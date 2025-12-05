@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대항해시대: 지식의 나침반 v3.4</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Nanum Myeongjo', serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .animate-bounce-slow { animation: bounce 3s infinite; }
+        
+        /* v3.3: 개선된 작은 물결 애니메이션 (잔물결/윤슬 효과) */
+        @keyframes ocean-flow {
+            0% { background-position: 0 0; }
+            100% { background-position: 30px 15px; }
+        }
+        .ocean-waves {
+            /* 작은 점들이 흩뿌려진 듯한 패턴으로 변경 */
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.25) 1.5px, transparent 2px),
+                radial-gradient(rgba(255, 255, 255, 0.2) 1.5px, transparent 2px);
+            background-position: 0 0, 15px 15px;
+            background-size: 30px 30px; /* 패턴 크기 축소 */
+            animation: ocean-flow 6s infinite linear;
+            opacity: 0.4; /* 은은하게 조절 */
+        }
+
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .pixel-art { image-rendering: pixelated; }
+    </style>
+</head>
+<body class="bg-[#0c0a09] overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- 아이콘 컴포넌트 ---
+        const IconBase = ({ children, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const Anchor = (props) => <IconBase {...props}><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></IconBase>;
+        const Wind = (props) => <IconBase {...props}><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></IconBase>;
+        const MapIcon = (props) => <IconBase {...props}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></IconBase>;
+        const Coins = (props) => <IconBase {...props}><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></IconBase>;
+        const BookOpen = (props) => <IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>;
+        const Compass = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></IconBase>;
+        const Scroll = (props) => <IconBase {...props}><path d="M8 19H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1"/><path d="M19 5v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></IconBase>;
+        const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
+        const CheckCircle = (props) => <IconBase {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>;
+        const Navigation = (props) => <IconBase {...props}><polygon points="3 11 22 2 13 21 11 13 3 11"/></IconBase>;
+        const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+        const Trophy = (props) => <IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></IconBase>;
+        const Ship = (props) => <IconBase {...props}><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.9 5.8 2.26 8"/><path d="M12 10V4"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></IconBase>;
+        const ArrowRight = (props) => <IconBase {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></IconBase>;
+        const Lock = (props) => <IconBase {...props}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>;
+
+        // --- 게임 설정 및 데이터 ---
+        const MAX_DAYS = 200;
+
+        const INITIAL_STATE = {
+            gold: 2000, 
+            day: 1,
+            location: 'lisbon',
+            inventory: { pepper: 0, nutmeg: 0, silk: 0, glass: 0, musket: 0, wine: 0, art: 0, ivory: 0, cotton: 0, cloves: 0, porcelain: 0 },
+            avgCost: { pepper: 0, nutmeg: 0, silk: 0, glass: 0, musket: 0, wine: 0, art: 0, ivory: 0, cotton: 0, cloves: 0, porcelain: 0 }, 
+            cargoSpace: 35, 
+            unlockedFacts: [],
+            gameOver: false
+        };
+
+        const PORTS = {
+            lisbon: {
+                id: 'lisbon', name: '리스본', continent: '유럽',
+                desc: '포르투갈의 수도. 아프리카/인도 항로의 기점.',
+                market: { musket: 60, wine: 60, glass: 40, ivory: 120, pepper: 80, nutmeg: 100, porcelain: 200, art: 100, cotton: 120, cloves: 110, silk: 150 },
+                x: 46, y: 35
+            },
+            sevilla: {
+                id: 'sevilla', name: '세비야', continent: '유럽',
+                desc: '스페인의 황금 항구. 신대륙의 물산 집결지.',
+                market: { wine: 30, musket: 80, glass: 35, ivory: 130, pepper: 85, nutmeg: 110, porcelain: 190, art: 110, cotton: 110, cloves: 120, silk: 140 },
+                x: 48, y: 37
+            },
+            venice: {
+                id: 'venice', name: '베네치아', continent: '유럽',
+                desc: '지중해 무역의 중심. 유리 공예가 유명.',
+                market: { glass: 20, musket: 90, wine: 70, ivory: 140, pepper: 90, nutmeg: 120, porcelain: 210, art: 50, cotton: 140, cloves: 130, silk: 160 },
+                x: 52, y: 34
+            },
+            cape_town: {
+                id: 'cape_town', name: '케이프타운', continent: '아프리카',
+                desc: '희망봉 인근 보급항. 상아가 거래됨.',
+                market: { ivory: 50, musket: 150, wine: 120, glass: 100, pepper: 60, nutmeg: 80, porcelain: 180, art: 180, cotton: 80, cloves: 90, silk: 120 },
+                x: 55, y: 75
+            },
+            calicut: {
+                id: 'calicut', name: '캘리컷', continent: '아시아',
+                desc: '인도의 무역항. 후추의 본고장.',
+                market: { pepper: 10, musket: 220, wine: 200, glass: 150, ivory: 90, nutmeg: 40, porcelain: 100, art: 250, cotton: 20, cloves: 50, silk: 70 },
+                x: 70, y: 55
+            },
+            malacca: {
+                id: 'malacca', name: '말라카', continent: '아시아',
+                desc: '향신료 무역의 중심지.',
+                market: { nutmeg: 5, musket: 240, wine: 220, glass: 160, ivory: 100, pepper: 20, porcelain: 80, art: 260, cotton: 40, cloves: 15, silk: 40 },
+                x: 82, y: 65
+            },
+            macau: {
+                id: 'macau', name: '마카오', continent: '아시아',
+                desc: '동아시아의 관문. 도자기가 풍부.',
+                market: { porcelain: 40, musket: 260, wine: 250, glass: 180, ivory: 150, pepper: 50, nutmeg: 60, art: 280, cotton: 60, cloves: 70, silk: 20 },
+                x: 88, y: 50
+            }
+        };
+
+        const GOODS_INFO = {
+            cotton: { name: '면직물', desc: '인도산이 최고급이지만 유럽에서도 구함.', origin: 'any' },
+            silk: { name: '비단', desc: '동양의 사치품. 유럽에선 매우 비쌈.', origin: 'any' },
+            art: { name: '예술품', desc: '유럽 르네상스 작품. 아시아에선 희귀.', origin: 'any' },
+            cloves: { name: '정향', desc: '향신료의 일종. 동남아에선 흔함.', origin: 'any' },
+            musket: { name: '화승총', desc: '유럽의 최신식 무기.', origin: ['lisbon'] },
+            wine: { name: '와인', desc: '선상 필수품이자 기호식품.', origin: ['sevilla'] },
+            glass: { name: '유리 공예', desc: '투명하고 아름다운 보석.', origin: ['venice'] },
+            ivory: { name: '상아', desc: '아프리카의 귀한 보물.', origin: ['cape_town'] },
+            pepper: { name: '후추', desc: '검은 황금.', origin: ['calicut'] },
+            nutmeg: { name: '육두구', desc: '향신료 제도의 보물.', origin: ['malacca'] },
+            porcelain: { name: '도자기', desc: '중국의 하얀 금.', origin: ['macau'] }
+        };
+
+        const GOOD_EVENTS = [
+            { name: "순풍", text: "강한 뒷바람을 타고 빠르게 도착했습니다!", effect: (s) => ({ ...s, day: s.day - 4 }) },
+            { name: "난파선 발견", text: "표류하던 난파선에서 은화를 건졌습니다.", effect: (s) => ({ ...s, gold: s.gold + 150 }) },
+            { name: "돌고래 떼", text: "돌고래가 뱃길을 안내하여 선원들의 사기가 오릅니다.", effect: (s) => ({ ...s, day: s.day - 2, gold: s.gold + 50 }) },
+            { name: "현지인의 환대", text: "원주민들이 식량을 나누어 주었습니다.", effect: (s) => ({ ...s, gold: s.gold + 50 }) }
+        ];
+
+        const BAD_EVENTS = [
+            { name: "무풍지대", text: "바람이 멈춰 바다에 갇혔습니다.", effect: (s) => ({ ...s, day: s.day + 7 }) },
+            { name: "괴혈병", text: "선원들이 쓰러져 치료에 시간이 걸립니다.", effect: (s) => ({ ...s, day: s.day + 5 }) },
+            { name: "쥐 떼 창궐", text: "쥐들이 식량을 먹어치워 손해가 발생했습니다.", effect: (s) => ({ ...s, gold: s.gold - 80 }) },
+            { name: "폭풍우", text: "배가 파손되어 수리비가 청구되었습니다.", effect: (s) => ({ ...s, gold: s.gold - 150 }) },
+            { name: "해적 출몰", text: "해적에게 통행료를 뺏겼습니다.", effect: (s) => ({ ...s, gold: s.gold - 100 }) }
+        ];
+
+        const QUIZZES = [
+            { question: "1492년, 인도를 찾아 서쪽으로 항해하다가 아메리카 대륙에 도착한 인물은?", options: ["크리스토퍼 콜럼버스", "아메리고 베스푸치", "페르디난드 마젤란", "바스코 다 가마"], answer: 0, fact: "콜럼버스는 죽을 때까지 그곳을 인도라고 믿었습니다." },
+            { question: "아프리카 최남단 희망봉을 돌아 인도 항로를 개척한 인물은?", options: ["바스코 다 가마", "바르톨로메우 디아스", "엔히크 왕자", "아메리고 베스푸치"], answer: 0, fact: "그의 성공으로 향신료 직수입 길이 열려 베네치아의 독점이 깨졌습니다." },
+            { question: "세계 최초로 지구 일주에 성공한 선단은?", options: ["마젤란 선단", "콜럼버스 선단", "드레이크 선단", "바스코 다 가마 선단"], answer: 0, fact: "마젤란 본인은 필리핀 막탄섬에서 전사했지만, 그의 부하 엘카노가 항해를 마쳤습니다." },
+            { question: "대항해시대 선박의 위도를 측정하기 위해 별의 고도를 관측하던 도구는?", options: ["아스트롤라베", "나침반", "크로노미터", "망원경"], answer: 0, fact: "아스트롤라베 덕분에 망망대해에서도 대략적인 위치를 알 수 있었습니다." },
+            { question: "유럽에서 '검은 황금'이라 불리며 가장 인기가 높았던 향신료는?", options: ["후추", "육두구", "정향", "계피"], answer: 0, fact: "당시 후추는 같은 무게의 금과 맞먹는 가치를 지녔습니다." },
+            { question: "스페인과 포르투갈이 신대륙을 나누기 위해 체결한 조약은?", options: ["토르데시야스 조약", "사라고사 조약", "베르사유 조약", "베스트팔렌 조약"], answer: 0, fact: "이 조약으로 브라질을 제외한 남미 대부분이 스페인 영역이 되었습니다." },
+            { question: "대항해시대 초기를 주도한 이베리아 반도의 두 국가는?", options: ["스페인, 포르투갈", "영국, 프랑스", "네덜란드, 영국", "미국, 영국"], answer: 0, fact: "포르투갈은 동쪽(인도)으로, 스페인은 서쪽(신대륙)으로 진출했습니다." },
+            { question: "명나라 때 대함대를 이끌고 아프리카까지 원정을 다녀온 인물은?", options: ["정화", "이븐 바투타", "마르코 폴로", "장건"], answer: 0, fact: "정화의 함대는 콜럼버스의 배보다 훨씬 컸습니다." },
+            { question: "신대륙에서 구대륙으로 전해져 기근 해결에 기여한 작물은?", options: ["감자, 옥수수", "밀, 보리", "쌀, 콩", "포도, 올리브"], answer: 0, fact: "이 작물들은 척박한 땅에서도 잘 자라 유럽의 인구 폭발을 이끌었습니다." },
+            { question: "장거리 항해 중 비타민 C 부족으로 발생한 질병은?", options: ["괴혈병", "페스트", "천연두", "말라리아"], answer: 0, fact: "나중에 신선한 과일과 야채를 먹으면 낫는다는 것을 알게 되었습니다." },
+            { question: "원양 항해에 적합하도록 개량된, 삼각돛을 단 서양의 범선은?", options: ["카라벨선", "갤리선", "정크선", "거북선"], answer: 0, fact: "카라벨선은 바람을 거슬러 항해할 수 있어 탐험에 유리했습니다." },
+            { question: "신대륙이 인도가 아님을 밝혀내어 이름의 유래가 된 인물은?", options: ["아메리고 베스푸치", "크리스토퍼 콜럼버스", "페르디난드 마젤란", "바스코 누녜스 데 발보아"], answer: 0, fact: "그는 이곳이 인도가 아니라 '신대륙'이라는 사실을 알렸습니다." },
+            { question: "멕시코의 아즈텍 제국을 멸망시킨 스페인 정복자는?", options: ["에르난 코르테스", "프란시스코 피사로", "바스코 다 가마", "페르디난드 마젤란"], answer: 0, fact: "코르테스는 아즈텍에 반감을 가진 원주민 부족들과 연합했습니다." },
+            { question: "신대륙의 은 유입으로 유럽 물가가 급등한 현상은?", options: ["가격 혁명", "상업 혁명", "산업 혁명", "종교 개혁"], answer: 0, fact: "돈(은화)이 많아지자 돈의 가치는 떨어지고 물가는 올랐습니다." },
+            { question: "유럽-아프리카-아메리카를 잇는 대서양 무역 형태는?", options: ["삼각 무역", "중계 무역", "보호 무역", "가공 무역"], answer: 0, fact: "유럽의 총/술 -> 아프리카 노예 -> 아메리카 설탕/목화로 이어졌습니다." },
+            { question: "네덜란드가 설립한 세계 최초의 주식회사는?", options: ["동인도 회사", "서인도 회사", "허드슨 베이 회사", "남해 회사"], answer: 0, fact: "이 회사는 군대를 거느리고 전쟁을 할 수 있을 만큼 강력했습니다." },
+            { question: "항해 중 경도를 측정하기 위해 고안된 정밀 시계는?", options: ["크로노미터", "해시계", "물시계", "모래시계"], answer: 0, fact: "존 해리슨이 발명한 크로노미터는 항해술의 일대 혁명이었습니다." },
+            { question: "대항해시대 이전 지중해 무역을 독점했던 이탈리아 도시는?", options: ["베네치아", "제노바", "피렌체", "밀라노"], answer: 0, fact: "베네치아 상인들은 동방 물품을 독점하여 큰 부를 쌓았습니다." },
+            { question: "항해 학교를 세워 포르투갈의 대양 진출을 이끈 왕자는?", options: ["엔히크", "펠리페 2세", "루이 14세", "찰스 1세"], answer: 0, fact: "직접 항해하진 않았지만 '항해왕'이라는 별명을 얻었습니다." },
+            { question: "유럽인이 가져와 신대륙 원주민 인구를 급격히 감소시킨 질병은?", options: ["천연두", "흑사병", "장티푸스", "콜레라"], answer: 0, fact: "면역력이 없던 원주민들에게는 치명적인 전염병이었습니다." },
+            { question: "다음 중 구대륙에서 신대륙으로 전해진 것은?", options: ["말(Horse)", "감자", "옥수수", "토마토"], answer: 0, fact: "말은 유럽인들이 신대륙으로 가져가 원주민들에게 충격을 주었습니다." },
+            { question: "대항해시대 결과 무역의 중심지는 지중해에서 어디로 이동했나요?", options: ["대서양", "태평양", "인도양", "북해"], answer: 0, fact: "리스본, 세비야 같은 대서양 연안 도시들이 번영하기 시작했습니다." },
+            { question: "영국이 스페인의 무적함대를 격파한 해전은?", options: ["칼레 해전", "레판토 해전", "트라팔가 해전", "살라미스 해전"], answer: 0, fact: "이 승리로 영국은 해상 강국으로 떠올랐습니다." },
+            { question: "인도의 면직물로, 유럽 패션에 큰 영향을 준 직물은?", options: ["캘리코", "모직물", "비단", "린넨"], answer: 0, fact: "캘리컷 항구의 이름을 따서 캘리코라고 불렀습니다." },
+            { question: "중국의 도자기와 비단을 유럽에 중계 무역한 나라는?", options: ["포르투갈", "스페인", "영국", "네덜란드"], answer: 0, fact: "포르투갈은 마카오를 거점으로 동서양 무역을 중계했습니다." },
+            { question: "지구 구형설을 믿고 서쪽으로 항해를 시도한 인물은?", options: ["콜럼버스", "토스카넬리", "마젤란", "프톨레마이오스"], answer: 0, fact: "당시 사람들은 지구가 평평해서 끝으로 가면 떨어진다고 생각하기도 했습니다." },
+            { question: "유럽인들이 아메리카 대륙에 만든 대규모 농장 경영 방식은?", options: ["플랜테이션", "엔코미엔다", "아시엔다", "장원"], answer: 0, fact: "설탕, 담배 등을 재배하기 위해 많은 노예가 동원되었습니다." },
+            { question: "스페인이 남미에서 발견한 당시 세계 최대의 은광은?", options: ["포토시 은광", "이와미 은광", "사도 광산", "캘리포니아 금광"], answer: 0, fact: "여기서 캐낸 은은 전 세계로 퍼져 화폐로 사용되었습니다." },
+            { question: "적도 부근에서 바람이 불지 않아 항해를 어렵게 했던 구역은?", options: ["무풍지대", "편서풍대", "무역풍대", "극동풍대"], answer: 0, fact: "범선 시대 선원들에게 가장 무서운 곳 중 하나였습니다." },
+            { question: "원주민의 인권을 옹호하며 스페인의 착취를 비판한 성직자는?", options: ["라스 카사스", "세풀베다", "로욜라", "루터"], answer: 0, fact: "그의 노력으로 원주민 보호법이 만들어지기도 했습니다." },
+            { question: "항해에 적합하도록 고안된, 각도가 정확한 지도의 도법은?", options: ["메르카토르 도법", "페터스 도법", "몰바이데 도법", "방위 도법"], answer: 0, fact: "직선으로 항로를 그릴 수 있어 항해사들에게 필수적이었습니다." },
+            { question: "콜럼버스의 1차 항해 기함 이름은?", options: ["산타마리아호", "빅토리아호", "골든 하인드호", "메이플라워호"], answer: 0, fact: "핀타호, 니냐호와 함께 3척이 떠났습니다." },
+            { question: "향신료 '정향'의 모양은 무엇을 닮았을까요?", options: ["못", "꽃봉오리", "별", "잎사귀"], answer: 0, fact: "강한 향기가 나서 치통 치료제나 향수로도 쓰였습니다." },
+            { question: "대항해시대 유럽인들이 동방에서 가장 얻고 싶어 했던 물건은?", options: ["향신료", "비단", "도자기", "차"], answer: 0, fact: "고기의 맛을 좋게 해주는 향신료는 부의 상징이었습니다." },
+            { question: "대항해시대를 가능하게 한 기술적 요인이 아닌 것은?", options: ["증기기관 발명", "나침반 전래", "조선술 발달", "지도 제작술 발달"], answer: 0, fact: "증기기관은 산업혁명 시기에 발명되었습니다." },
+            { question: "포르투갈 상인들이 일본 다네가시마에 전해준 무기는?", options: ["조총", "대포", "화약", "갑옷"], answer: 0, fact: "이 조총은 훗날 전국시대 통일과 임진왜란에 영향을 주었습니다." },
+            { question: "희망봉의 원래 이름은 무엇이었을까요?", options: ["폭풍의 곶", "희망의 곶", "사자의 곶", "녹색의 곶"], answer: 0, fact: "너무 험해서 '폭풍의 곶'이라 불렸지만, 나중에 '희망봉'으로 바뀌었습니다." },
+            { question: "마젤란이 통과한 남아메리카 남단의 해협 이름은?", options: ["마젤란 해협", "드레이크 해협", "베링 해협", "호르무즈 해협"], answer: 0, fact: "그의 이름을 따서 마젤란 해협이라고 부릅니다." },
+            { question: "다음 중 신대륙에 존재했던 문명이 아닌 것은?", options: ["이집트 문명", "아즈텍 문명", "잉카 문명", "마야 문명"], answer: 0, fact: "이집트 문명은 아프리카 나일강 변에서 발생했습니다." },
+            { question: "유럽인들이 아프리카 어딘가에 있다고 믿었던 기독교 왕국은?", options: ["프레스터 존의 왕국", "만사 무사 왕국", "솔로몬 왕국", "시바 여왕국"], answer: 0, fact: "이 왕국을 찾기 위해 아프리카 등을 탐험하기도 했습니다." },
+            { question: "선박의 방향을 조절하기 위해 선미에 설치한 장치는?", options: ["키(Rudder)", "닻", "노", "갑판"], answer: 0, fact: "키 덕분에 큰 배도 원하는 방향으로 쉽게 움직일 수 있었습니다." }
+        ];
+
+        // --- 픽셀 아트 아이콘 ---
+        const PixelItemIcon = ({ type }) => {
+            const colors = { 
+                pepper: ['#2d2d2d', '#404040'], nutmeg: ['#8B4513', '#A0522D'], silk: ['#9370DB', '#E6E6FA'], glass: ['#87CEEB', '#E0FFFF'],
+                musket: ['#5D4037', '#BCAAA4'], wine: ['#800020', '#D32F2F'], art: ['#FFD700', '#F0E68C'], ivory: ['#FFFFF0', '#F5F5DC'],
+                cotton: ['#FFFFFF', '#E0E0E0'], cloves: ['#5D4037', '#8D6E63'], porcelain: ['#E3F2FD', '#1E88E5']
+            };
+            const c = colors[type] || ['#888', '#ccc'];
+            
+            if(type === 'pepper') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="6" y="6" width="2" height="2" fill={c[0]}/><rect x="9" y="5" width="2" height="2" fill={c[0]}/><rect x="5" y="9" width="2" height="2" fill={c[0]}/><rect x="8" y="8" width="2" height="2" fill={c[1]}/></svg>;
+            if(type === 'nutmeg') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="6" y="6" width="4" height="4" fill={c[0]} rx="2"/><rect x="7" y="5" width="2" height="1" fill={c[0]}/><rect x="7" y="10" width="2" height="1" fill={c[0]}/><rect x="5" y="7" width="1" height="2" fill={c[0]}/><rect x="10" y="7" width="1" height="2" fill={c[0]}/><rect x="7" y="7" width="2" height="2" fill={c[1]}/></svg>;
+            if(type === 'silk') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M4 4h9v10h-9z" fill={c[0]}/><rect x="5" y="5" width="6" height="8" fill={c[1]} opacity="0.6"/></svg>;
+            if(type === 'glass') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M6 3h4v9h-4z" fill={c[0]}/><rect x="7" y="5" width="2" height="5" fill={c[1]} opacity="0.8"/></svg>;
+            if(type === 'musket') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M2 10l2 2 10-8-2-2z" fill={c[0]}/><rect x="3" y="11" width="3" height="1" fill={c[1]}/></svg>;
+            if(type === 'wine') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M6 3h4v6l-2 3-2-3z" fill={c[0]}/><rect x="7" y="12" width="2" height="2" fill={c[0]}/><rect x="5" y="14" width="6" height="1" fill={c[0]}/><rect x="7" y="4" width="2" height="4" fill={c[1]}/></svg>;
+            if(type === 'art') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="3" y="3" width="10" height="10" fill={c[0]} stroke="#8B4513"/><circle cx="8" cy="8" r="3" fill={c[1]}/></svg>;
+            if(type === 'ivory') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M10 3s2 2 0 10c0 0-4-2-2-10z" fill={c[0]} stroke="#CCC"/></svg>;
+            if(type === 'cotton') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><circle cx="8" cy="8" r="4" fill={c[0]}/><circle cx="6" cy="6" r="2" fill={c[1]}/><circle cx="10" cy="7" r="2" fill={c[1]}/></svg>;
+            if(type === 'cloves') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><circle cx="8" cy="6" r="3" fill={c[0]}/><rect x="7" y="8" width="2" height="5" fill={c[1]}/></svg>;
+            if(type === 'porcelain') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M4 4h8v6c0 2-2 4-4 4s-4-2-4-4V4z" fill={c[0]}/><path d="M5 6h6" stroke={c[1]} strokeWidth="1"/></svg>;
+            return null;
+        };
+
+        const PixelPort = () => <svg width="20" height="20" viewBox="0 0 16 16" className="drop-shadow-sm"><rect x="4" y="6" width="8" height="8" fill="#D2691E" stroke="#5D4037"/><rect x="7" y="9" width="2" height="5" fill="#3E2723"/><path d="M3 6L8 1L13 6H3Z" fill="#8B0000" stroke="#5D4037"/></svg>;
+        const PixelShip = () => <svg width="24" height="24" viewBox="0 0 24 24" className="drop-shadow-lg"><path d="M4 14H20V16H4V14Z" fill="#e2e8f0"/><path d="M6 16H18V18H6V16Z" fill="#94a3b8"/><path d="M10 10H14V14H10V10Z" fill="#f8fafc"/><path d="M12 4H14V10H12V4Z" fill="#f8fafc"/><path d="M10 6H12V8H10V6Z" fill="#f8fafc"/><rect x="8" y="12" width="2" height="2" fill="#475569"/><rect x="14" y="12" width="2" height="2" fill="#475569"/></svg>;
+
+        const PixelMap = ({ currentLocation }) => {
+            return (
+                <div className="w-full h-64 bg-[#1a4785] relative overflow-hidden border-[6px] border-[#5c3a21] rounded-lg shadow-inner mb-6 group select-none box-content ring-2 ring-[#3e2b20]">
+                    <div className="absolute inset-0 opacity-10 pointer-events-none z-0 mix-blend-multiply bg-[#d4b483]"></div>
+                    <div className="absolute inset-0 ocean-waves opacity-50"></div>
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                    
+                    <div className="absolute top-[20%] left-[42%] w-14 h-24 bg-[#2d6a4f] opacity-80 rounded-sm shadow-lg border border-[#1b4332]"></div> 
+                    <div className="absolute top-[20%] left-[50%] w-20 h-14 bg-[#2d6a4f] opacity-80 rounded-sm shadow-lg border border-[#1b4332]"></div> 
+                    <div className="absolute top-[50%] left-[68%] w-10 h-12 bg-[#2d6a4f] opacity-80 rounded-sm shadow-lg border border-[#1b4332]"></div>
+                    <div className="absolute top-[55%] left-[80%] w-12 h-16 bg-[#2d6a4f] opacity-80 rounded-sm shadow-lg border border-[#1b4332]"></div>
+                    
+                    {Object.values(PORTS).map(port => (
+                        <div key={port.id} className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 hover:scale-110 transition-transform cursor-pointer group/port" style={{ left: `${port.x}%`, top: `${port.y}%` }}>
+                            <div className="flex flex-col items-center">
+                                <PixelPort />
+                                <div className="mt-1 bg-[#f4e4bc] px-1.5 py-0.5 rounded text-[8px] font-bold text-[#5c3a21] border border-[#8b5e3c] shadow-md opacity-0 group-hover/port:opacity-100 transition-opacity whitespace-nowrap z-50">
+                                    {port.name}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {Object.values(PORTS).map(port => {
+                        if (port.id === currentLocation) return (
+                            <div key={'ship'} className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 z-20" style={{ left: `${port.x}%`, top: `${port.y}%` }}>
+                                <div className="relative">
+                                    <div className="animate-bounce-slow"><PixelShip /></div>
+                                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-[10px] font-bold text-[#f4e4bc] whitespace-nowrap bg-[#3e2b20] px-2 py-0.5 rounded border border-[#8b5e3c] shadow-lg">Me</div>
+                                </div>
+                            </div>
+                        );
+                        return null;
+                    })}
+                </div>
+            );
+        };
+
+        const Modal = ({ title, children, onClose }) => (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                <div className="bg-[#f4e4bc] w-full max-w-lg rounded-sm border-[8px] border-[#5c3a21] shadow-[0_0_50px_rgba(0,0,0,0.5)] relative animate-scale-in" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')" }}>
+                    <div className="bg-[#3e2b20] text-[#eecfa1] p-4 text-center font-bold text-xl border-b-4 border-[#2a1d15] shadow-md relative">
+                        <span className="relative z-10 drop-shadow-md">{title}</span>
+                    </div>
+                    <div className="p-8 text-[#3e2b20] font-serif leading-relaxed">{children}</div>
+                    {onClose && (
+                        <div className="p-4 border-t-2 border-[#d4b483]/50 flex justify-center bg-[#e8d5a5]/30">
+                            <button onClick={onClose} className="px-8 py-2 bg-[#8b4513] text-[#f4e4bc] rounded-sm hover:bg-[#6d3710] transition-colors font-bold shadow-md border border-[#a0522d]">확인</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        function HistoryTradeGame() {
+            const [gameState, setGameState] = useState(INITIAL_STATE);
+            const [activeModal, setActiveModal] = useState(null); 
+            const [selectedGood, setSelectedGood] = useState(null);
+            const [currentQuiz, setCurrentQuiz] = useState(null);
+            const [pendingDestination, setPendingDestination] = useState(null);
+            const [quizResultInfo, setQuizResultInfo] = useState(null); 
+            const [voyageDays, setVoyageDays] = useState(0); 
+
+            const currentPort = PORTS[gameState.location];
+            const upgradeCost = Math.floor(gameState.cargoSpace * 20);
+
+            useEffect(() => {
+                if (!gameState.gameOver) {
+                    if (gameState.day > MAX_DAYS || gameState.gold < 0) {
+                        setGameState(prev => ({ ...prev, gameOver: true }));
+                    }
+                }
+            }, [gameState.day, gameState.gold]);
+
+            const handleTrade = (goodKey, isBuying) => {
+                const price = currentPort.market[goodKey];
+                const currentQty = gameState.inventory[goodKey];
+                const currentAvg = gameState.avgCost[goodKey];
+                
+                if (isBuying) {
+                    if (gameState.gold >= price && getTotalCargo() < gameState.cargoSpace) {
+                        const newAvg = Math.floor(((currentQty * currentAvg) + price) / (currentQty + 1));
+                        setGameState(prev => ({
+                            ...prev,
+                            gold: prev.gold - price,
+                            inventory: { ...prev.inventory, [goodKey]: currentQty + 1 },
+                            avgCost: { ...prev.avgCost, [goodKey]: newAvg }
+                        }));
+                    }
+                } else {
+                    if (currentQty > 0) {
+                        const remainingAvg = currentQty - 1 === 0 ? 0 : currentAvg;
+                        setGameState(prev => ({
+                            ...prev,
+                            gold: prev.gold + price,
+                            inventory: { ...prev.inventory, [goodKey]: currentQty - 1 },
+                            avgCost: { ...prev.avgCost, [goodKey]: remainingAvg }
+                        }));
+                    }
+                }
+            };
+
+            const handleUpgradeCargo = () => {
+                if (gameState.gold >= upgradeCost) {
+                    setGameState(prev => ({
+                        ...prev,
+                        gold: prev.gold - upgradeCost,
+                        cargoSpace: prev.cargoSpace + 5
+                    }));
+                }
+            };
+
+            const getTotalCargo = () => Object.values(gameState.inventory).reduce((a, b) => a + b, 0);
+
+            const calculateDays = (targetId) => {
+                const current = PORTS[gameState.location];
+                const target = PORTS[targetId];
+                const dx = current.x - target.x;
+                const dy = current.y - target.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return Math.ceil(5 + distance / 2.5); 
+            };
+
+            const startVoyage = (destId) => {
+                if (gameState.gameOver) return;
+                setPendingDestination(destId);
+                setVoyageDays(calculateDays(destId)); 
+                
+                const randomQuiz = QUIZZES[Math.floor(Math.random() * QUIZZES.length)];
+                setCurrentQuiz(randomQuiz);
+                setActiveModal('quiz');
+            };
+
+            const handleQuizResult = (isCorrect) => {
+                let message = "";
+                let newGameState = { ...gameState };
+                let eventHappened = null;
+                const daysNeeded = voyageDays; 
+
+                if (isCorrect) {
+                    newGameState.location = pendingDestination;
+                    newGameState.day += daysNeeded; 
+                    newGameState.gold -= 30; 
+                    newGameState.unlockedFacts = [...new Set([...newGameState.unlockedFacts, currentQuiz.fact])];
+                    message = `항해 성공! ${daysNeeded}일 만에 도착했습니다.`;
+
+                    if (Math.random() < 0.4) {
+                        const event = GOOD_EVENTS[Math.floor(Math.random() * GOOD_EVENTS.length)];
+                        newGameState = event.effect(newGameState);
+                        eventHappened = { ...event, type: 'good' };
+                    }
+                } else {
+                    const penaltyDays = Math.ceil(daysNeeded * 1.5);
+                    newGameState.day += penaltyDays;
+                    newGameState.gold -= 50; 
+                    message = `항로를 잃고 표류하다 ${penaltyDays}일 만에 회항했습니다.`;
+                    
+                    if (Math.random() < 0.3) {
+                        const event = BAD_EVENTS[Math.floor(Math.random() * BAD_EVENTS.length)];
+                        newGameState = event.effect(newGameState);
+                        eventHappened = { ...event, type: 'bad' };
+                    }
+                }
+
+                setGameState(newGameState);
+                setQuizResultInfo({ success: isCorrect, text: message, fact: currentQuiz.fact, event: eventHappened });
+                setActiveModal('result');
+                setCurrentQuiz(null);
+            };
+
+            const getRank = () => {
+                if (gameState.gold >= 20000) return "전설의 무역왕";
+                if (gameState.gold >= 10000) return "대부호";
+                if (gameState.gold >= 5000) return "숙련된 선장";
+                if (gameState.gold >= 2000) return "평범한 상인";
+                return "초보 뱃사람";
+            };
+
+            const getProfit = (good, price) => {
+                const avg = gameState.avgCost[good];
+                if (avg === 0) return 0;
+                return price - avg;
+            };
+
+            return (
+                <div className="min-h-screen bg-[#0c0a09] text-[#eecfa1] font-serif flex flex-col items-center p-4">
+                    {/* 상단바 */}
+                    <div className="w-full max-w-5xl bg-[#3e2b20] border-b-[6px] border-[#2a1d15] p-3 flex justify-between items-center shadow-lg rounded-t-xl z-10 relative overflow-hidden">
+                        <div className="absolute inset-0 opacity-10" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')"}}></div>
+                        <div className="flex items-center gap-6 relative z-10">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-[#d4a065] font-bold tracking-widest uppercase mb-1">Current Port</span>
+                                <div className="text-2xl font-bold text-[#f4e4bc] flex items-center gap-2 drop-shadow-md">
+                                    <Anchor className="w-5 h-5 text-[#d4a065]" /> {currentPort.name} <span className="text-sm text-[#8b5e3c] ml-1">({currentPort.continent})</span>
+                                </div>
+                            </div>
+                            <div className="h-10 w-[2px] bg-[#2a1d15]/50 border-r border-[#5c3a21]"></div>
+                            <div className="flex gap-6">
+                                <div className="flex flex-col items-start min-w-[120px]">
+                                    <span className="text-xs font-bold text-[#8b5e3c] tracking-widest mb-1">TREASURY</span>
+                                    <div className="flex items-center gap-2 bg-[#2a1d15]/80 px-4 py-2 rounded-sm border border-[#5c3a21] shadow-inner w-full">
+                                        <Coins className="text-slate-300 w-5 h-5" /> 
+                                        <span className={`font-bold text-2xl ${gameState.gold < 200 ? 'text-red-500 animate-pulse' : 'text-[#eecfa1]'}`}>{gameState.gold} 은</span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-start min-w-[120px]">
+                                    <span className="text-xs font-bold text-[#8b5e3c] tracking-widest mb-1">DAY</span>
+                                    <div className="flex items-center gap-2 bg-[#2a1d15]/80 px-4 py-2 rounded-sm border border-[#5c3a21] shadow-inner w-full">
+                                        <Clock className={`w-5 h-5 ${gameState.day > MAX_DAYS - 20 ? 'text-red-500 animate-pulse' : 'text-blue-400'}`} /> 
+                                        <span className="text-[#eecfa1] font-bold text-2xl">{Math.min(gameState.day, MAX_DAYS)} / {MAX_DAYS}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onClick={() => setActiveModal('journal')} className="relative z-10 flex items-center gap-2 bg-[#5c3a21] px-5 py-2 rounded-sm hover:bg-[#6d4c41] transition-all border-b-4 border-[#3e2b20] active:border-b-0 active:translate-y-1 shadow-lg group">
+                            <BookOpen className="w-4 h-4 text-[#d4a065] group-hover:text-white" /> <span className="font-bold text-[#f4e4bc]">탐험 일지</span>
+                        </button>
+                    </div>
+
+                    {/* 메인 게임 영역 */}
+                    <div className="w-full max-w-5xl flex-1 bg-[#e8d5a5] text-[#3e2b20] relative shadow-2xl overflow-hidden flex flex-col md:flex-row border-x-4 border-b-4 border-[#2a1d15] rounded-b-xl" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')"}}>
+                        
+                        {/* 왼쪽: 거래소 */}
+                        <div className="flex-1 p-6 border-r border-[#8b5e3c]/30 relative z-10 flex flex-col min-h-0">
+                            <h2 className="text-2xl font-bold mb-2 flex items-center gap-3 text-[#3e2b20] border-b-2 border-[#8b5e3c] pb-2">
+                                <MapIcon className="w-6 h-6 text-[#8b4513]" /> {currentPort.name} 거래소 <span className="text-sm text-[#8b5e3c] font-normal mt-1">({currentPort.continent})</span>
+                            </h2>
+                            <p className="text-sm italic text-[#5c4033] mb-4 bg-[#fff8e1]/50 p-2 rounded border border-[#d4b483]">"{currentPort.desc}"</p>
+                            
+                            {/* 거래 리스트 (모든 아이템 표시) */}
+                            <div className="bg-white/40 p-2 rounded-lg shadow-sm border border-[#d4b483] flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0">
+                                <div className="grid grid-cols-[2fr_1fr_2fr] text-xs font-bold text-[#8b5e3c] border-b border-[#8b5e3c] pb-1 mb-2 px-2 sticky top-0 bg-[#fff8e1]/90 z-10">
+                                    <span>상품 (시세)</span>
+                                    <span className="text-center">보유/평단가</span>
+                                    <span className="text-right">거래</span>
+                                </div>
+                                
+                                <div className="space-y-1.5 pb-2">
+                                {Object.keys(GOODS_INFO).map((good) => {
+                                    const price = currentPort.market[good] || 0; 
+                                    const profit = getProfit(good, price);
+                                    const isOrigin = GOODS_INFO[good].origin.includes(currentPort.id) || GOODS_INFO[good].origin === 'any';
+                                    
+                                    return (
+                                        <div key={good} className="flex justify-between items-center group p-1.5 hover:bg-[#fff8e1] rounded transition-colors border-b border-dashed border-[#8b5e3c]/30 last:border-0">
+                                            <div className="flex items-center gap-2 flex-1" onClick={() => {setSelectedGood(good); setActiveModal('goodInfo');}}>
+                                                <div className="p-1 bg-[#f4e4bc] rounded-sm border border-[#8b5e3c] shadow-sm cursor-pointer hover:scale-110 transition-transform">
+                                                    <PixelItemIcon type={good} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-[#3e2b20] text-sm cursor-pointer hover:underline decoration-[#8b4513]">{GOODS_INFO[good].name}</div>
+                                                    <div className="text-xs font-bold text-[#8b5e3c]">{price} 은</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex flex-col items-center justify-center w-20">
+                                                <div className="font-mono font-bold text-sm bg-[#f4e4bc] border border-[#d4b483] px-2 rounded shadow-inner">{gameState.inventory[good]}</div>
+                                                {gameState.inventory[good] > 0 && (
+                                                    <div className="text-[9px] text-[#5c4033]">평단: {gameState.avgCost[good]}</div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-1 justify-end flex-1">
+                                                {isOrigin ? (
+                                                    <button onClick={() => handleTrade(good, true)} disabled={gameState.gameOver || gameState.gold < price || getTotalCargo() >= gameState.cargoSpace}
+                                                        className="px-2 py-1 bg-[#2e7d32] text-[#f4e4bc] text-xs font-bold rounded-sm hover:bg-[#1b5e20] disabled:opacity-50 shadow-sm border border-[#1b5e20] min-w-[40px]">
+                                                        구매
+                                                    </button>
+                                                ) : (
+                                                    <div className="text-[10px] text-[#8b5e3c] font-bold px-1 text-center min-w-[40px] opacity-60 flex flex-col items-center leading-tight">
+                                                        <Lock className="w-3 h-3 mb-0.5"/>
+                                                        <span>{
+                                                            GOODS_INFO[good].origin === 'any' ? '공용' :
+                                                            GOODS_INFO[good].origin[0] === 'lisbon' ? '리스본' : 
+                                                            GOODS_INFO[good].origin[0] === 'sevilla' ? '세비야' : 
+                                                            GOODS_INFO[good].origin[0] === 'venice' ? '베네치아' :
+                                                            GOODS_INFO[good].origin[0] === 'cape_town' ? '케이프' :
+                                                            GOODS_INFO[good].origin[0] === 'calicut' ? '캘리컷' :
+                                                            GOODS_INFO[good].origin[0] === 'malacca' ? '말라카' : '마카오'
+                                                        }</span>
+                                                    </div>
+                                                )}
+                                                
+                                                <button onClick={() => handleTrade(good, false)} disabled={gameState.gameOver || gameState.inventory[good] <= 0}
+                                                    className={`relative px-2 py-1 text-[#f4e4bc] text-xs font-bold rounded-sm hover:bg-opacity-90 disabled:opacity-50 shadow-sm border flex items-center gap-1 justify-center min-w-[65px] transition-colors
+                                                        ${gameState.inventory[good] > 0 
+                                                            ? (profit > 0 ? 'bg-[#2e7d32] border-[#1b5e20]' : profit < 0 ? 'bg-[#c62828] border-[#b71c1c]' : 'bg-gray-600 border-gray-700')
+                                                            : 'bg-[#8b5e3c] border-[#5c3a21]'
+                                                        }`}>
+                                                    <span>판매</span>
+                                                    {gameState.inventory[good] > 0 && (
+                                                        <span className="text-[10px] ml-0.5">
+                                                            {profit > 0 ? `+${profit}` : profit}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                </div>
+                            </div>
+                            
+                            <div className="mt-4 flex justify-between items-center bg-[#fff8e1]/40 p-2 rounded border border-[#d4b483]">
+                                <div className="text-xs font-bold text-[#5c4033]">
+                                    적재량: {getTotalCargo()} / {gameState.cargoSpace}
+                                </div>
+                                <button
+                                    onClick={handleUpgradeCargo}
+                                    disabled={gameState.gold < upgradeCost}
+                                    className="flex items-center gap-1 px-2 py-1 bg-[#8b4513] text-[#f4e4bc] text-[10px] font-bold rounded shadow-sm hover:bg-[#6d3710] disabled:opacity-50 disabled:cursor-not-allowed border border-[#5c3a21]"
+                                    title={`비용: ${upgradeCost} 은`}
+                                >
+                                    <Ship className="w-3 h-3" /> 증축 ({upgradeCost}은)
+                                </button>
+                            </div>
+
+                            <div className="mt-3 bg-[#fff8e1]/60 p-3 rounded border border-[#d4b483] relative">
+                                <div className="absolute -top-3 left-3 bg-[#8b5e3c] text-[#f4e4bc] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                                    <Scroll className="w-3 h-3" /> 초보 선장을 위한 지침서
+                                </div>
+                                <ul className="text-xs text-[#5c4033] space-y-1 mt-1 list-disc pl-4 font-bold leading-relaxed">
+                                    <li><span className="text-[#8b4513]">목표:</span> 200일 동안 최고의 수익을 올리세요.</li>
+                                    <li><span className="text-[#8b4513]">무역:</span> <span className="text-red-700">구매는 원산지</span>에서만! 판매는 어디서든 가능합니다.</li>
+                                    <li><span className="text-[#8b4513]">항해:</span> 지도에서 목적지를 선택하세요. 거리가 멀수록 오래 걸립니다.</li>
+                                    <li><span className="text-[#8b4513]">퀴즈:</span> 정답을 맞혀야 이동합니다. 틀리면 제자리에서 지연됩니다.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* 오른쪽: 지도 (자유 이동) */}
+                        <div className="w-full md:w-[400px] bg-[#d4b483]/30 p-6 border-l border-[#8b5e3c]/30 flex flex-col relative z-10 backdrop-blur-sm min-h-0">
+                            <h2 className="text-xl font-bold mb-3 flex items-center gap-2 text-[#3e2b20]"><Compass className="w-5 h-5 text-[#8b4513]" /> 항해 지도</h2>
+                            <PixelMap currentLocation={gameState.location} />
+                            
+                            <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-[#3e2b20] mt-4"><Navigation className="w-5 h-5 text-[#8b4513]" /> 자유 항해 (목적지 선택)</h2>
+                            <div className="space-y-2 overflow-y-auto no-scrollbar flex-1 pb-2">
+                                {Object.keys(PORTS).filter(id => id !== gameState.location).map(destId => {
+                                    const days = calculateDays(destId);
+                                    return (
+                                        <button key={destId} onClick={() => startVoyage(destId)} disabled={gameState.gameOver}
+                                            className="w-full p-3 bg-[#f4e4bc] border-2 border-[#8b5e3c] rounded-sm hover:bg-[#fff8e1] hover:border-[#5c3a21] transition-all text-left group shadow-md relative overflow-hidden">
+                                            <div className="flex justify-between items-center">
+                                                <div className="font-bold text-[#5c3a21] group-hover:text-[#3e2b20]">{PORTS[destId].name} <span className="text-xs font-normal text-[#8b5e3c]">({PORTS[destId].continent})</span></div>
+                                                <div className={`text-xs flex items-center gap-1 font-bold ${days > 20 ? 'text-red-600' : 'text-[#8b5e3c]'}`}>
+                                                    <Wind className="w-3 h-3" /> {days}일 소요
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 text-[#eecfa1] text-[10px] font-serif tracking-widest opacity-40">Developed by Son Seoyul</div>
+
+                    {/* --- 모달들 (생략 없이 포함) --- */}
+                    {activeModal === 'goodInfo' && selectedGood && (
+                        <Modal title={GOODS_INFO[selectedGood].name} onClose={() => setActiveModal(null)}>
+                            <div className="flex flex-col items-center mb-4">
+                                <div className="p-6 bg-[#e8d5a5] rounded-full border-4 border-[#8b5e3c] mb-4 shadow-inner"><div className="transform scale-[2.0]"><PixelItemIcon type={selectedGood} /></div></div>
+                                <p className="leading-relaxed text-center">{GOODS_INFO[selectedGood].desc}</p>
+                                <div className="mt-4 text-sm font-bold text-[#8b4513]">
+                                    {GOODS_INFO[selectedGood].origin === 'any' ? '원산지: 공용 (모든 항구)' : 
+                                     `원산지: ${GOODS_INFO[selectedGood].origin.map(o => PORTS[o].name).join(', ')}`}
+                                </div>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {activeModal === 'quiz' && currentQuiz && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+                            <div className="bg-[#2a1d15] w-full max-w-lg rounded-lg border-[4px] border-[#d4a065] shadow-2xl p-8 relative animate-scale-in" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}>
+                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-[#d4a065] text-[#2a1d15] px-8 py-2 rounded-sm font-bold shadow-lg border-2 border-[#8b5e3c] flex items-center gap-2">
+                                    <Compass className="w-5 h-5 animate-spin-slow" /> 항해의 기로
+                                </div>
+                                <div className="mt-6 mb-8 p-4 bg-[#1a1a1a]/50 border border-[#8b5e3c]/30 rounded text-center">
+                                    <h3 className="text-xl font-bold text-[#eecfa1] leading-relaxed drop-shadow-md">{currentQuiz.question}</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {currentQuiz.options.map((option, idx) => (
+                                        <button key={idx} onClick={() => handleQuizResult(idx === currentQuiz.answer)}
+                                            className="w-full p-4 text-left bg-[#3e2b20] text-[#eecfa1] border border-[#5c4033] hover:bg-[#5c4033] hover:border-[#d4a065] rounded-sm transition-all flex items-center justify-between group shadow-md">
+                                            <span className="font-serif text-lg">{idx + 1}. {option}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeModal === 'result' && quizResultInfo && (
+                        <Modal title={quizResultInfo.success ? "항해 성공" : "항해 실패"} onClose={() => setActiveModal(null)}>
+                            <div className="flex flex-col items-center gap-4 text-center">
+                                {quizResultInfo.success ? <CheckCircle className="w-16 h-16 text-[#2e7d32]" /> : <XCircle className="w-16 h-16 text-[#c62828]" />}
+                                <p className="text-xl font-bold text-[#3e2b20]">{quizResultInfo.text}</p>
+                                {quizResultInfo.event && (
+                                    <div className={`w-full p-3 rounded-sm border-2 border-dashed flex flex-col items-center gap-1 animate-bounce shadow-sm ${quizResultInfo.event.type === 'good' ? 'bg-[#e8f5e9] border-[#2e7d32] text-[#1b5e20]' : 'bg-[#ffebee] border-[#c62828] text-[#b71c1c]'}`}>
+                                        <div className="font-bold flex items-center gap-2"><Ship className="w-4 h-4" /> {quizResultInfo.event.name}</div>
+                                        <p className="text-sm font-serif">{quizResultInfo.event.text}</p>
+                                    </div>
+                                )}
+                                {quizResultInfo.success && (
+                                    <div className="bg-[#fff8e1] p-4 rounded-sm border-t-4 border-[#8b4513] w-full mt-2 shadow-md text-left">
+                                        <p className="text-xs font-bold text-[#8b5e3c] uppercase mb-1 flex items-center gap-1"><BookOpen className="w-3 h-3" /> Historical Fact</p>
+                                        <p className="leading-relaxed font-bold text-[#3e2b20] font-serif">"{quizResultInfo.fact}"</p>
+                                    </div>
+                                )}
+                            </div>
+                        </Modal>
+                    )}
+
+                    {activeModal === 'journal' && (
+                        <Modal title="선장의 탐험 일지" onClose={() => setActiveModal(null)}>
+                            {gameState.unlockedFacts.length === 0 ? (
+                                <div className="text-center py-12 text-[#8b5e3c] border-2 border-dashed border-[#d4b483] rounded-lg">
+                                    <p className="font-bold text-lg">아직 기록된 역사가 없습니다.</p>
+                                    <p className="text-sm mt-2">항해를 떠나 퀴즈를 맞히세요.</p>
+                                </div>
+                            ) : (
+                                <ul className="space-y-4 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
+                                    {gameState.unlockedFacts.map((fact, idx) => (
+                                        <li key={idx} className="bg-[#fff8e1] p-3 rounded-sm shadow-md border border-[#d4b483] text-[#3e2b20] font-serif">"{fact}"</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </Modal>
+                    )}
+
+                    {gameState.gameOver && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+                            <div className="bg-[#f4e4bc] w-full max-w-md rounded-lg border-[8px] border-[#5c3a21] shadow-2xl p-10 text-center animate-scale-in" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')"}}>
+                                <Trophy className="w-20 h-20 mx-auto text-[#FFD700] mb-4 drop-shadow-md" />
+                                <h2 className="text-4xl font-bold text-[#3e2b20] mb-2">{gameState.gold < 0 ? "파산..." : "항해 종료"}</h2>
+                                <p className="text-[#8b5e3c] mb-6 font-bold">{gameState.gold < 0 ? "자금이 바닥나 여정을 멈춥니다." : "위대한 항해를 마쳤습니다."}</p>
+                                <div className="bg-[#fff8e1] p-4 rounded-sm border-2 border-[#d4b483] mb-6 shadow-inner">
+                                    <div className="text-sm text-[#8b5e3c] font-bold uppercase">Final Profit</div>
+                                    <div className="text-4xl font-bold text-[#3e2b20] mb-2 font-mono">{gameState.gold} 은</div>
+                                    <div className="text-2xl font-bold text-[#8b4513] font-serif">{getRank()}</div>
+                                </div>
+                                <button onClick={() => window.location.reload()} className="w-full px-8 py-3 bg-[#2e7d32] text-[#f4e4bc] rounded-sm hover:bg-[#1b5e20] transition-colors font-bold shadow-lg border-b-4 border-[#1b5e20] active:border-b-0 active:translate-y-1">
+                                    {gameState.gold < 0 ? "다시 도전하기" : "새로운 항해 시작"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<HistoryTradeGame />);
+    </script>
+</body>
+</html>
