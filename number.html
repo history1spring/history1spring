@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10진수 ↔ 2진수 게임</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .game-wrapper {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px 20px 28px;
+      max-width: 560px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 18px;
+    }
+
+    .mode-switch {
+      display: flex;
+      border-radius: 999px;
+      background: #e5e7eb;
+      padding: 4px;
+      margin-bottom: 10px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 0;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: transparent;
+      color: #4b5563;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .mode-btn.active {
+      background: #111827;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    .progress-wrapper {
+      margin: 6px 0 8px;
+    }
+
+    .progress-bg {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: #16a34a;
+      transition: width 0.15s ease;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      color: #4b5563;
+    }
+
+    .status-row span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-label {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    .difficulty-row {
+      margin: 8px 0 14px;
+      font-size: 0.85rem;
+      color: #4b5563;
+    }
+
+    .difficulty-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .difficulty-slider {
+      width: 100%;
+    }
+
+    .difficulty-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .difficulty-info {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    .question-box {
+      background: #111827;
+      color: #f9fafb;
+      border-radius: 12px;
+      padding: 14px 12px;
+      margin-bottom: 14px;
+    }
+
+    .question-label {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .question-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .answer-input {
+      flex: 1;
+      min-width: 160px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .answer-input:focus {
+      border-color: #111827;
+      box-shadow: 0 0 0 1px #11182720;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15) inset;
+    }
+
+    .feedback {
+      min-height: 22px;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+
+    .feedback.correct { color: #16a34a; }
+    .feedback.wrong { color: #dc2626; }
+    .feedback.notice { color: #6b7280; }
+
+    /* 👉 힌트를 더 진하게, 눈에 잘 띄게 */
+    .hint-box {
+      min-height: 20px;
+      font-size: 0.85rem;
+      color: #111827;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .footer {
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 480px) {
+      .game-wrapper {
+        border-radius: 0;
+        height: 100vh;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <div class="title">10진수 ↔ 2진수 게임</div>
+    <div class="subtitle">슬라이더로 난이도를 바꾸면서 진법 변환을 연습해요!</div>
+
+    <div class="mode-switch">
+      <button id="mode10to2" class="mode-btn active">
+        10진수 → 2진수
+      </button>
+      <button id="mode2to10" class="mode-btn">
+        2진수 → 10진수
+      </button>
+    </div>
+
+    <div class="progress-wrapper">
+      <div class="progress-bg">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span>
+        <span class="status-label">점수</span>
+        <span id="scoreText">0 / 0</span>
+      </span>
+      <span>
+        <span class="status-label">연속 정답</span>
+        <span id="streakText">0</span>
+      </span>
+    </div>
+
+    <div class="difficulty-row">
+      <div class="difficulty-top">
+        <span class="status-label">난이도</span>
+        <span id="rangeText">1 ~ 15</span>
+      </div>
+      <input
+        id="difficultySlider"
+        class="difficulty-slider"
+        type="range"
+        min="1"
+        max="5"
+        value="2"
+      />
+      <div class="difficulty-labels">
+        <span>쉬움</span>
+        <span>보통</span>
+        <span>어려움</span>
+      </div>
+      <div id="difficultyInfo" class="difficulty-info">
+        레벨 2: 1 ~ 15 (4비트 이내)
+      </div>
+    </div>
+
+    <div class="question-box">
+      <div class="question-label">문제</div>
+      <div id="question" class="question-text">
+        로딩 중...
+      </div>
+    </div>
+
+    <div class="input-row">
+      <input
+        id="answerInput"
+        class="answer-input"
+        type="text"
+        autocomplete="off"
+        placeholder="여기에 답을 적으세요"
+      />
+      <button id="checkBtn" class="btn btn-primary">채점</button>
+    </div>
+
+    <div class="input-row">
+      <button id="nextBtn" class="btn btn-secondary">다음 문제</button>
+      <button id="resetBtn" class="btn btn-secondary">점수 초기화</button>
+      <button id="hintBtn" class="btn btn-secondary">힌트 보기</button>
+    </div>
+
+    <div id="feedback" class="feedback notice">
+      답을 쓰고 <b>채점</b> 버튼을 눌러 보세요.
+    </div>
+    <div id="hintBox" class="hint-box"></div>
+
+    <div class="hint">
+      • 2진수에는 숫자 <b>0</b>과 <b>1</b>만 사용해요.<br />
+      • 난이도 슬라이더로 숫자 범위를 바꿀 수 있어요. (3~8비트)
+    </div>
+
+    <div class="footer">
+      <span>전체 화면으로 띄워 놓고, 반 전체가 같이 퀴즈처럼 풀어도 좋아요.</span>
+      <span>제작 : 손서율</span>
+    </div>
+  </div>
+
+  <script>
+    // ====== 난이도 설정 ======
+    const LEVELS = [
+      { id: 1, label: "레벨 1", min: 1,  max: 7,   desc: "1 ~ 7 (3비트 이내)" },
+      { id: 2, label: "레벨 2", min: 1,  max: 15,  desc: "1 ~ 15 (4비트 이내)" },
+      { id: 3, label: "레벨 3", min: 1,  max: 31,  desc: "1 ~ 31 (5비트 이내)" },
+      { id: 4, label: "레벨 4", min: 1,  max: 63,  desc: "1 ~ 63 (6비트 이내)" },
+      { id: 5, label: "레벨 5", min: 1,  max: 255, desc: "1 ~ 255 (8비트 이내)" }
+    ];
+
+    let currentLevel = 2;   // 슬라이더 기본값과 맞춤 (value="2")
+    let mode = "10to2";     // "10to2" 또는 "2to10"
+    let currentNumber = 0;  // 실제 10진수 값
+    let score = 0;
+    let total = 0;
+    let streak = 0;
+
+    // ====== DOM 연결 ======
+    const mode10to2Btn = document.getElementById("mode10to2");
+    const mode2to10Btn = document.getElementById("mode2to10");
+    const questionEl = document.getElementById("question");
+    const answerInput = document.getElementById("answerInput");
+    const checkBtn = document.getElementById("checkBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const hintBtn = document.getElementById("hintBtn");
+    const feedbackEl = document.getElementById("feedback");
+    const scoreTextEl = document.getElementById("scoreText");
+    const streakTextEl = document.getElementById("streakText");
+    const rangeTextEl = document.getElementById("rangeText");
+    const difficultySliderEl = document.getElementById("difficultySlider");
+    const difficultyInfoEl = document.getElementById("difficultyInfo");
+    const progressBarEl = document.getElementById("progressBar");
+    const hintBoxEl = document.getElementById("hintBox");
+
+    // ====== 유틸 함수 ======
+    function getCurrentLevelConfig() {
+      return LEVELS[currentLevel - 1];
+    }
+
+    function getRandomNumber() {
+      const cfg = getCurrentLevelConfig();
+      return Math.floor(Math.random() * (cfg.max - cfg.min + 1)) + cfg.min;
+    }
+
+    function toBinaryString(num) {
+      return num.toString(2);
+    }
+
+    function updateScoreText() {
+      scoreTextEl.textContent = `${score} / ${total}`;
+      updateProgressBar();
+    }
+
+    function updateStreakText() {
+      streakTextEl.textContent = `${streak}`;
+    }
+
+    function updateProgressBar() {
+      if (total === 0) {
+        progressBarEl.style.width = "0%";
+        return;
+      }
+      const ratio = score / total;
+      const percent = Math.round(ratio * 100);
+      progressBarEl.style.width = percent + "%";
+    }
+
+    function setFeedback(message, type) {
+      feedbackEl.textContent = message;
+      feedbackEl.className = "feedback " + (type || "notice");
+    }
+
+    function updateDifficultyUI() {
+      const cfg = getCurrentLevelConfig();
+      rangeTextEl.textContent = `${cfg.min} ~ ${cfg.max}`;
+      difficultyInfoEl.textContent = `${cfg.label}: ${cfg.desc}`;
+    }
+
+    // ====== 문제 생성 ======
+    function generateQuestion() {
+      currentNumber = getRandomNumber();
+      const binaryStr = toBinaryString(currentNumber);
+
+      if (mode === "10to2") {
+        questionEl.textContent = `${currentNumber} (10진수)를 2진수로 바꿔 보세요.`;
+      } else {
+        questionEl.textContent = `${binaryStr} (2진수)를 10진수로 바꿔 보세요.`;
+      }
+
+      answerInput.value = "";
+      hintBoxEl.textContent = "";
+      setFeedback("답을 쓰고 채점 버튼을 눌러 보세요.", "notice");
+      answerInput.focus();
+      updateDifficultyUI();
+    }
+
+    // ====== 모드 전환 ======
+    function setMode(newMode) {
+      if (newMode === mode) return;
+      mode = newMode;
+
+      if (mode === "10to2") {
+        mode10to2Btn.classList.add("active");
+        mode2to10Btn.classList.remove("active");
+      } else {
+        mode10to2Btn.classList.remove("active");
+        mode2to10Btn.classList.add("active");
+      }
+
+      generateQuestion();
+    }
+
+    // ====== 채점 ======
+    function checkAnswer() {
+      const raw = answerInput.value.trim();
+
+      if (!raw) {
+        setFeedback("먼저 답을 입력해 주세요.", "notice");
+        return;
+      }
+
+      total += 1; // 채점 시도 수
+
+      if (mode === "10to2") {
+        // 10진수 → 2진수
+        const sanitized = raw.replace(/\s+/g, "");
+
+        if (!/^[01]+$/.test(sanitized)) {
+          total -= 1; // 형식 오류는 채점 카운트에서 제외
+          setFeedback("2진수에는 0과 1만 사용할 수 있어요!", "wrong");
+          return;
+        }
+
+        const userValue = parseInt(sanitized, 2);
+        const correctBinary = toBinaryString(currentNumber);
+
+        if (userValue === currentNumber) {
+          score += 1;
+          streak += 1;
+          setFeedback(
+            `정답이에요! ${currentNumber}(10) = ${correctBinary}(2)`,
+            "correct"
+          );
+        } else {
+          streak = 0;
+          setFeedback(
+            `아쉬워요. 정답은 ${correctBinary}(2) 입니다. (${currentNumber}(10))`,
+            "wrong"
+          );
+        }
+      } else {
+        // 2진수 → 10진수
+        if (!/^[0-9]+$/.test(raw)) {
+          total -= 1; // 형식 오류는 채점 카운트에서 제외
+          setFeedback("10진수 답은 숫자로만 입력해 주세요.", "wrong");
+          return;
+        }
+
+        const userNum = parseInt(raw, 10);
+        const correctBinary = toBinaryString(currentNumber);
+
+        if (userNum === currentNumber) {
+          score += 1;
+          streak += 1;
+          setFeedback(
+            `정답이에요! ${correctBinary}(2) = ${currentNumber}(10)`,
+            "correct"
+          );
+        } else {
+          streak = 0;
+          setFeedback(
+            `아쉬워요. 정답은 ${currentNumber}(10) 입니다. (${correctBinary}(2))`,
+            "wrong"
+          );
+        }
+      }
+
+      updateScoreText();
+      updateStreakText();
+    }
+
+    // ====== 점수 초기화 ======
+    function resetGame() {
+      score = 0;
+      total = 0;
+      streak = 0;
+      updateScoreText();
+      updateStreakText();
+      hintBoxEl.textContent = "";
+      setFeedback("점수가 초기화되었습니다. 새 문제를 풀어 보세요!", "notice");
+      generateQuestion();
+    }
+
+    // ====== 힌트 표시 (7학년 눈높이 설명, 1부터 시작) ======
+    function showHint() {
+      if (mode === "10to2") {
+        // 10진수 → 2진수 힌트
+        hintBoxEl.textContent =
+          "1, 2, 4, 8, 16, 32... 처럼 2를 계속 곱해서 커지는 수들을 떠올려 보세요. " +
+          "이 숫자보다 작거나 같은 가장 큰 수부터 먼저 골라요. " +
+          "그 수를 쓰는 자리는 1, 쓰지 않는 자리는 0이라고 생각하면서 큰 수부터 하나씩 빼 가며 1과 0을 채워 보세요.";
+      } else {
+        // 2진수 → 10진수 힌트
+        hintBoxEl.textContent =
+          "맨 오른쪽 숫자는 1, 그 왼쪽은 2, 그 다음은 4, 8, 16... 자리라고 생각해 보세요. " +
+          "숫자가 1인 자리에 있는 값들만 골라서 모두 더하면 10진수 값이 돼요.";
+      }
+    }
+
+    // ====== 이벤트 연결 ======
+    mode10to2Btn.addEventListener("click", () => setMode("10to2"));
+    mode2to10Btn.addEventListener("click", () => setMode("2to10"));
+
+    checkBtn.addEventListener("click", checkAnswer);
+    nextBtn.addEventListener("click", generateQuestion);
+    resetBtn.addEventListener("click", resetGame);
+    hintBtn.addEventListener("click", showHint);
+
+    answerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        checkAnswer();
+      }
+    });
+
+    difficultySliderEl.addEventListener("input", () => {
+      currentLevel = parseInt(difficultySliderEl.value, 10);
+      generateQuestion();
+    });
+
+    // ====== 초기 설정 ======
+    updateDifficultyUI();
+    updateScoreText();
+    updateStreakText();
+    generateQuestion();
+  </script>
+</body>
+</html>

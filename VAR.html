@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>오프사이드 VAR : 난전 & 스피드 (v38)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Pretendard:wght@400;700&display=swap');
+
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #222; color: white; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; overflow: hidden; user-select: none;
+        }
+
+        #main-stage { display: flex; gap: 30px; align-items: flex-start; position: relative; }
+
+        #game-wrapper { display: flex; flex-direction: column; gap: 10px; }
+
+        .team-indicator { 
+            display: flex; justify-content: space-between; 
+            font-size: 16px; font-weight: bold; 
+            width: 800px;
+            background: linear-gradient(90deg, #444 0%, #224488 100%);
+            padding: 10px 20px; border-radius: 5px; box-sizing: border-box; border: 1px solid #555;
+        }
+
+        #perspective-wrapper { perspective: 800px; }
+
+        #game-container { 
+            position: relative; 
+            width: 800px; height: 500px; 
+            background-color: #4CAF50; 
+            border: 8px solid #fff; border-radius: 5px; 
+            overflow: hidden; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8); 
+            transform: rotateX(15deg) scale(0.98); /* 줌인 유지 */
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #countdown-layer, #final-scoreboard {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            transform: translateZ(50px); 
+        }
+        #countdown-text {
+            font-family: 'Black Ops One', cursive; font-size: 100px; color: #ff4444; /* 강렬한 색상 */
+            text-shadow: 0 0 30px rgba(255,0,0,0.8);
+        }
+        
+        .score-text { font-family: 'Black Ops One', cursive; font-size: 80px; margin: 0; text-shadow: 0 0 20px #fc0; color: #ffcc00; }
+        .rank-badge { font-size: 24px; margin-top: 15px; color: white; background: #444; padding: 5px 20px; border-radius: 20px;}
+
+        #side-panel { width: 260px; display: flex; flex-direction: column; gap: 15px; margin-top: 50px;} 
+        #score-box { background-color: #333; border: 2px solid #555; border-radius: 10px; padding: 15px; text-align: center; font-family: 'Black Ops One', cursive; color: #00ff00; font-size: 24px; }
+        
+        #rule-board { 
+            background-color: #111; border: 4px solid #444; border-radius: 10px; padding: 20px; 
+            font-family: 'Pretendard', sans-serif; font-size: 14px; color: #eee; line-height: 1.6;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .rule-title { color:#ffcc00; font-weight:bold; border-bottom:2px dashed #555; padding-bottom:10px; margin-bottom:15px; text-align:center; font-size: 18px; }
+        .rule-step { margin-bottom: 15px; }
+        .highlight-red { color: #ff4444; font-weight: bold; }
+        .highlight-blue { color: #4488ff; font-weight: bold; }
+
+        canvas { display: block; image-rendering: pixelated; }
+        .grass-line { position: absolute; width: 100%; height: 60px; background-color: rgba(255,255,255,0.08); }
+        .var-line { position: absolute; top: 0; bottom: 0; width: 4px; display: none; z-index: 50; }
+        .line-def { background-color: #4488ff; border-right: 2px dashed rgba(255,255,255,0.8); box-shadow: 0 0 15px #4488ff;}
+        .line-att { background-color: #ff4444; box-shadow: 0 0 15px #ff4444;}
+
+        #ui-layer { margin-top: 15px; text-align: center; width: 100%; }
+        button { 
+            font-size: 18px; padding: 12px 20px; margin: 0 5px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; 
+            box-shadow: 0 4px 0 #000; transition: 0.1s;
+            white-space: nowrap; display: inline-flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        button:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+        button:disabled { background-color: #444; color: #888; cursor: not-allowed; box-shadow: none; transform: translateY(2px);}
+        
+        #btn-off { background-color: #ff4444; color: white; width: 200px; }
+        #btn-on { background-color: #4488ff; color: white; width: 200px; }
+        #btn-retry { background-color: #fff; color: #333; display: none; border: 2px solid #ccc; width: 130px; } 
+        #btn-next { background-color: #ffaa00; color: black; display: none; width: 130px; }
+        #btn-start-game { background-color: #ffcc00; color: black; font-size: 24px; padding: 20px 50px; border: none;}
+        #btn-restart { margin-top:30px; padding: 15px 30px; font-size: 20px; background-color: white; color: black;}
+
+        #message { margin-top: 15px; font-size: 24px; height: 30px; font-weight: bold; text-align: center; color: #ffcc00; text-shadow: 0 2px 4px black;}
+        #explanation { color: #ccc; font-size: 15px; margin-top: 5px; text-align: center; min-height: 40px;}
+        #credit { position: fixed; bottom: 10px; right: 20px; font-size: 12px; color: rgba(255, 255, 255, 0.3); }
+
+    </style>
+</head>
+<body>
+
+    <h1 style="margin-bottom: 5px;">⚽ 오프사이드 VAR 판독관</h1>
+    <div style="margin-bottom: 10px; color:#aaa; font-size:14px;">※ 선수들이 겹쳐있고(Overlap) 매우 빠릅니다. <b>집중하세요!</b></div>
+    
+    <div id="main-stage">
+        
+        <div id="game-wrapper">
+            <div class="team-indicator">
+                <span style="color:#aaa">ㅣ 하프라인 (출발)</span>
+                <span style="color:#4488ff">골대 방향 (목표) ▶</span>
+            </div>
+
+            <div id="perspective-wrapper">
+                <div id="game-container">
+                    <div id="grass-bg"></div>
+                    <canvas id="gameCanvas" width="800" height="500"></canvas>
+                    
+                    <div id="line-def" class="var-line line-def"></div>
+                    <div id="line-att" class="var-line line-att"></div>
+
+                    <div id="countdown-layer">
+                        <div style="font-size:30px; color:#fff; margin-bottom:20px;">SCRAMBLE MODE</div>
+                        <div id="countdown-text">3</div>
+                    </div>
+
+                    <div id="final-scoreboard">
+                        <div style="font-size: 24px; color: #aaa;">FINAL SCORE</div>
+                        <div class="score-text" id="final-score-display">0 / 5</div>
+                        <div class="rank-badge" id="final-rank"></div>
+                        <button id="btn-restart" onclick="resetGame()">🔄 처음부터 다시</button>
+                    </div>
+
+                    <div id="start-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:200; display:flex; justify-content:center; align-items:center;">
+                        <button id="btn-start-game" onclick="startGame()">▶ 실전 훈련 시작</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="message">준비...</div>
+            <div id="explanation"></div>
+
+            <div id="ui-layer">
+                <div id="decision-buttons">
+                    <button id="btn-off" onclick="checkAnswer(true)" disabled>🚩 오프사이드</button>
+                    <button id="btn-on" onclick="checkAnswer(false)" disabled>⚽ 온사이드</button>
+                </div>
+                <div id="result-buttons" style="margin-top:10px;">
+                    <button id="btn-retry" onclick="retryScenario()">⏪ 다시보기</button>
+                    <button id="btn-next" onclick="nextScenario()">다음 경기 ▶</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="side-panel">
+            <div id="score-box">
+                ROUND <span id="current-round">1</span> / 5<br>
+                <span style="font-size:0.6em; color:#aaa;">SCORE: <span id="current-score" style="color:#fff;">0</span></span>
+            </div>
+
+            <div id="rule-board">
+                <div class="rule-title">📜 오프사이드 규칙</div>
+                
+                <div class="rule-step">
+                    <b>1. 언제? (When)</b><br>
+                    같은 편 선수가 공을<br>
+                    <span style="color:#ffcc00">차는(터치) 바로 그 순간!</span>
+                </div>
+
+                <div class="rule-step">
+                    <b>2. 어디서? (Where)</b><br>
+                    <span class="highlight-red">공격수</span>가 
+                    <span class="highlight-blue">최종 수비수</span>보다<br>
+                    골대 쪽에 더 가까이 있다면?
+                </div>
+
+                <div class="rule-step" style="background:#222; padding:8px; border-radius:5px; text-align:center;">
+                    <span class="highlight-red">YES 👉 반칙 (오프사이드)</span><br>
+                    <span class="highlight-blue">NO 👉 진행 (온사이드)</span>
+                </div>
+
+                <div style="font-size:12px; color:#aaa; margin-top:10px; border-top:1px dashed #444; padding-top:10px;">
+                    * 선수들이 엉켜있어 헷갈립니다.<br>
+                    * 유니폼 색깔을 잘 보세요.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="credit">제작 : 교사 손서율</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const gameContainer = document.getElementById('game-container');
+    const lineDef = document.getElementById('line-def');
+    const lineAtt = document.getElementById('line-att');
+    const msgBox = document.getElementById('message');
+    const expBox = document.getElementById('explanation');
+    const countdownLayer = document.getElementById('countdown-layer');
+    const countdownText = document.getElementById('countdown-text');
+    const startOverlay = document.getElementById('start-overlay');
+    const finalBoard = document.getElementById('final-scoreboard');
+    
+    const btnOff = document.getElementById('btn-off');
+    const btnOn = document.getElementById('btn-on');
+    const btnRetry = document.getElementById('btn-retry');
+    const btnNext = document.getElementById('btn-next');
+    
+    const MAX_ROUNDS = 5;
+    let round = 1;
+    let score = 0;
+    let isFrozen = false;
+    let loopId; 
+    
+    let scenarioQueue = [];
+    let players = []; 
+    let ball = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, gravity: 0.35, isKicked: false, targetId: null };
+    
+    let passSchedule = []; 
+    let gameFrame = 0;
+    let kickStopFrame = 0; 
+    let KICK_TARGET_FRAME = 100; // [속도 증가] 120 -> 100프레임 (더 빨리 참)
+
+    let replayData = null;
+    let freezeFrameData = { defX: 0, attX: 0, isOffside: false, attackerNum: 0, defenderNum: 0 };
+
+    for(let i=0; i<8; i++) {
+        let div = document.createElement('div');
+        div.className = 'grass-line';
+        div.style.top = (i * 120) + 'px'; 
+        div.style.height = '60px';
+        document.getElementById('game-container').insertBefore(div, canvas);
+    }
+
+    class Player {
+        constructor(id, x, y, team, role, number) {
+            this.id = id;
+            this.x = x;
+            this.y = y;
+            this.baseX = x; 
+            this.baseY = y;
+            this.team = team; 
+            this.role = role; 
+            this.number = number; 
+            this.speed = 0;
+            this.dirY = (Math.random() - 0.5) * 1.5; 
+            this.frame = 0; 
+        }
+
+        update() {
+            if(this.role === 'gk') {
+                this.y += Math.sin(Date.now() / 300) * 1.5; 
+                this.x = this.baseX + Math.sin(Date.now() / 600) * 2;
+            } else if (this.role === 'referee') {
+                this.x += (Math.random() - 0.5) * 4; // 심판도 빨라짐
+                this.y += (Math.random() - 0.5) * 4;
+                if(this.x < 100) this.x = 100; if(this.x > 700) this.x = 700;
+            } else if (this.role === 'linesman') {
+                let defenders = players.filter(p => p.team === 'blue' && p.role !== 'gk');
+                if(defenders.length > 0) {
+                    defenders.sort((a, b) => b.x - a.x);
+                    let targetX = defenders[0].x;
+                    let diff = targetX - this.x;
+                    let speed = diff * 0.2; // 부심 추적 속도 증가
+                    if(speed > 6) speed = 6; 
+                    if(speed < -6) speed = -6;
+                    this.x += speed;
+                }
+            } else {
+                if (this.speed !== 0) {
+                    this.x += this.speed; 
+                } else {
+                    this.x = this.baseX + Math.sin(gameFrame * 0.1 + this.id) * 5; // 대기 동작도 빠르고 크게
+                }
+
+                if(this.role === 'attacker' || this.role === 'passer') {
+                    // [난전 핵심] Y축으로 크게 움직여서 수비수와 겹치게 만듦
+                    this.y += Math.sin(gameFrame * 0.08 + this.id) * 1.5; 
+                } else if (this.role === 'defender') {
+                    this.y = this.baseY + Math.cos(gameFrame * 0.05 + this.id) * 1.0;
+                } else {
+                    this.y += this.dirY * 0.8; 
+                }
+                
+                if (this.role === 'passer' && !ball.isKicked && ball.targetId === this.id) {
+                    this.x += 1.5; 
+                    this.baseX += 1.5; 
+                }
+            }
+
+            if(this.role !== 'linesman') {
+                if(this.y < 30) { this.y = 30; this.dirY *= -1; }
+                if(this.y > 470) { this.y = 470; this.dirY *= -1; }
+            }
+            if(this.x < 10) { this.x = 10; } 
+            if(this.x > 790) { this.x = 790; }
+
+            this.frame++;
+        }
+
+        draw() {
+            // 캐릭터 1.3배 확대
+            drawPixelGuy(this.x, this.y, this.team, this.frame, this.speed, this.role, this.number, 1.3);
+        }
+    }
+
+    function startGame() {
+        startOverlay.style.display = 'none';
+        resetGame();
+    }
+
+    function generateScenarioQueue() {
+        let q = [];
+        let offsideCount = (Math.random() > 0.5) ? 3 : 2;
+        for(let i=0; i<offsideCount; i++) q.push('OFFSIDE');
+        for(let i=0; i<(5-offsideCount); i++) q.push('ONSIDE');
+        for (let i = q.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [q[i], q[j]] = [q[j], q[i]];
+        }
+        return q;
+    }
+
+    function resetGame() {
+        round = 1;
+        score = 0;
+        finalBoard.style.display = 'none';
+        scenarioQueue = generateScenarioQueue();
+        updateScoreUI();
+        initRound();
+    }
+
+    function updateScoreUI() {
+        document.getElementById('current-round').innerText = round;
+        document.getElementById('current-score').innerText = score;
+    }
+
+    function initRound() {
+        lineDef.style.display = 'none'; lineAtt.style.display = 'none';
+        btnNext.style.display = 'none'; btnRetry.style.display = 'none';
+        btnOff.disabled = true; btnOn.disabled = true;
+        btnOff.style.opacity = 0.5; btnOn.style.opacity = 0.5;
+        
+        msgBox.innerText = `ROUND ${round}`;
+        msgBox.style.color = "#ffcc00";
+        expBox.innerText = "";
+        
+        gameContainer.style.transform = "rotateX(15deg) scale(0.98)";
+
+        isFrozen = false;
+        ball.isKicked = false;
+        ball.z = 0;
+        
+        gameFrame = 0;
+        kickStopFrame = 0;
+        passStage = 0;
+
+        createScenario();
+        
+        replayData = {
+            players: JSON.parse(JSON.stringify(players)),
+            ball: JSON.parse(JSON.stringify(ball)),
+            passSchedule: JSON.parse(JSON.stringify(passSchedule)),
+            scenario: freezeFrameData,
+            KICK_TARGET_FRAME: KICK_TARGET_FRAME
+        };
+
+        runCountdown(3);
+    }
+
+    function createScenario() {
+        players = [];
+        passSchedule = [];
+        let idCounter = 0;
+
+        // 1. GKs & Ref
+        players.push(new Player(idCounter++, 760, 250, 'blue', 'gk', 1));
+        players.push(new Player(idCounter++, 350, 250, 'ref', 'referee', 'REF'));
+        players.push(new Player(idCounter++, 400, 60, 'linesman', 'linesman', 'L'));
+
+        let intendedOutcome = scenarioQueue.pop(); 
+        if(!intendedOutcome) intendedOutcome = (Math.random() > 0.5) ? 'OFFSIDE' : 'ONSIDE';
+
+        // 수비 라인 (400~600)
+        let defLineX = 450 + Math.random() * 100;
+        // [속도 증가] 수비수 움직임 더 빠르게
+        let defSpeed = (Math.random() > 0.6) ? -2.0 : 1.0; 
+        
+        // KICK TIMING 조정 (더 빨리 참 = 100 프레임)
+        KICK_TARGET_FRAME = 90 + Math.floor(Math.random()*30);
+
+        // BLUE 수비수 (4명) -> 들쭉날쭉 배치 (난전 유도)
+        let defNums = [2, 3, 4, 5];
+        for(let i=0; i<4; i++) {
+            let dy = 80 + i*100 + (Math.random()*20); 
+            // 라인 정렬을 망가뜨림 (±30px 오차)
+            let dx = defLineX + (Math.random()*60 - 30); 
+            
+            // 역산: 킥 시점에 dx 위치에 있으려면?
+            let startX = dx - (defSpeed * KICK_TARGET_FRAME);
+            
+            let d = new Player(idCounter++, startX, dy, 'blue', 'defender', defNums[i]);
+            d.speed = defSpeed;
+            players.push(d);
+        }
+        
+        // BLUE 미드필더 (3명)
+        let midNums = [6, 8, 10];
+        for(let i=0; i<3; i++) {
+            let dy = 100 + i*120;
+            let d = new Player(idCounter++, defLineX - 150 - Math.random()*50, dy, 'blue', 'midfielder', midNums[i]);
+            d.speed = 0.5;
+            players.push(d);
+        }
+
+        // RED 패서 (왼쪽)
+        let passer1 = new Player(idCounter++, 50, 200, 'red', 'passer', 8); 
+        let passer2 = new Player(idCounter++, 120, 320, 'red', 'passer', 10); 
+        players.push(passer1); players.push(passer2);
+
+        // [공격수 침투]
+        // 목표: 수비라인과 거의 겹치게 (난전)
+        let estDefX = defLineX; 
+        let targetX_End;
+        let gap = Math.random() * 15; // 0~15px 차이 (깻잎)
+
+        if (intendedOutcome === 'OFFSIDE') targetX_End = estDefX + gap + (defSpeed * KICK_TARGET_FRAME);
+        else targetX_End = estDefX - gap + (defSpeed * KICK_TARGET_FRAME);
+
+        // [속도 대폭 증가] 5.5 ~ 7.5 (전력질주)
+        let attSpeed = 5.5 + Math.random() * 2.0; 
+        let startAttX = targetX_End - (attSpeed * KICK_TARGET_FRAME);
+        if(startAttX < 150) { 
+            startAttX = 150; 
+            attSpeed = (targetX_End - 150) / KICK_TARGET_FRAME;
+        }
+
+        let striker = new Player(idCounter++, startAttX, 100 + Math.random()*300, 'red', 'attacker', 9);
+        striker.speed = attSpeed;
+        players.push(striker); 
+        
+        // [미끼 공격수] 수비수 사이사이에 배치 (시야 방해)
+        let dummy1 = new Player(idCounter++, startAttX - 20, defLineX - 50, 'red', 'attacker', 11);
+        dummy1.speed = attSpeed * 0.9;
+        // Y좌표를 수비수와 겹치게
+        dummy1.y = 150 + Math.random() * 200; 
+        players.push(dummy1);
+
+        let dummy2 = new Player(idCounter++, startAttX - 50, 400, 'red', 'attacker', 7);
+        dummy2.speed = attSpeed * 0.8;
+        players.push(dummy2);
+
+        ball.x = passer1.x + 15; ball.y = passer1.y; ball.targetId = passer1.id;
+
+        // 패스 스케줄
+        passSchedule.push({ type: 'short', from: passer1, to: passer2, time: 30 });
+        passSchedule.push({ type: 'final', from: passer2, to: striker, time: KICK_TARGET_FRAME });
+    }
+
+    function executePass(passInfo) {
+        let from = passInfo.from;
+        let to = passInfo.to;
+
+        ball.isKicked = true;
+        ball.targetId = to.id; 
+
+        // 패스 속도도 빠르게
+        let flightFrames = 25; 
+        if(passInfo.type === 'final') flightFrames = 40; 
+
+        let predX = to.x + (to.speed * flightFrames * 1.1); // 타겟 예측 보정
+        let predY = to.y + (to.dirY * flightFrames);
+        predX = Math.max(50, Math.min(750, predX)); 
+        predY = Math.max(50, Math.min(450, predY));
+
+        let dx = predX - ball.x; 
+        let dy = predY - ball.y;
+
+        ball.vx = dx / flightFrames;
+        ball.vy = dy / flightFrames;
+        
+        if(passInfo.type === 'short') ball.vz = 3;
+        else ball.vz = 8; 
+
+        if(passInfo.type === 'final') {
+            calculateOffsideState(); 
+            kickStopFrame = gameFrame + 10; 
+        }
+    }
+
+    function calculateOffsideState() {
+        let defenders = players.filter(p => p.team === 'blue' && p.role !== 'gk');
+        defenders.sort((a, b) => b.x - a.x);
+        let lastDefender = defenders[0]; 
+
+        let attackers = players.filter(p => p.team === 'red' && (p.role === 'attacker'));
+        attackers.sort((a, b) => b.x - a.x);
+        let topAttacker = attackers[0];
+
+        freezeFrameData.defX = lastDefender.x;
+        freezeFrameData.attX = topAttacker.x;
+        freezeFrameData.isOffside = (topAttacker.x > lastDefender.x);
+        
+        freezeFrameData.attackerNum = topAttacker.number;
+        freezeFrameData.defenderNum = lastDefender.number;
+    }
+
+    function runCountdown(n) {
+        countdownLayer.style.display = 'flex';
+        countdownText.innerText = n;
+        
+        if(n > 0) {
+            setTimeout(() => runCountdown(n-1), 800);
+        } else {
+            countdownLayer.style.display = 'none';
+            msgBox.innerText = "PLAY!";
+            startGameLoop(); 
+        }
+    }
+
+    function startGameLoop() {
+        if(loopId) cancelAnimationFrame(loopId);
+        gameLoop();
+    }
+
+    function gameLoop() {
+        if(isFrozen) {
+            draw(); 
+            return; 
+        }
+
+        gameFrame++;
+
+        if(passSchedule.length > 0) {
+            if(gameFrame === passSchedule[0].time) {
+                let p = passSchedule.shift();
+                p.from = players.find(pl => pl.id === p.from.id);
+                p.to = players.find(pl => pl.id === p.to.id);
+                executePass(p);
+            }
+        }
+
+        if(kickStopFrame > 0 && gameFrame >= kickStopFrame) {
+            isFrozen = true;
+            gameContainer.style.transform = `rotateX(15deg) scale(0.98)`;
+            msgBox.innerText = "⏸ STOP! 판정하세요!";
+            msgBox.style.color = "#ffcc00";
+            btnOff.disabled = false; btnOn.disabled = false;
+            btnOff.style.opacity = 1; btnOn.style.opacity = 1;
+        }
+
+        players.forEach(p => p.update());
+        
+        if(ball.isKicked) {
+            if(ball.x < 10) { ball.x = 10; ball.vx *= -0.8; }
+            if(ball.x > 790) { ball.x = 790; ball.vx *= -0.8; }
+            if(ball.y < 10) { ball.y = 10; ball.vy *= -0.8; }
+            if(ball.y > 490) { ball.y = 490; ball.vy *= -0.8; }
+
+            ball.x += ball.vx; ball.y += ball.vy; ball.z += ball.vz;
+            ball.vz -= ball.gravity; 
+            
+            if(ball.z < 0) { 
+                ball.z = 0; ball.vz = -ball.vz * 0.5; 
+                let target = players.find(p => p.id === ball.targetId);
+                if(target) {
+                    let dist = Math.sqrt(Math.pow(ball.x - target.x, 2) + Math.pow(ball.y - target.y, 2));
+                    if(dist < 40 && Math.abs(ball.vz) < 3) {
+                        ball.isKicked = false; 
+                    }
+                }
+            }
+        } else {
+            let holder = players.find(p => p.id === ball.targetId);
+            if(holder) { 
+                ball.x = holder.x + 15; 
+                ball.y = holder.y + 5; 
+            }
+        }
+
+        draw();
+        loopId = requestAnimationFrame(gameLoop);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(400, 0); ctx.lineTo(400, 500); ctx.stroke();
+        ctx.beginPath(); ctx.arc(400, 250, 50, 0, Math.PI*2); ctx.stroke();
+        
+        ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fillRect(740, 150, 60, 200);
+        ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.strokeRect(740, 150, 60, 200);
+
+        ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fillRect(0, 150, 60, 200);
+        ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.strokeRect(0, 150, 60, 200);
+
+        players.sort((a, b) => a.y - b.y);
+        players.forEach(p => p.draw());
+        drawPixelBall(ball.x, ball.y, ball.z);
+    }
+
+    function drawPixelGuy(x, y, team, frame, speed, role, number, scale=1.0) {
+        let colorBody, colorShorts;
+        if (role === 'gk') {
+            colorBody = '#ffff00'; colorShorts = 'black'; 
+        } else if (role === 'referee') {
+            colorBody = '#222'; colorShorts = '#111';
+        } else if (role === 'linesman') {
+            colorBody = '#ffaa00'; colorShorts = 'black'; 
+        } else if (team === 'red') {
+            colorBody = '#ff4444'; colorShorts = 'white';
+        } else if (team === 'blue') {
+            colorBody = '#4488ff'; colorShorts = 'white';
+        }
+        
+        let colorSkin = '#ffccaa';
+        
+        ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+        if(speed < 0) ctx.scale(-1, 1);
+
+        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(-8, 18, 16, 4);
+        
+        let legOffset = Math.sin(frame * 0.8) * 6; // 다리 빠름
+        
+        if(role === 'linesman') {
+            ctx.fillStyle = 'yellow'; ctx.fillRect(5, -10, 8, 5); 
+            ctx.fillStyle = 'brown'; ctx.fillRect(5, -10, 2, 15);
+        }
+
+        ctx.fillStyle = colorShorts; ctx.fillRect(-6, 8, 4, 6); 
+        ctx.fillStyle = (role.includes('ref') || role==='linesman' || role==='gk') ? 'black' : colorSkin; 
+        ctx.fillRect(-6, 14 + legOffset, 3, 6); 
+        ctx.fillStyle = 'black'; ctx.fillRect(-6, 20 + legOffset, 4, 3); 
+
+        ctx.fillStyle = colorShorts; ctx.fillRect(2, 8, 4, 6);
+        ctx.fillStyle = (role.includes('ref') || role==='linesman' || role==='gk') ? 'black' : colorSkin;
+        ctx.fillRect(2, 14 - legOffset, 3, 6);
+        ctx.fillStyle = 'black'; ctx.fillRect(2, 20 - legOffset, 4, 3);
+        
+        ctx.fillStyle = colorBody; ctx.fillRect(-7, -5, 14, 14);
+        
+        if(!role.includes('ref') && role !== 'linesman') {
+            ctx.save();
+            if(speed < 0) ctx.scale(-1, 1); 
+            ctx.fillStyle = "white"; 
+            ctx.font = "bold 9px Arial"; ctx.textAlign="center"; ctx.fillText(number, 0, 5); 
+            ctx.restore();
+        }
+
+        ctx.fillStyle = colorSkin; ctx.fillRect(-5, -14, 10, 9);
+        if(role === 'gk') ctx.fillStyle = 'black'; 
+        ctx.fillStyle = '#222'; ctx.fillRect(-6, -16, 12, 4); ctx.fillRect(-6, -16, 3, 8); 
+        ctx.restore();
+    }
+
+    function drawPixelBall(x, y, z) {
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        let shadowScale = (1 - (z/50)) * 1.3; if(shadowScale < 0.2) shadowScale = 0.2;
+        ctx.beginPath(); ctx.ellipse(x, y+20, 6*shadowScale, 3*shadowScale, 0, 0, Math.PI*2); ctx.fill();
+        let drawY = y - z;
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, drawY, 6*1.3, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "black"; ctx.lineWidth=1; ctx.stroke();
+        ctx.fillStyle = "black"; ctx.fillRect(x-3, drawY-3, 6, 6);
+    }
+
+    function retryScenario() {
+        players = [];
+        replayData.players.forEach(pd => {
+            let p = new Player(pd.id, pd.x, pd.y, pd.team, pd.role, pd.number);
+            p.speed = pd.speed; p.dirY = pd.dirY; p.baseX = pd.baseX; p.baseY = pd.baseY;
+            players.push(p);
+        });
+        
+        ball = JSON.parse(JSON.stringify(replayData.ball));
+        passSchedule = JSON.parse(JSON.stringify(replayData.passSchedule));
+        freezeFrameData = replayData.scenario; 
+        KICK_TARGET_FRAME = replayData.KICK_TARGET_FRAME;
+
+        gameFrame = 0;
+        kickStopFrame = 0;
+
+        lineDef.style.display = 'none'; lineAtt.style.display = 'none';
+        btnNext.style.display = 'none'; btnRetry.style.display = 'none';
+        msgBox.innerText = "⏪ REPLAY ACTION";
+        
+        gameContainer.style.transform = "rotateX(15deg) scale(0.98)";
+
+        isFrozen = false;
+        startGameLoop();
+        
+        setTimeout(() => {
+             isFrozen = true;
+             gameContainer.style.transform = "rotateX(0deg) scale(1)"; 
+             msgBox.innerText = "⏸ STOP! 다시 확인하세요!";
+             showVARLines();
+             btnNext.style.display = 'inline-block';
+        }, 3000); 
+    }
+
+    function checkAnswer(userChoice) {
+        if(!isFrozen) return;
+        let correct = (userChoice === freezeFrameData.isOffside);
+        
+        gameContainer.style.transform = "rotateX(0deg) scale(1)";
+        
+        showVARLines();
+        
+        if(correct) {
+            score++;
+            updateScoreUI();
+            msgBox.innerHTML = "✅ <span style='color:#00ff00'>정답! (Correct)</span>";
+        } else {
+            msgBox.innerHTML = "❌ <span style='color:#ff4444'>오심! (Wrong)</span>";
+        }
+        
+        explainResult();
+        btnOff.disabled = true; btnOn.disabled = true;
+        btnOn.style.opacity = 0.3; btnOff.style.opacity = 0.3;
+        btnNext.style.display = 'inline-block';
+        btnRetry.style.display = 'inline-block';
+    }
+
+    function showVARLines() {
+        lineDef.style.display = 'block';
+        lineDef.style.left = freezeFrameData.defX + 'px';
+        lineAtt.style.display = 'block';
+        lineAtt.style.left = freezeFrameData.attX + 'px';
+    }
+
+    function explainResult() {
+        let diff = Math.round(freezeFrameData.attX - freezeFrameData.defX);
+        let txt = "";
+        
+        let attNum = freezeFrameData.attackerNum;
+        let defNum = freezeFrameData.defenderNum;
+
+        if (diff > 0) {
+            txt = `<b>${attNum}번 공격수</b>가 ${defNum}번 수비수보다 <b style='color:#ff4444'>${diff}px</b> 앞섰습니다.`;
+        } else {
+            txt = `<b>${attNum}번 공격수</b>는 ${defNum}번 수비수보다 <b style='color:#4488ff'>${Math.abs(diff)}px</b> 뒤에 있습니다.`;
+        }
+        expBox.innerHTML = txt;
+    }
+
+    function nextScenario() {
+        if(round < MAX_ROUNDS) {
+            round++;
+            updateScoreUI();
+            initRound();
+        } else {
+            finalBoard.style.display = 'flex';
+            document.getElementById('final-score-display').innerText = `${score} / ${MAX_ROUNDS}`;
+            let title = score === 5 ? "🏆 월드 클래스 주심" : (score >= 3 ? "⚽ 프로 리그 심판" : "🐣 심판 연수생");
+            document.getElementById('final-rank').innerText = title;
+        }
+    }
+</script>
+</body>
+</html>
