@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대항해시대: 지식의 나침반 v3.4</title>
+    <title>거상:대항해시대</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -21,20 +21,18 @@
         .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .animate-bounce-slow { animation: bounce 3s infinite; }
         
-        /* v3.3: 개선된 작은 물결 애니메이션 (잔물결/윤슬 효과) */
         @keyframes ocean-flow {
             0% { background-position: 0 0; }
             100% { background-position: 30px 15px; }
         }
         .ocean-waves {
-            /* 작은 점들이 흩뿌려진 듯한 패턴으로 변경 */
             background-image: 
                 radial-gradient(rgba(255, 255, 255, 0.25) 1.5px, transparent 2px),
                 radial-gradient(rgba(255, 255, 255, 0.2) 1.5px, transparent 2px);
             background-position: 0 0, 15px 15px;
-            background-size: 30px 30px; /* 패턴 크기 축소 */
+            background-size: 30px 30px;
             animation: ocean-flow 6s infinite linear;
-            opacity: 0.4; /* 은은하게 조절 */
+            opacity: 0.4;
         }
 
         @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -42,7 +40,7 @@
         .pixel-art { image-rendering: pixelated; }
     </style>
 </head>
-<body class="bg-[#0c0a09] overflow-hidden">
+<body class="bg-[#0c0a09] overflow-hidden select-none">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -75,8 +73,9 @@
             gold: 2000, 
             day: 1,
             location: 'lisbon',
-            inventory: { pepper: 0, nutmeg: 0, silk: 0, glass: 0, musket: 0, wine: 0, art: 0, ivory: 0, cotton: 0, cloves: 0, porcelain: 0 },
-            avgCost: { pepper: 0, nutmeg: 0, silk: 0, glass: 0, musket: 0, wine: 0, art: 0, ivory: 0, cotton: 0, cloves: 0, porcelain: 0 }, 
+            // 삭제된 물품(면직물, 비단, 예술품, 정향) 제외
+            inventory: { pepper: 0, nutmeg: 0, glass: 0, musket: 0, wine: 0, ivory: 0, porcelain: 0, food: 0, wood: 0, copper: 0 },
+            avgCost: { pepper: 0, nutmeg: 0, glass: 0, musket: 0, wine: 0, ivory: 0, porcelain: 0, food: 0, wood: 0, copper: 0 }, 
             cargoSpace: 35, 
             unlockedFacts: [],
             gameOver: false
@@ -86,52 +85,54 @@
             lisbon: {
                 id: 'lisbon', name: '리스본', continent: '유럽',
                 desc: '포르투갈의 수도. 아프리카/인도 항로의 기점.',
-                market: { musket: 60, wine: 60, glass: 40, ivory: 120, pepper: 80, nutmeg: 100, porcelain: 200, art: 100, cotton: 120, cloves: 110, silk: 150 },
+                market: { musket: 60, wine: 60, glass: 40, ivory: 120, pepper: 80, nutmeg: 100, porcelain: 200, food: 10, wood: 20, copper: 40 },
                 x: 46, y: 35
             },
             sevilla: {
                 id: 'sevilla', name: '세비야', continent: '유럽',
                 desc: '스페인의 황금 항구. 신대륙의 물산 집결지.',
-                market: { wine: 30, musket: 80, glass: 35, ivory: 130, pepper: 85, nutmeg: 110, porcelain: 190, art: 110, cotton: 110, cloves: 120, silk: 140 },
+                market: { wine: 30, musket: 80, glass: 35, ivory: 130, pepper: 85, nutmeg: 110, porcelain: 190, food: 12, wood: 25, copper: 45 },
                 x: 48, y: 37
             },
             venice: {
                 id: 'venice', name: '베네치아', continent: '유럽',
                 desc: '지중해 무역의 중심. 유리 공예가 유명.',
-                market: { glass: 20, musket: 90, wine: 70, ivory: 140, pepper: 90, nutmeg: 120, porcelain: 210, art: 50, cotton: 140, cloves: 130, silk: 160 },
+                market: { glass: 20, musket: 90, wine: 70, ivory: 140, pepper: 90, nutmeg: 120, porcelain: 210, food: 15, wood: 30, copper: 50 },
                 x: 52, y: 34
             },
             cape_town: {
                 id: 'cape_town', name: '케이프타운', continent: '아프리카',
                 desc: '희망봉 인근 보급항. 상아가 거래됨.',
-                market: { ivory: 50, musket: 150, wine: 120, glass: 100, pepper: 60, nutmeg: 80, porcelain: 180, art: 180, cotton: 80, cloves: 90, silk: 120 },
+                market: { ivory: 50, musket: 150, wine: 120, glass: 100, pepper: 60, nutmeg: 80, porcelain: 180, food: 20, wood: 15, copper: 80 },
                 x: 55, y: 75
             },
             calicut: {
                 id: 'calicut', name: '캘리컷', continent: '아시아',
                 desc: '인도의 무역항. 후추의 본고장.',
-                market: { pepper: 10, musket: 220, wine: 200, glass: 150, ivory: 90, nutmeg: 40, porcelain: 100, art: 250, cotton: 20, cloves: 50, silk: 70 },
+                market: { pepper: 10, musket: 220, wine: 200, glass: 150, ivory: 90, nutmeg: 40, porcelain: 100, food: 8, wood: 20, copper: 70 },
                 x: 70, y: 55
             },
             malacca: {
                 id: 'malacca', name: '말라카', continent: '아시아',
                 desc: '향신료 무역의 중심지.',
-                market: { nutmeg: 5, musket: 240, wine: 220, glass: 160, ivory: 100, pepper: 20, porcelain: 80, art: 260, cotton: 40, cloves: 15, silk: 40 },
+                market: { nutmeg: 5, musket: 240, wine: 220, glass: 160, ivory: 100, pepper: 20, porcelain: 80, food: 10, wood: 10, copper: 80 },
                 x: 82, y: 65
             },
             macau: {
                 id: 'macau', name: '마카오', continent: '아시아',
                 desc: '동아시아의 관문. 도자기가 풍부.',
-                market: { porcelain: 40, musket: 260, wine: 250, glass: 180, ivory: 150, pepper: 50, nutmeg: 60, art: 280, cotton: 60, cloves: 70, silk: 20 },
+                market: { porcelain: 40, musket: 260, wine: 250, glass: 180, ivory: 150, pepper: 50, nutmeg: 60, food: 10, wood: 25, copper: 90 },
                 x: 88, y: 50
             }
         };
 
         const GOODS_INFO = {
-            cotton: { name: '면직물', desc: '인도산이 최고급이지만 유럽에서도 구함.', origin: 'any' },
-            silk: { name: '비단', desc: '동양의 사치품. 유럽에선 매우 비쌈.', origin: 'any' },
-            art: { name: '예술품', desc: '유럽 르네상스 작품. 아시아에선 희귀.', origin: 'any' },
-            cloves: { name: '정향', desc: '향신료의 일종. 동남아에선 흔함.', origin: 'any' },
+            // [공용]
+            food: { name: '식량', desc: '항해의 필수품. 수익성은 낮습니다.', origin: 'any' },
+            wood: { name: '목재', desc: '선박 수리용 자재. 어디서든 구합니다.', origin: 'any' },
+            copper: { name: '구리', desc: '산업의 기초. 유럽에서 저렴합니다.', origin: 'any' },
+
+            // [특산품]
             musket: { name: '화승총', desc: '유럽의 최신식 무기.', origin: ['lisbon'] },
             wine: { name: '와인', desc: '선상 필수품이자 기호식품.', origin: ['sevilla'] },
             glass: { name: '유리 공예', desc: '투명하고 아름다운 보석.', origin: ['venice'] },
@@ -157,69 +158,67 @@
         ];
 
         const QUIZZES = [
-            { question: "1492년, 인도를 찾아 서쪽으로 항해하다가 아메리카 대륙에 도착한 인물은?", options: ["크리스토퍼 콜럼버스", "아메리고 베스푸치", "페르디난드 마젤란", "바스코 다 가마"], answer: 0, fact: "콜럼버스는 죽을 때까지 그곳을 인도라고 믿었습니다." },
-            { question: "아프리카 최남단 희망봉을 돌아 인도 항로를 개척한 인물은?", options: ["바스코 다 가마", "바르톨로메우 디아스", "엔히크 왕자", "아메리고 베스푸치"], answer: 0, fact: "그의 성공으로 향신료 직수입 길이 열려 베네치아의 독점이 깨졌습니다." },
-            { question: "세계 최초로 지구 일주에 성공한 선단은?", options: ["마젤란 선단", "콜럼버스 선단", "드레이크 선단", "바스코 다 가마 선단"], answer: 0, fact: "마젤란 본인은 필리핀 막탄섬에서 전사했지만, 그의 부하 엘카노가 항해를 마쳤습니다." },
-            { question: "대항해시대 선박의 위도를 측정하기 위해 별의 고도를 관측하던 도구는?", options: ["아스트롤라베", "나침반", "크로노미터", "망원경"], answer: 0, fact: "아스트롤라베 덕분에 망망대해에서도 대략적인 위치를 알 수 있었습니다." },
-            { question: "유럽에서 '검은 황금'이라 불리며 가장 인기가 높았던 향신료는?", options: ["후추", "육두구", "정향", "계피"], answer: 0, fact: "당시 후추는 같은 무게의 금과 맞먹는 가치를 지녔습니다." },
-            { question: "스페인과 포르투갈이 신대륙을 나누기 위해 체결한 조약은?", options: ["토르데시야스 조약", "사라고사 조약", "베르사유 조약", "베스트팔렌 조약"], answer: 0, fact: "이 조약으로 브라질을 제외한 남미 대부분이 스페인 영역이 되었습니다." },
-            { question: "대항해시대 초기를 주도한 이베리아 반도의 두 국가는?", options: ["스페인, 포르투갈", "영국, 프랑스", "네덜란드, 영국", "미국, 영국"], answer: 0, fact: "포르투갈은 동쪽(인도)으로, 스페인은 서쪽(신대륙)으로 진출했습니다." },
-            { question: "명나라 때 대함대를 이끌고 아프리카까지 원정을 다녀온 인물은?", options: ["정화", "이븐 바투타", "마르코 폴로", "장건"], answer: 0, fact: "정화의 함대는 콜럼버스의 배보다 훨씬 컸습니다." },
-            { question: "신대륙에서 구대륙으로 전해져 기근 해결에 기여한 작물은?", options: ["감자, 옥수수", "밀, 보리", "쌀, 콩", "포도, 올리브"], answer: 0, fact: "이 작물들은 척박한 땅에서도 잘 자라 유럽의 인구 폭발을 이끌었습니다." },
-            { question: "장거리 항해 중 비타민 C 부족으로 발생한 질병은?", options: ["괴혈병", "페스트", "천연두", "말라리아"], answer: 0, fact: "나중에 신선한 과일과 야채를 먹으면 낫는다는 것을 알게 되었습니다." },
-            { question: "원양 항해에 적합하도록 개량된, 삼각돛을 단 서양의 범선은?", options: ["카라벨선", "갤리선", "정크선", "거북선"], answer: 0, fact: "카라벨선은 바람을 거슬러 항해할 수 있어 탐험에 유리했습니다." },
-            { question: "신대륙이 인도가 아님을 밝혀내어 이름의 유래가 된 인물은?", options: ["아메리고 베스푸치", "크리스토퍼 콜럼버스", "페르디난드 마젤란", "바스코 누녜스 데 발보아"], answer: 0, fact: "그는 이곳이 인도가 아니라 '신대륙'이라는 사실을 알렸습니다." },
-            { question: "멕시코의 아즈텍 제국을 멸망시킨 스페인 정복자는?", options: ["에르난 코르테스", "프란시스코 피사로", "바스코 다 가마", "페르디난드 마젤란"], answer: 0, fact: "코르테스는 아즈텍에 반감을 가진 원주민 부족들과 연합했습니다." },
-            { question: "신대륙의 은 유입으로 유럽 물가가 급등한 현상은?", options: ["가격 혁명", "상업 혁명", "산업 혁명", "종교 개혁"], answer: 0, fact: "돈(은화)이 많아지자 돈의 가치는 떨어지고 물가는 올랐습니다." },
-            { question: "유럽-아프리카-아메리카를 잇는 대서양 무역 형태는?", options: ["삼각 무역", "중계 무역", "보호 무역", "가공 무역"], answer: 0, fact: "유럽의 총/술 -> 아프리카 노예 -> 아메리카 설탕/목화로 이어졌습니다." },
-            { question: "네덜란드가 설립한 세계 최초의 주식회사는?", options: ["동인도 회사", "서인도 회사", "허드슨 베이 회사", "남해 회사"], answer: 0, fact: "이 회사는 군대를 거느리고 전쟁을 할 수 있을 만큼 강력했습니다." },
-            { question: "항해 중 경도를 측정하기 위해 고안된 정밀 시계는?", options: ["크로노미터", "해시계", "물시계", "모래시계"], answer: 0, fact: "존 해리슨이 발명한 크로노미터는 항해술의 일대 혁명이었습니다." },
-            { question: "대항해시대 이전 지중해 무역을 독점했던 이탈리아 도시는?", options: ["베네치아", "제노바", "피렌체", "밀라노"], answer: 0, fact: "베네치아 상인들은 동방 물품을 독점하여 큰 부를 쌓았습니다." },
-            { question: "항해 학교를 세워 포르투갈의 대양 진출을 이끈 왕자는?", options: ["엔히크", "펠리페 2세", "루이 14세", "찰스 1세"], answer: 0, fact: "직접 항해하진 않았지만 '항해왕'이라는 별명을 얻었습니다." },
-            { question: "유럽인이 가져와 신대륙 원주민 인구를 급격히 감소시킨 질병은?", options: ["천연두", "흑사병", "장티푸스", "콜레라"], answer: 0, fact: "면역력이 없던 원주민들에게는 치명적인 전염병이었습니다." },
-            { question: "다음 중 구대륙에서 신대륙으로 전해진 것은?", options: ["말(Horse)", "감자", "옥수수", "토마토"], answer: 0, fact: "말은 유럽인들이 신대륙으로 가져가 원주민들에게 충격을 주었습니다." },
+            { question: "1492년, 인도를 찾아 서쪽으로 항해하다가 아메리카 대륙에 도착한 인물은?", options: ["크리스토퍼 콜럼버스", "아메리고 베스푸치", "페르디난드 마젤란", "바스코 다 가마"], answer: 0, fact: "콜럼버스는 죽을 때까지 그곳을 인도(동인도)로 믿었다고 전해집니다." },
+            { question: "아프리카 최남단 희망봉을 돌아 인도 항로를 개척한 인물은?", options: ["바스코 다 가마", "바르톨로메우 디아스", "엔히크 왕자", "아메리고 베스푸치"], answer: 0, fact: "그의 성공으로 향신료 직수입 길이 열려 이탈리아 상인들의 중개 이익이 약화되었습니다." },
+            { question: "세계 최초로 지구 일주에 성공한 선단은?", options: ["마젤란 선단", "콜럼버스 선단", "드레이크 선단", "바스코 다 가마 선단"], answer: 0, fact: "마젤란은 필리핀 막탄섬에서 전사했지만, 부하 엘카노가 항해를 마쳤습니다." },
+            { question: "대항해시대 선박의 위도를 측정하기 위해 별의 고도를 관측하던 도구는?", options: ["아스트롤라베", "나침반", "크로노미터", "망원경"], answer: 0, fact: "아스트롤라베 덕분에 망망대해에서도 대략적인 위도를 추정할 수 있었습니다." },
+            { question: "유럽에서 '검은 황금'이라 불리며 가장 인기가 높았던 향신료는?", options: ["후추", "육두구", "정향", "계피"], answer: 0, fact: "당시 후추는 지역과 시기에 따라 가격이 달랐지만, 금에 버금갈 만큼 비싸게 거래되기도 했습니다." },
+            { question: "스페인과 포르투갈이 신대륙을 나누기 위해 체결한 조약은?", options: ["토르데시야스 조약", "사라고사 조약", "베르사유 조약", "베스트팔렌 조약"], answer: 0, fact: "이 조약은 경계선을 기준으로 양국의 ‘탐험·점유권’을 나누려는 합의였습니다(브라질이 포르투갈 영역이 된 배경으로 자주 설명됩니다)." },
+            { question: "대항해시대 초기를 주도한 이베리아 반도의 두 국가는?", options: ["스페인, 포르투갈", "영국, 프랑스", "네덜란드, 영국", "미국, 영국"], answer: 0, fact: "포르투갈은 동쪽(인도양·인도)으로, 스페인은 서쪽(아메리카)으로 진출했습니다." },
+            { question: "명나라 때 대함대를 이끌고 아프리카까지 원정을 다녀온 인물은?", options: ["정화", "이븐 바투타", "마르코 폴로", "장건"], answer: 0, fact: "정화의 원정은 인도양 일대까지 영향력을 넓히려는 국가적 사업이었습니다." },
+            { question: "신대륙에서 구대륙으로 전해져 기근 해결에 기여한 작물은?", options: ["감자, 옥수수", "밀, 보리", "쌀, 콩", "포도, 올리브"], answer: 0, fact: "감자와 옥수수는 비교적 척박한 환경에서도 재배가 가능해 유럽의 인구 증가에 영향을 주었습니다." },
+            { question: "장거리 항해 중 비타민 C 부족으로 발생한 질병은?", options: ["괴혈병", "페스트", "천연두", "말라리아"], answer: 0, fact: "나중에 감귤류 같은 신선한 과일·채소가 예방에 도움이 된다는 사실이 알려졌습니다." },
+            { question: "원양 항해에 적합하도록 개량된, 삼각돛을 단 서양의 범선은?", options: ["카라벨선", "갤리선", "정크선", "거북선"], answer: 0, fact: "카라벨선은 바람을 거슬러 항해(지그재그로)하기에 유리해 탐험에 활용되었습니다." },
+            { question: "신대륙이 인도가 아님을 밝혀내어 이름의 유래가 된 인물은?", options: ["아메리고 베스푸치", "크리스토퍼 콜럼버스", "페르디난드 마젤란", "바스코 누녜스 데 발보아"], answer: 0, fact: "베스푸치는 이 지역이 아시아가 아니라 새로운 대륙이라는 인식을 확산시키는 데 영향을 주었습니다." },
+            { question: "멕시코의 아즈텍 제국을 멸망시킨 스페인 정복자는?", options: ["에르난 코르테스", "프란시스코 피사로", "바스코 다 가마", "페르디난드 마젤란"], answer: 0, fact: "코르테스는 아즈텍에 반감을 가진 원주민 세력과 연합하기도 했습니다." },
+            { question: "신대륙의 은 유입으로 유럽 물가가 급등한 현상은?", options: ["가격 혁명", "상업 혁명", "산업 혁명", "종교 개혁"], answer: 0, fact: "은 유입이 늘면서 통화량이 증가해 물가 상승이 장기간 나타났습니다." },
+            { question: "유럽-아프리카-아메리카를 잇는 대서양 무역 형태는?", options: ["삼각 무역", "중계 무역", "보호 무역", "가공 무역"], answer: 0, fact: "유럽 물품 → 아프리카(노예) → 아메리카(설탕·목화 등)로 이어졌습니다." },
+            { question: "항해 중 경도를 측정하기 위해 고안된 정밀 시계는?", options: ["크로노미터", "해시계", "물시계", "모래시계"], answer: 0, fact: "존 해리슨의 해상용 크로노미터는 경도 측정에 큰 전환점을 만들었습니다." },
+            { question: "대항해시대 이전 지중해 무역을 독점했던 이탈리아 도시는?", options: ["베네치아", "제노바", "피렌체", "밀라노"], answer: 0, fact: "베네치아는 동방 물품의 중계 무역으로 큰 부를 축적했습니다." },
+            { question: "포르투갈의 대양 진출을 후원하며 탐험을 조직적으로 지원한 왕자는?", options: ["엔히크", "펠리페 2세", "루이 14세", "찰스 1세"], answer: 0, fact: "엔히크는 직접 항해하진 않았지만 탐험을 후원해 ‘항해왕’이라 불렸습니다." },
+            { question: "유럽인이 가져와 신대륙 원주민 인구를 급격히 감소시킨 질병은?", options: ["천연두", "흑사병", "장티푸스", "콜레라"], answer: 0, fact: "면역력이 없던 원주민들에게는 치명적이었습니다." },
+            { question: "다음 중 구대륙에서 신대륙으로 전해진 것은?", options: ["말(Horse)", "감자", "옥수수", "토마토"], answer: 0, fact: "말은 유럽인들이 신대륙으로 가져가 원주민 사회에 큰 변화를 주었습니다." },
             { question: "대항해시대 결과 무역의 중심지는 지중해에서 어디로 이동했나요?", options: ["대서양", "태평양", "인도양", "북해"], answer: 0, fact: "리스본, 세비야 같은 대서양 연안 도시들이 번영하기 시작했습니다." },
-            { question: "영국이 스페인의 무적함대를 격파한 해전은?", options: ["칼레 해전", "레판토 해전", "트라팔가 해전", "살라미스 해전"], answer: 0, fact: "이 승리로 영국은 해상 강국으로 떠올랐습니다." },
-            { question: "인도의 면직물로, 유럽 패션에 큰 영향을 준 직물은?", options: ["캘리코", "모직물", "비단", "린넨"], answer: 0, fact: "캘리컷 항구의 이름을 따서 캘리코라고 불렀습니다." },
-            { question: "중국의 도자기와 비단을 유럽에 중계 무역한 나라는?", options: ["포르투갈", "스페인", "영국", "네덜란드"], answer: 0, fact: "포르투갈은 마카오를 거점으로 동서양 무역을 중계했습니다." },
-            { question: "지구 구형설을 믿고 서쪽으로 항해를 시도한 인물은?", options: ["콜럼버스", "토스카넬리", "마젤란", "프톨레마이오스"], answer: 0, fact: "당시 사람들은 지구가 평평해서 끝으로 가면 떨어진다고 생각하기도 했습니다." },
-            { question: "유럽인들이 아메리카 대륙에 만든 대규모 농장 경영 방식은?", options: ["플랜테이션", "엔코미엔다", "아시엔다", "장원"], answer: 0, fact: "설탕, 담배 등을 재배하기 위해 많은 노예가 동원되었습니다." },
-            { question: "스페인이 남미에서 발견한 당시 세계 최대의 은광은?", options: ["포토시 은광", "이와미 은광", "사도 광산", "캘리포니아 금광"], answer: 0, fact: "여기서 캐낸 은은 전 세계로 퍼져 화폐로 사용되었습니다." },
-            { question: "적도 부근에서 바람이 불지 않아 항해를 어렵게 했던 구역은?", options: ["무풍지대", "편서풍대", "무역풍대", "극동풍대"], answer: 0, fact: "범선 시대 선원들에게 가장 무서운 곳 중 하나였습니다." },
-            { question: "원주민의 인권을 옹호하며 스페인의 착취를 비판한 성직자는?", options: ["라스 카사스", "세풀베다", "로욜라", "루터"], answer: 0, fact: "그의 노력으로 원주민 보호법이 만들어지기도 했습니다." },
-            { question: "항해에 적합하도록 고안된, 각도가 정확한 지도의 도법은?", options: ["메르카토르 도법", "페터스 도법", "몰바이데 도법", "방위 도법"], answer: 0, fact: "직선으로 항로를 그릴 수 있어 항해사들에게 필수적이었습니다." },
+            { question: "인도의 면직물로, 유럽 패션에 큰 영향을 준 직물은?", options: ["캘리코", "모직물", "비단", "린넨"], answer: 0, fact: "캘리컷(Calicut) 항구의 이름에서 ‘캘리코’라는 말이 유래했다고 설명됩니다." },
+            { question: "대항해시대 초기, 마카오 등을 거점으로 중국 물품의 동서 교역에 관여한 나라는?", options: ["포르투갈", "스페인", "영국", "네덜란드"], answer: 0, fact: "포르투갈은 마카오 등 거점을 통해 동서 교역에 참여했습니다(이후에는 네덜란드 등도 활발히 진출합니다)." },
+            { question: "유럽인들이 아메리카 대륙에 만든 대규모 농장 경영 방식은?", options: ["플랜테이션", "엔코미엔다", "아시엔다", "장원"], answer: 0, fact: "설탕, 담배 등을 재배하기 위해 대규모 노동력이 동원되었습니다." },
+            { question: "스페인이 남미에서 발견한 당시 세계 최대의 은광은?", options: ["포토시 은광", "이와미 은광", "사도 광산", "캘리포니아 금광"], answer: 0, fact: "포토시 은은 세계 교역망 속 화폐 유통에도 큰 영향을 주었습니다." },
+            { question: "적도 부근에서 바람이 불지 않아 항해를 어렵게 했던 구역은?", options: ["무풍지대", "편서풍대", "무역풍대", "극동풍대"], answer: 0, fact: "범선 시대에는 바람이 없어 표류할 위험이 컸습니다." },
+            { question: "항해에 적합하도록 고안된, 각도가 정확한 지도의 도법은?", options: ["메르카토르 도법", "페터스 도법", "몰바이데 도법", "방위 도법"], answer: 0, fact: "등각항로를 직선으로 그릴 수 있어 항해에 유용했습니다." },
             { question: "콜럼버스의 1차 항해 기함 이름은?", options: ["산타마리아호", "빅토리아호", "골든 하인드호", "메이플라워호"], answer: 0, fact: "핀타호, 니냐호와 함께 3척이 떠났습니다." },
-            { question: "향신료 '정향'의 모양은 무엇을 닮았을까요?", options: ["못", "꽃봉오리", "별", "잎사귀"], answer: 0, fact: "강한 향기가 나서 치통 치료제나 향수로도 쓰였습니다." },
-            { question: "대항해시대 유럽인들이 동방에서 가장 얻고 싶어 했던 물건은?", options: ["향신료", "비단", "도자기", "차"], answer: 0, fact: "고기의 맛을 좋게 해주는 향신료는 부의 상징이었습니다." },
-            { question: "대항해시대를 가능하게 한 기술적 요인이 아닌 것은?", options: ["증기기관 발명", "나침반 전래", "조선술 발달", "지도 제작술 발달"], answer: 0, fact: "증기기관은 산업혁명 시기에 발명되었습니다." },
-            { question: "포르투갈 상인들이 일본 다네가시마에 전해준 무기는?", options: ["조총", "대포", "화약", "갑옷"], answer: 0, fact: "이 조총은 훗날 전국시대 통일과 임진왜란에 영향을 주었습니다." },
-            { question: "희망봉의 원래 이름은 무엇이었을까요?", options: ["폭풍의 곶", "희망의 곶", "사자의 곶", "녹색의 곶"], answer: 0, fact: "너무 험해서 '폭풍의 곶'이라 불렸지만, 나중에 '희망봉'으로 바뀌었습니다." },
-            { question: "마젤란이 통과한 남아메리카 남단의 해협 이름은?", options: ["마젤란 해협", "드레이크 해협", "베링 해협", "호르무즈 해협"], answer: 0, fact: "그의 이름을 따서 마젤란 해협이라고 부릅니다." },
-            { question: "다음 중 신대륙에 존재했던 문명이 아닌 것은?", options: ["이집트 문명", "아즈텍 문명", "잉카 문명", "마야 문명"], answer: 0, fact: "이집트 문명은 아프리카 나일강 변에서 발생했습니다." },
-            { question: "유럽인들이 아프리카 어딘가에 있다고 믿었던 기독교 왕국은?", options: ["프레스터 존의 왕국", "만사 무사 왕국", "솔로몬 왕국", "시바 여왕국"], answer: 0, fact: "이 왕국을 찾기 위해 아프리카 등을 탐험하기도 했습니다." },
-            { question: "선박의 방향을 조절하기 위해 선미에 설치한 장치는?", options: ["키(Rudder)", "닻", "노", "갑판"], answer: 0, fact: "키 덕분에 큰 배도 원하는 방향으로 쉽게 움직일 수 있었습니다." }
+            { question: "대항해시대 유럽인들이 동방에서 가장 얻고 싶어 했던 물건은?", options: ["향신료", "비단", "도자기", "차"], answer: 0, fact: "향신료는 음식 보존·풍미, 그리고 사치재로서 수요가 높았습니다." },
+            { question: "대항해시대를 가능하게 한 기술적 요인이 아닌 것은?", options: ["증기기관 발명", "나침반 전래", "조선술 발달", "지도 제작술 발달"], answer: 0, fact: "증기기관은 산업혁명 시기에 등장한 기술입니다." },
+            { question: "포르투갈 상인들이 일본 다네가시마에 전해준 무기는?", options: ["조총", "대포", "화약", "갑옷"], answer: 0, fact: "조총 전래는 일본 전국시대 전쟁 양상에 영향을 주었습니다." },
+            { question: "희망봉의 원래 이름은 무엇이었을까요?", options: ["폭풍의 곶", "희망의 곶", "사자의 곶", "녹색의 곶"], answer: 0, fact: "험한 항로 때문에 ‘폭풍의 곶’으로 불렸다고 전해집니다." },
+            { question: "마젤란이 통과한 남아메리카 남단의 해협 이름은?", options: ["마젤란 해협", "드레이크 해협", "베링 해협", "호르무즈 해협"], answer: 0, fact: "그의 이름을 따 ‘마젤란 해협’이라 부릅니다." },
+            { question: "다음 중 신대륙에 존재했던 문명이 아닌 것은?", options: ["이집트 문명", "아즈텍 문명", "잉카 문명", "마야 문명"], answer: 0, fact: "이집트 문명은 아프리카 나일강 유역에서 발전했습니다." },
+            { question: "유럽인들이 아프리카 어딘가에 있다고 믿었던 기독교 왕국은?", options: ["프레스터 존의 왕국", "만사 무사 왕국", "솔로몬 왕국", "시바 여왕국"], answer: 0, fact: "프레스터 존 전설은 탐험 동기 중 하나로 작용하기도 했습니다." },
+            { question: "선박의 방향을 조절하기 위해 선미에 설치한 장치는?", options: ["키(Rudder)", "닻", "노", "갑판"], answer: 0, fact: "키(방향타)는 큰 배의 조종에 필수였습니다." },
+            { question: "희망봉(아프리카 최남단 부근)에 처음 도달해 포르투갈의 항로 개척에 길을 연 인물은?", options: ["바르톨로메우 디아스", "바스코 다 가마", "콜럼버스", "마젤란"], answer: 0, fact: "디아스는 ‘폭풍의 곶’이라 불렸던 곳에 도달해 이후 인도 항로 개척의 발판을 마련했습니다." },
+            { question: "향신료 산지로 유명해 유럽이 치열하게 경쟁했던 ‘향신료 제도(Spice Islands)’는 오늘날 어느 지역을 가리키는가?", options: ["말루쿠 제도(몰루카스)", "카리브 제도", "하와이 제도", "카나리아 제도"], answer: 0, fact: "말루쿠 제도는 정향·육두구 같은 향신료 산지로 유명했습니다." },
+            { question: "스페인이 페루 지역의 잉카 제국을 무너뜨린 정복자는?", options: ["프란시스코 피사로", "에르난 코르테스", "바스코 다 가마", "드레이크"], answer: 0, fact: "피사로는 잉카 내 상황과 무기·전염병 등 복합 요인이 겹친 틈을 이용했습니다." },
+            { question: "아메리카-유럽-아시아를 연결하는 세계 교역이 본격화되며 나타난 변화로 가장 적절한 것은?", options: ["세계적 교역망 확대", "봉건제 강화", "자급자족 경제 확대", "교역 축소"], answer: 0, fact: "신항로 개척은 지역별 경제를 세계 시장으로 연결해 ‘세계사적 교류’를 크게 확대했습니다." }
         ];
 
         // --- 픽셀 아트 아이콘 ---
         const PixelItemIcon = ({ type }) => {
             const colors = { 
-                pepper: ['#2d2d2d', '#404040'], nutmeg: ['#8B4513', '#A0522D'], silk: ['#9370DB', '#E6E6FA'], glass: ['#87CEEB', '#E0FFFF'],
-                musket: ['#5D4037', '#BCAAA4'], wine: ['#800020', '#D32F2F'], art: ['#FFD700', '#F0E68C'], ivory: ['#FFFFF0', '#F5F5DC'],
-                cotton: ['#FFFFFF', '#E0E0E0'], cloves: ['#5D4037', '#8D6E63'], porcelain: ['#E3F2FD', '#1E88E5']
+                pepper: ['#2d2d2d', '#404040'], nutmeg: ['#8B4513', '#A0522D'], glass: ['#87CEEB', '#E0FFFF'],
+                musket: ['#5D4037', '#BCAAA4'], wine: ['#800020', '#D32F2F'], ivory: ['#FFFFF0', '#F5F5DC'],
+                porcelain: ['#E3F2FD', '#1E88E5'], food: ['#F4A460', '#D2691E'], wood: ['#8B4513', '#A0522D'], copper: ['#B87333', '#CD853F']
             };
             const c = colors[type] || ['#888', '#ccc'];
             
             if(type === 'pepper') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="6" y="6" width="2" height="2" fill={c[0]}/><rect x="9" y="5" width="2" height="2" fill={c[0]}/><rect x="5" y="9" width="2" height="2" fill={c[0]}/><rect x="8" y="8" width="2" height="2" fill={c[1]}/></svg>;
             if(type === 'nutmeg') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="6" y="6" width="4" height="4" fill={c[0]} rx="2"/><rect x="7" y="5" width="2" height="1" fill={c[0]}/><rect x="7" y="10" width="2" height="1" fill={c[0]}/><rect x="5" y="7" width="1" height="2" fill={c[0]}/><rect x="10" y="7" width="1" height="2" fill={c[0]}/><rect x="7" y="7" width="2" height="2" fill={c[1]}/></svg>;
-            if(type === 'silk') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M4 4h9v10h-9z" fill={c[0]}/><rect x="5" y="5" width="6" height="8" fill={c[1]} opacity="0.6"/></svg>;
             if(type === 'glass') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M6 3h4v9h-4z" fill={c[0]}/><rect x="7" y="5" width="2" height="5" fill={c[1]} opacity="0.8"/></svg>;
             if(type === 'musket') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M2 10l2 2 10-8-2-2z" fill={c[0]}/><rect x="3" y="11" width="3" height="1" fill={c[1]}/></svg>;
             if(type === 'wine') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M6 3h4v6l-2 3-2-3z" fill={c[0]}/><rect x="7" y="12" width="2" height="2" fill={c[0]}/><rect x="5" y="14" width="6" height="1" fill={c[0]}/><rect x="7" y="4" width="2" height="4" fill={c[1]}/></svg>;
-            if(type === 'art') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="3" y="3" width="10" height="10" fill={c[0]} stroke="#8B4513"/><circle cx="8" cy="8" r="3" fill={c[1]}/></svg>;
             if(type === 'ivory') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M10 3s2 2 0 10c0 0-4-2-2-10z" fill={c[0]} stroke="#CCC"/></svg>;
-            if(type === 'cotton') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><circle cx="8" cy="8" r="4" fill={c[0]}/><circle cx="6" cy="6" r="2" fill={c[1]}/><circle cx="10" cy="7" r="2" fill={c[1]}/></svg>;
-            if(type === 'cloves') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><circle cx="8" cy="6" r="3" fill={c[0]}/><rect x="7" y="8" width="2" height="5" fill={c[1]}/></svg>;
             if(type === 'porcelain') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M4 4h8v6c0 2-2 4-4 4s-4-2-4-4V4z" fill={c[0]}/><path d="M5 6h6" stroke={c[1]} strokeWidth="1"/></svg>;
+            if(type === 'food') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><circle cx="6" cy="6" r="3" fill={c[0]}/><circle cx="10" cy="7" r="3" fill={c[1]}/><circle cx="8" cy="10" r="3" fill={c[0]}/></svg>;
+            if(type === 'wood') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><rect x="4" y="4" width="2" height="8" fill={c[0]}/><rect x="7" y="4" width="2" height="8" fill={c[1]}/><rect x="10" y="4" width="2" height="8" fill={c[0]}/></svg>;
+            if(type === 'copper') return <svg width="32" height="32" viewBox="0 0 16 16" fill="none" className="pixel-art"><path d="M4 4h8v8H4z" fill={c[0]}/><rect x="5" y="5" width="2" height="2" fill={c[1]}/><rect x="9" y="9" width="2" height="2" fill={c[1]}/></svg>;
             return null;
         };
 
@@ -353,8 +352,29 @@
                 setPendingDestination(destId);
                 setVoyageDays(calculateDays(destId)); 
                 
-                const randomQuiz = QUIZZES[Math.floor(Math.random() * QUIZZES.length)];
-                setCurrentQuiz(randomQuiz);
+                // 랜덤으로 문제를 뽑되, 선택지 셔플을 위해 원본을 복사 후 셔플 로직 적용
+                const randomQuizIndex = Math.floor(Math.random() * QUIZZES.length);
+                const rawQuiz = QUIZZES[randomQuizIndex];
+                
+                // 선택지 셔플 로직
+                // 1. 현재 정답 텍스트 저장
+                const correctAnswerText = rawQuiz.options[rawQuiz.answer];
+                
+                // 2. 옵션 배열 복사 및 셔플
+                const shuffledOptions = [...rawQuiz.options];
+                for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+                }
+                
+                // 3. 섞인 배열에서 정답의 새로운 인덱스 찾기
+                const newAnswerIndex = shuffledOptions.indexOf(correctAnswerText);
+                
+                setCurrentQuiz({
+                    ...rawQuiz,
+                    options: shuffledOptions,
+                    answer: newAnswerIndex
+                });
                 setActiveModal('quiz');
             };
 
@@ -410,9 +430,9 @@
             };
 
             return (
-                <div className="min-h-screen bg-[#0c0a09] text-[#eecfa1] font-serif flex flex-col items-center p-4">
+                <div className="h-screen w-full flex flex-col items-center p-4 bg-[#0c0a09] overflow-hidden select-none font-serif text-[#eecfa1]">
                     {/* 상단바 */}
-                    <div className="w-full max-w-5xl bg-[#3e2b20] border-b-[6px] border-[#2a1d15] p-3 flex justify-between items-center shadow-lg rounded-t-xl z-10 relative overflow-hidden">
+                    <div className="w-full max-w-5xl bg-[#3e2b20] border-b-[6px] border-[#2a1d15] p-3 flex justify-between items-center shadow-lg rounded-t-xl z-10 relative overflow-hidden shrink-0">
                         <div className="absolute inset-0 opacity-10" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')"}}></div>
                         <div className="flex items-center gap-6 relative z-10">
                             <div className="flex flex-col">
@@ -445,17 +465,17 @@
                         </button>
                     </div>
 
-                    {/* 메인 게임 영역 */}
-                    <div className="w-full max-w-5xl flex-1 bg-[#e8d5a5] text-[#3e2b20] relative shadow-2xl overflow-hidden flex flex-col md:flex-row border-x-4 border-b-4 border-[#2a1d15] rounded-b-xl" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')"}}>
+                    {/* 메인 게임 영역 (flex-1로 남은 공간 채움) */}
+                    <div className="flex-1 w-full max-w-5xl bg-[#e8d5a5] text-[#3e2b20] relative shadow-2xl overflow-hidden flex flex-col md:flex-row border-x-4 border-b-4 border-[#2a1d15] rounded-b-xl min-h-0" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')"}}>
                         
                         {/* 왼쪽: 거래소 */}
-                        <div className="flex-1 p-6 border-r border-[#8b5e3c]/30 relative z-10 flex flex-col min-h-0">
-                            <h2 className="text-2xl font-bold mb-2 flex items-center gap-3 text-[#3e2b20] border-b-2 border-[#8b5e3c] pb-2">
+                        <div className="flex-1 p-6 border-r border-[#8b5e3c]/30 relative z-10 flex flex-col h-full overflow-hidden">
+                            <h2 className="text-2xl font-bold mb-2 flex items-center gap-3 text-[#3e2b20] border-b-2 border-[#8b5e3c] pb-2 shrink-0">
                                 <MapIcon className="w-6 h-6 text-[#8b4513]" /> {currentPort.name} 거래소 <span className="text-sm text-[#8b5e3c] font-normal mt-1">({currentPort.continent})</span>
                             </h2>
-                            <p className="text-sm italic text-[#5c4033] mb-4 bg-[#fff8e1]/50 p-2 rounded border border-[#d4b483]">"{currentPort.desc}"</p>
+                            <p className="text-sm italic text-[#5c4033] mb-4 bg-[#fff8e1]/50 p-2 rounded border border-[#d4b483] shrink-0">"{currentPort.desc}"</p>
                             
-                            {/* 거래 리스트 (모든 아이템 표시) */}
+                            {/* 거래 리스트 (flex-1로 남은 높이 차지 및 스크롤) */}
                             <div className="bg-white/40 p-2 rounded-lg shadow-sm border border-[#d4b483] flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0">
                                 <div className="grid grid-cols-[2fr_1fr_2fr] text-xs font-bold text-[#8b5e3c] border-b border-[#8b5e3c] pb-1 mb-2 px-2 sticky top-0 bg-[#fff8e1]/90 z-10">
                                     <span>상품 (시세)</span>
@@ -529,7 +549,7 @@
                                 </div>
                             </div>
                             
-                            <div className="mt-4 flex justify-between items-center bg-[#fff8e1]/40 p-2 rounded border border-[#d4b483]">
+                            <div className="mt-4 flex justify-between items-center bg-[#fff8e1]/40 p-2 rounded border border-[#d4b483] shrink-0">
                                 <div className="text-xs font-bold text-[#5c4033]">
                                     적재량: {getTotalCargo()} / {gameState.cargoSpace}
                                 </div>
@@ -543,13 +563,13 @@
                                 </button>
                             </div>
 
-                            <div className="mt-3 bg-[#fff8e1]/60 p-3 rounded border border-[#d4b483] relative">
+                            <div className="mt-3 bg-[#fff8e1]/60 p-3 rounded border border-[#d4b483] relative shrink-0">
                                 <div className="absolute -top-3 left-3 bg-[#8b5e3c] text-[#f4e4bc] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
                                     <Scroll className="w-3 h-3" /> 초보 선장을 위한 지침서
                                 </div>
                                 <ul className="text-xs text-[#5c4033] space-y-1 mt-1 list-disc pl-4 font-bold leading-relaxed">
                                     <li><span className="text-[#8b4513]">목표:</span> 200일 동안 최고의 수익을 올리세요.</li>
-                                    <li><span className="text-[#8b4513]">무역:</span> <span className="text-red-700">구매는 원산지</span>에서만! 판매는 어디서든 가능합니다.</li>
+                                    <li><span className="text-[#8b4513]">무역:</span> <span className="text-red-700">특산물 구매는 원산지</span>에서만! 판매는 어디서든 가능합니다.</li>
                                     <li><span className="text-[#8b4513]">항해:</span> 지도에서 목적지를 선택하세요. 거리가 멀수록 오래 걸립니다.</li>
                                     <li><span className="text-[#8b4513]">퀴즈:</span> 정답을 맞혀야 이동합니다. 틀리면 제자리에서 지연됩니다.</li>
                                 </ul>
@@ -557,12 +577,12 @@
                         </div>
 
                         {/* 오른쪽: 지도 (자유 이동) */}
-                        <div className="w-full md:w-[400px] bg-[#d4b483]/30 p-6 border-l border-[#8b5e3c]/30 flex flex-col relative z-10 backdrop-blur-sm min-h-0">
-                            <h2 className="text-xl font-bold mb-3 flex items-center gap-2 text-[#3e2b20]"><Compass className="w-5 h-5 text-[#8b4513]" /> 항해 지도</h2>
+                        <div className="w-full md:w-[400px] bg-[#d4b483]/30 p-6 border-l border-[#8b5e3c]/30 flex flex-col relative z-10 backdrop-blur-sm min-h-0 h-full overflow-hidden">
+                            <h2 className="text-xl font-bold mb-3 flex items-center gap-2 text-[#3e2b20] shrink-0"><Compass className="w-5 h-5 text-[#8b4513]" /> 항해 지도</h2>
                             <PixelMap currentLocation={gameState.location} />
                             
-                            <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-[#3e2b20] mt-4"><Navigation className="w-5 h-5 text-[#8b4513]" /> 자유 항해 (목적지 선택)</h2>
-                            <div className="space-y-2 overflow-y-auto no-scrollbar flex-1 pb-2">
+                            <h2 className="text-lg font-bold mb-2 flex items-center gap-2 text-[#3e2b20] mt-4 shrink-0"><Navigation className="w-5 h-5 text-[#8b4513]" /> 자유 항해 (목적지 선택)</h2>
+                            <div className="space-y-2 overflow-y-auto no-scrollbar flex-1 pb-2 min-h-0">
                                 {Object.keys(PORTS).filter(id => id !== gameState.location).map(destId => {
                                     const days = calculateDays(destId);
                                     return (
@@ -581,7 +601,7 @@
                         </div>
                     </div>
 
-                    <div className="mt-4 text-[#eecfa1] text-[10px] font-serif tracking-widest opacity-40">Developed by Son Seoyul</div>
+                    <div className="mt-4 text-[#eecfa1] text-[10px] font-serif tracking-widest opacity-40 shrink-0">제작 : 손서율</div>
 
                     {/* --- 모달들 (생략 없이 포함) --- */}
                     {activeModal === 'goodInfo' && selectedGood && (
@@ -610,7 +630,7 @@
                                     {currentQuiz.options.map((option, idx) => (
                                         <button key={idx} onClick={() => handleQuizResult(idx === currentQuiz.answer)}
                                             className="w-full p-4 text-left bg-[#3e2b20] text-[#eecfa1] border border-[#5c4033] hover:bg-[#5c4033] hover:border-[#d4a065] rounded-sm transition-all flex items-center justify-between group shadow-md">
-                                            <span className="font-serif text-lg">{idx + 1}. {option}</span>
+                                            <span className="font-serif text-lg">{option}</span>
                                         </button>
                                     ))}
                                 </div>
