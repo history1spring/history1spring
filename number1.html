@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>진수 변환 마스터하기</title>
+  <style>
+    :root {
+      --bg: #fdfcf0;
+      --card-bg: #ffffff;
+      --primary: #4f46e5;
+      --primary-soft: #e0e7ff;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --error: #f43f5e;
+      --text: #1e293b;
+      --text-light: #64748b;
+    }
+
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, sans-serif; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* 전체 레이아웃 (설명창 + 게임창) */
+    .main-layout {
+      display: flex;
+      gap: 20px;
+      max-width: 900px;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    /* 왼쪽 게임 영역 */
+    .app-container {
+      flex: 1.2;
+      background: var(--card-bg);
+      border-radius: 32px;
+      padding: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+      border: 4px solid #f1f5f9;
+      position: relative;
+    }
+
+    /* 오른쪽 설명 영역 */
+    .info-container {
+      flex: 0.8;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 24px;
+      border: 2px solid var(--primary-soft);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.02);
+    }
+
+    @media (max-width: 850px) {
+      .main-layout { flex-direction: column; align-items: center; }
+      .app-container, .info-container { width: 100%; }
+    }
+
+    .header { text-align: center; margin-bottom: 25px; }
+    .title { font-size: 1.8rem; font-weight: 900; color: var(--primary); margin: 0; }
+
+    .dashboard { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
+    .stat-box { flex: 1; background: #f8fafc; padding: 10px; border-radius: 18px; text-align: center; border: 1px solid #e2e8f0; }
+    .stat-label { font-size: 0.75rem; color: var(--text-light); font-weight: 700; margin-bottom: 2px; }
+    .stat-value { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+
+    .progress-container { width: 100%; height: 10px; background: #f1f5f9; border-radius: 10px; margin-bottom: 25px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--success); width: 0%; transition: width 0.3s ease; }
+
+    .question-card { background: var(--primary-soft); border-radius: 24px; padding: 30px 20px; text-align: center; margin-bottom: 20px; position: relative; }
+    .mode-tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 5px 18px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+    .question-value { font-size: 3.5rem; font-weight: 900; color: var(--primary); margin: 10px 0; }
+
+    .input-area { display: flex; flex-direction: column; gap: 15px; }
+    input[type="text"] { width: 100%; background: #f8fafc; border: 3px solid #e2e8f0; border-radius: 20px; padding: 16px; font-size: 1.5rem; font-weight: 800; text-align: center; color: var(--text); outline: none; }
+    input[type="text"]:focus { border-color: var(--primary); background: white; }
+
+    .btn-main { border: none; border-radius: 20px; padding: 16px; font-weight: 800; cursor: pointer; font-size: 1.1rem; background: var(--primary); color: white; box-shadow: 0 6px 0 #3730a3; transition: all 0.1s; }
+    .btn-main:active { transform: translateY(3px); box-shadow: 0 3px 0 #3730a3; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-sub { border: none; border-radius: 18px; padding: 12px; font-weight: 700; cursor: pointer; background: #f1f5f9; color: var(--text-light); }
+
+    #hint-box { margin-top: 20px; background: #fffbeb; border: 2px solid #fef3c7; padding: 18px; border-radius: 20px; display: none; }
+    .hint-title { font-weight: 800; color: #92400e; margin-bottom: 8px; display: block; font-size: 0.9rem; }
+    .bit-table { display: flex; gap: 5px; justify-content: center; margin-top: 10px; }
+    .bit-item { background: white; border: 1px solid #fcd34d; padding: 4px 8px; border-radius: 8px; font-weight: 800; font-size: 0.8rem; }
+
+    /* 결과 화면 */
+    #result-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: white; border-radius: 32px; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+    #final-score { font-size: 5rem; font-weight: 900; color: var(--primary); margin: 0; line-height: 1; }
+    #final-score-label { font-size: 1.2rem; color: var(--text-light); margin-bottom: 30px; }
+
+    #feedback { height: 24px; margin-top: 10px; text-align: center; font-weight: 800; font-size: 1rem; }
+    .correct { color: var(--success); }
+    .wrong { color: var(--error); }
+
+    .diff-control-wrapper { margin-top: 20px; }
+    .diff-info { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-light); font-weight: 700; margin-bottom: 8px; }
+    input[type="range"] { width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; appearance: none; outline: none; }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; background: var(--primary); border-radius: 50%; cursor: pointer; border: 3px solid white; }
+
+    .footer { margin-top: 30px; text-align: center; font-size: 0.8rem; color: var(--text-light); }
+
+    /* 설명창 내부 스타일 */
+    .info-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary-soft); padding-bottom: 8px; }
+    .info-section { margin-bottom: 20px; }
+    .info-section h4 { margin: 10px 0 5px; color: var(--text); font-size: 0.95rem; }
+    .code-box { background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; display: block; margin: 5px 0; color: var(--primary); }
+
+    .shake { animation: shake 0.4s ease-in-out; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+  </style>
+</head>
+<body>
+
+<div class="main-layout">
+  <!-- 왼쪽: 게임 영역 -->
+  <div class="app-container">
+    <div id="result-screen">
+      <div id="final-score">0</div>
+      <div id="final-score-label">10문제 중 맞힌 개수</div>
+      <div id="new-record" style="color: var(--accent); font-weight: 800; margin-bottom: 20px; display: none;">✨ 최고 기록 갱신! ✨</div>
+      <button onclick="resetRound()" class="btn-main" style="width: 200px;">다시 도전하기</button>
+    </div>
+
+    <div class="header">
+      <h1 class="title">진수 변환 마스터하기</h1>
+    </div>
+
+    <div class="dashboard">
+      <div class="stat-box">
+        <div class="stat-label">진행도</div>
+        <div id="progress-text" class="stat-value">1 / 10</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">최고 기록</div>
+        <div id="best-score" class="stat-value">0 / 10</div>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+    <div class="question-card" id="q-card">
+      <div id="mode-text" class="mode-tag">10진수 ➔ 2진수</div>
+      <div class="question-value" id="q-value">--</div>
+      <div id="q-sub" style="font-size: 0.9rem; color: var(--text-light);">이 숫자를 변환해봐!</div>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="정답 입력" spellcheck="false" autocomplete="off">
+      <button id="btn-check" class="btn-main">정답 확인하기</button>
+      <div class="btn-row">
+        <button id="btn-hint" class="btn-sub">💡 힌트 보기</button>
+        <button id="btn-toggle" class="btn-sub">🔄 모드 변경</button>
+      </div>
+    </div>
+
+    <div id="feedback"></div>
+
+    <div id="hint-box">
+      <span class="hint-title">💡 선생님의 힌트</span>
+      <div id="hint-content" style="font-size: 0.85rem; color: #b45309; line-height: 1.6;"></div>
+      <div class="bit-table" id="bit-table"></div>
+    </div>
+
+    <div class="diff-control-wrapper">
+      <div class="diff-info">
+        <span>난이도 조절</span>
+        <span id="level-display" style="color: var(--primary);">레벨 2 (4비트, 1~15)</span>
+      </div>
+      <input type="range" id="diff-slider" min="1" max="5" value="2">
+    </div>
+
+    <div class="footer">
+      Developed by Son Seoyul
+    </div>
+  </div>
+
+  <!-- 오른쪽: 설명 영역 -->
+  <div class="info-container">
+    <div class="info-title">진법 학습 가이드</div>
+    
+    <div class="info-section">
+      <h4>1. 10진법과 2진법이란?</h4>
+      • <strong>10진법</strong>: 우리가 평소 쓰는 숫자 (0~9). 10이 되면 자리올림이 발생합니다.<br>
+      • <strong>2진법</strong>: 컴퓨터가 쓰는 숫자 (0, 1). 2가 되면 자리올림이 발생합니다.
+    </div>
+
+    <div class="info-section">
+      <h4>2. 10진수 ➔ 2진수 변환</h4>
+      • 방법: 10진수를 2로 계속 나누어 나머지를 거꾸로 읽거나, 큰 자릿값부터 빼서 '1'을 채웁니다.<br>
+      <span class="code-box">13 ➔ (8+4+1) ➔ 1101₂</span>
+    </div>
+
+    <div class="info-section">
+      <h4>3. 2진수 ➔ 10진수 변환</h4>
+      • 방법: 각 자리의 고유 값(1, 2, 4, 8, 16...)을 확인하고 '1'인 자리만 모두 더합니다.<br>
+      <span class="code-box">1011₂ ➔ (8+0+2+1) ➔ 11</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MAX_QUESTIONS = 10;
+  const LEVELS = [
+    { id: 1, name: "레벨 1", max: 7, bits: 3, label: "3비트, 1~7" },
+    { id: 2, name: "레벨 2", max: 15, bits: 4, label: "4비트, 1~15" },
+    { id: 3, name: "레벨 3", max: 31, bits: 5, label: "5비트, 1~31" },
+    { id: 4, name: "레벨 4", max: 63, bits: 6, label: "6비트, 1~63" },
+    { id: 5, name: "레벨 5", max: 255, bits: 8, label: "8비트, 1~255" }
+  ];
+
+  let state = {
+    mode: '10to2',
+    level: 2,
+    targetNum: 0,
+    currentIdx: 1,
+    correctCount: 0,
+    bestScore: 0,
+    roundActive: true
+  };
+
+  const ui = {
+    qValue: document.getElementById('q-value'),
+    input: document.getElementById('user-input'),
+    feedback: document.getElementById('feedback'),
+    progressText: document.getElementById('progress-text'),
+    progressBar: document.getElementById('progress-bar'),
+    bestScore: document.getElementById('best-score'),
+    modeTag: document.getElementById('mode-text'),
+    hintBox: document.getElementById('hint-box'),
+    hintContent: document.getElementById('hint-content'),
+    bitTable: document.getElementById('bit-table'),
+    resultScreen: document.getElementById('result-screen'),
+    finalScore: document.getElementById('final-score'),
+    newRecord: document.getElementById('new-record'),
+    qCard: document.getElementById('q-card'),
+    levelDisplay: document.getElementById('level-display'),
+    slider: document.getElementById('diff-slider')
+  };
+
+  function init() {
+    newQuestion();
+    updateUI();
+  }
+
+  function newQuestion() {
+    if (state.currentIdx > MAX_QUESTIONS) {
+      endRound();
+      return;
+    }
+
+    const config = LEVELS[state.level - 1];
+    state.targetNum = Math.floor(Math.random() * config.max) + 1;
+    
+    if (state.mode === '10to2') {
+      ui.qValue.textContent = state.targetNum;
+      ui.modeTag.textContent = "10진수 ➔ 2진수";
+    } else {
+      ui.qValue.textContent = state.targetNum.toString(2);
+      ui.modeTag.textContent = "2진수 ➔ 10진수";
+    }
+    
+    ui.input.value = '';
+    ui.feedback.textContent = '';
+    ui.hintBox.style.display = 'none';
+    ui.input.focus();
+    updateUI();
+  }
+
+  function checkAnswer() {
+    if (!state.roundActive) return;
+    const val = ui.input.value.trim();
+    if (!val) return;
+
+    const correctBinary = state.targetNum.toString(2);
+    const correctDecimal = state.targetNum.toString();
+    
+    let isCorrect = false;
+    if (state.mode === '10to2') {
+      isCorrect = (val.replace(/^0+/, '') === correctBinary.replace(/^0+/, ''));
+    } else {
+      isCorrect = (val === correctDecimal);
+    }
+
+    if (isCorrect) {
+      state.correctCount++;
+      ui.feedback.innerHTML = `<span class="correct">정답! +1점 👏</span>`;
+      ui.qCard.style.background = "#d1fae5";
+    } else {
+      const answer = state.mode === '10to2' ? correctBinary : correctDecimal;
+      ui.feedback.innerHTML = `<span class="wrong">앗! 정답은 ${answer}!</span>`;
+      ui.qCard.classList.add('shake');
+      ui.qCard.style.background = "#fee2e2";
+      setTimeout(() => ui.qCard.classList.remove('shake'), 400);
+    }
+
+    state.currentIdx++;
+    setTimeout(() => {
+      ui.qCard.style.background = "var(--primary-soft)";
+      newQuestion();
+    }, 1200);
+  }
+
+  function updateUI() {
+    ui.progressText.textContent = `${Math.min(state.currentIdx, MAX_QUESTIONS)} / ${MAX_QUESTIONS}`;
+    ui.progressBar.style.width = `${((state.currentIdx - 1) / MAX_QUESTIONS) * 100}%`;
+    ui.bestScore.textContent = `${state.bestScore} / ${MAX_QUESTIONS}`;
+    ui.levelDisplay.textContent = `${LEVELS[state.level - 1].name} (${LEVELS[state.level - 1].label})`;
+  }
+
+  function showHint() {
+    ui.hintBox.style.display = 'block';
+    ui.bitTable.innerHTML = '';
+    const config = LEVELS[state.level - 1];
+    let places = [];
+    for(let i=0; i < config.bits; i++) places.unshift(Math.pow(2, i));
+
+    places.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'bit-item';
+      item.textContent = p;
+      ui.bitTable.appendChild(item);
+    });
+
+    if (state.mode === '10to2') {
+      ui.hintContent.innerHTML = `
+        뺄 수 있는 가장 큰 상자부터 1을 써보세요!<br>
+        (예: ${state.targetNum}에서 뺄 수 있는 가장 큰 값 찾기)
+      `;
+    } else {
+      ui.hintContent.innerHTML = `
+        오른쪽 끝부터 1, 2, 4, 8... 순서예요.<br>
+        문제의 '1'이 위치한 상자들의 숫자만 더해보세요!
+      `;
+    }
+  }
+
+  function endRound() {
+    state.roundActive = false;
+    ui.resultScreen.style.display = 'flex';
+    ui.finalScore.textContent = state.correctCount;
+    
+    if (state.correctCount > state.bestScore) {
+      state.bestScore = state.correctCount;
+      ui.newRecord.style.display = 'block';
+    } else {
+      ui.newRecord.style.display = 'none';
+    }
+    updateUI();
+  }
+
+  function resetRound() {
+    state.currentIdx = 1;
+    state.correctCount = 0;
+    state.roundActive = true;
+    ui.resultScreen.style.display = 'none';
+    newQuestion();
+  }
+
+  document.getElementById('btn-toggle').onclick = () => {
+    state.mode = state.mode === '10to2' ? '2to10' : '10to2';
+    resetRound();
+  };
+
+  document.getElementById('btn-check').onclick = checkAnswer;
+  document.getElementById('btn-hint').onclick = showHint;
+  ui.input.onkeypress = (e) => { if (e.key === 'Enter') checkAnswer(); };
+
+  ui.slider.oninput = (e) => {
+    state.level = parseInt(e.target.value);
+    resetRound();
+    updateUI();
+  };
+
+  init();
+</script>
+
+</body>
+</html>
