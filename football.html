@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>축구 전술 상황실</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800;900&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --text-main: #2d3748;
+            --text-sub: #718096;
+            --panel-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --primary-green: #059669;
+            --primary-orange: #ea580c;
+            --pitch-bg: #2eab5b;
+            --btn-default-bg: #f8fafc;
+            --btn-default-text: #475569;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+            user-select: none;
+            overflow-y: auto;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 1050px;
+            max-width: 100%;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            color: #0f172a;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        /* 세련되고 깔끔한 교과서 안내 문구 디자인 */
+        .disclaimer {
+            background-color: #eff6ff;
+            color: #334155;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 14.5px;
+            border: 1px solid #bfdbfe;
+            display: inline-flex; 
+            align-items: center; 
+            gap: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            text-align: left;
+            line-height: 1.6;
+        }
+        .disclaimer span {
+            font-size: 22px;
+        }
+        .disclaimer b {
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        #main-container {
+            display: flex;
+            gap: 24px;
+            width: 1050px;
+            max-width: 100%;
+            align-items: flex-start;
+        }
+
+        /* 왼쪽 열: 전술판 + 결과창 */
+        #left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 600px;
+            flex-shrink: 0;
+        }
+
+        /* 전술판 (축구장) */
+        #tactics-board {
+            width: 100%;
+            height: 420px;
+            background-color: var(--pitch-bg);
+            border: 6px solid #ffffff;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* 축구장 라인 그리기 */
+        .pitch-line { position: absolute; border: 2px solid rgba(255,255,255,0.6); }
+        .center-line { width: 0; height: 100%; left: 50%; top: 0; }
+        .center-circle { width: 100px; height: 100px; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+        .center-dot { width: 6px; height: 6px; background: rgba(255,255,255,0.8); border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); position: absolute; }
+        .penalty-box-left { width: 100px; height: 210px; left: 0; top: 50%; transform: translateY(-50%); border-left: none; }
+        .penalty-box-right { width: 100px; height: 210px; right: 0; top: 50%; transform: translateY(-50%); border-right: none; }
+        .goal-box-left { width: 40px; height: 100px; left: 0; top: 50%; transform: translateY(-50%); border-left: none; }
+        .goal-box-right { width: 40px; height: 100px; right: 0; top: 50%; transform: translateY(-50%); border-right: none; }
+
+        /* 선수 토큰 */
+        .player-token, .opponent-token {
+            width: 34px;
+            height: 34px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+            font-size: 11px;
+            color: white;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        
+        /* 우리 팀 (조작 가능) */
+        .player-token { cursor: grab; transition: top 0.4s ease, left 0.4s ease, background 0.3s; background: #ef4444; }
+        .player-token:active { cursor: grabbing; z-index: 20; transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 8px 15px rgba(0,0,0,0.4); }
+        .player-gk { background: #eab308; color: #1e293b; }
+        .player-df { background: #3b82f6; }
+        .player-mf { background: #10b981; }
+        .player-fw { background: #ef4444; }
+
+        /* 상대 팀 (조작 불가, 애니메이션용) */
+        .opponent-token { background: #334155; display: none; transition: top 0.8s ease-in-out, left 0.8s ease-in-out; border-color: #cbd5e0; }
+
+        /* 공 (애니메이션용) */
+        #ball {
+            width: 18px; height: 18px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 2L12 22M2 12L22 12M5 5L19 19M5 19L19 5"/></svg>') no-repeat center center;
+            background-size: cover; border-radius: 50%; position: absolute; transform: translate(-50%, -50%);
+            display: none; z-index: 30; transition: top 0.6s linear, left 0.6s linear; box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+
+        /* 세련된 스포츠 중계 팝업 스타일의 액션 텍스트 */
+        #action-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) skew(-8deg);
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 900; 
+            color: #ffffff; 
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+            display: none; z-index: 40; 
+            pointer-events: none; text-align: center; line-height: 1.1;
+            text-transform: uppercase;
+            animation: stylishPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes stylishPop {
+            0% { transform: translate(-50%, -50%) skew(-8deg) scale(0.6); opacity: 0; }
+            70% { transform: translate(-50%, -50%) skew(-8deg) scale(1.05); opacity: 1; }
+            100% { transform: translate(-50%, -50%) skew(-8deg) scale(1); opacity: 1; }
+        }
+
+        /* 축구장 아래: 결과 창 */
+        #match-result-area {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border: 2px solid var(--border-color);
+            display: none; 
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #result-title { font-size: 22px; font-weight: 800; margin: 0 0 12px 0; }
+        #result-desc { font-size: 15px; line-height: 1.6; color: var(--text-main); margin: 0 0 15px 0; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #f1f5f9;}
+        
+        /* 교과서 핵심 노트 스타일 (차분하고 신뢰감 있는 톤) */
+        .textbook-note { 
+            font-size: 13.5px; 
+            color: #1e40af; 
+            background: #eff6ff; 
+            padding: 14px 16px; 
+            border-radius: 8px; 
+            border-left: 4px solid #3b82f6; 
+            line-height: 1.5; 
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .result-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .result-btn { border: none; padding: 12px 24px; font-size: 15px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        #retry-btn { background: #f1f5f9; color: #475569; display: none; border: 1px solid #e2e8f0; }
+        #retry-btn:hover { background: #e2e8f0; }
+        #next-btn { background: var(--primary-blue); color: white; box-shadow: 0 4px 0 var(--primary-blue-hover); }
+        #next-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* 오른쪽: 미션 및 조작부 */
+        #control-panel {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel-box {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .panel-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background-color: var(--primary-blue);
+            border-radius: 2px;
+        }
+
+        #mission-desc {
+            font-size: 14.5px;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        /* 옵션 버튼들 */
+        .option-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .option-btn {
+            background-color: var(--btn-default-bg);
+            color: var(--btn-default-text);
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .option-btn:hover { background-color: #e2e8f0; }
+        .option-btn.selected { 
+            background-color: #eff6ff; 
+            border-color: var(--primary-blue); 
+            color: var(--primary-blue); 
+            box-shadow: 0 0 0 1px var(--primary-blue);
+        }
+
+        .hint-text {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-top: 10px;
+            line-height: 1.5;
+            min-height: 40px;
+        }
+
+        #action-buttons {
+            display: flex; gap: 10px; margin-top: auto;
+        }
+
+        #btn-hint {
+            background-color: #f8fafc; 
+            color: #475569; 
+            border: 1px solid #cbd5e0; 
+            padding: 16px; 
+            font-size: 14px; 
+            font-weight: 700; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            flex: 1; 
+            transition: 0.2s;
+        }
+        #btn-hint:hover { background-color: #f1f5f9; color: #0f172a; }
+        #btn-hint:active { transform: translateY(2px); }
+
+        #execute-btn {
+            background-color: var(--primary-blue); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            font-size: 16px; 
+            font-weight: 800; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            flex: 2; 
+            box-shadow: 0 4px 0 var(--primary-blue-hover); 
+            transition: 0.2s;
+        }
+        #execute-btn:active { transform: translateY(4px); box-shadow: none; }
+        #execute-btn:disabled { background-color: #94a3b8; box-shadow: 0 4px 0 #64748b; cursor: not-allowed; }
+
+        /* 하이라이트 클래스 */
+        .text-point { color: #ea580c; font-weight: 700; }
+        .text-blue { color: #2563eb; font-weight: 700; }
+        .text-red { color: #ef4444; font-weight: 700; }
+        .text-green { color: #059669; font-weight: 700; }
+        
+        #progress-indicator { 
+            font-size: 13px; 
+            color: #ffffff; 
+            background: var(--text-main);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700; 
+            letter-spacing: 0.5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>⚽ 축구 전술 상황실</h1>
+        <div class="disclaimer">
+            <span>📖</span>
+            <div><b>본 훈련은 체육 교과서를 바탕으로 안정적이고 확률 높은 모범 답안을 찾는 방식으로 제작되었습니다.</b><br>각 상황에 맞는 포메이션의 장단점과 수비 전술의 특징을 적용하여 전술의 핵심 원리를 익혀보세요.</div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        
+        <!-- 왼쪽 열: 전술판 + 결과 보고서 -->
+        <div id="left-column">
+            <!-- 전술판 영역 -->
+            <div id="tactics-board">
+                <div class="pitch-line center-line"></div>
+                <div class="pitch-line center-circle"></div>
+                <div class="center-dot"></div>
+                <div class="pitch-line penalty-box-left"></div>
+                <div class="pitch-line goal-box-left"></div>
+                <div class="pitch-line penalty-box-right"></div>
+                <div class="pitch-line goal-box-right"></div>
+                
+                <div id="action-text">GOAL</div>
+                <div id="ball"></div>
+                <!-- 상대 선수 5명 추가 -->
+                <div class="opponent-token" id="opp-1">OPP</div>
+                <div class="opponent-token" id="opp-2">OPP</div>
+                <div class="opponent-token" id="opp-3">OPP</div>
+                <div class="opponent-token" id="opp-4">OPP</div>
+                <div class="opponent-token" id="opp-5">OPP</div>
+                <!-- 우리 선수 토큰들이 JS로 생성되어 추가됨 -->
+            </div>
+
+            <!-- 축구장 하단 결과 창 -->
+            <div id="match-result-area">
+                <h3 id="result-title">결과</h3>
+                <div id="result-desc">결과 내용이 여기에 표시됩니다.</div>
+                <!-- 교과서 핵심 노트 영역 -->
+                <div class="textbook-note" id="textbook-note"></div>
+                <div class="result-actions">
+                    <button id="retry-btn" class="result-btn" onclick="retryMission()">🔄 다른 전술 적용해보기</button>
+                    <button id="next-btn" class="result-btn" onclick="nextMission()">다음 상황으로 ▶</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 컨트롤 패널 -->
+        <div id="control-panel">
+            
+            <div class="panel-box" style="padding-top: 15px; padding-bottom: 15px;">
+                <div class="panel-header" style="margin-bottom: 8px;">
+                    <h2 class="panel-title">경기 상황 브리핑</h2>
+                    <div id="progress-indicator">MISSION 1 / 5</div>
+                </div>
+                <div id="mission-desc">로딩 중...</div>
+            </div>
+
+            <div class="panel-box">
+                <h2 class="panel-title" style="margin-bottom: 12px;">1. 포메이션 (선수 배치)</h2>
+                <div class="option-grid" id="formation-grid">
+                    <button class="option-btn" onclick="selectFormation('4-3-3')">4-3-3 대형</button>
+                    <button class="option-btn" onclick="selectFormation('3-5-2')">3-5-2 대형</button>
+                    <button class="option-btn" onclick="selectFormation('4-4-2')">4-4-2 대형</button>
+                    <button class="option-btn" onclick="selectFormation('4-2-3-1')">4-2-3-1 대형</button>
+                </div>
+                <div class="hint-text" id="formation-hint">버튼을 누르면 포메이션의 장단점이 보입니다.</div>
+            </div>
+
+            <div class="panel-box">
+                <h2 class="panel-title" style="margin-bottom: 12px;">2. 팀 수비 전술</h2>
+                <div class="option-grid" id="tactic-grid">
+                    <button class="option-btn" onclick="selectTactic('대인 방어')">대인 방어</button>
+                    <button class="option-btn" onclick="selectTactic('지역 방어')">지역 방어</button>
+                    <button class="option-btn" onclick="selectTactic('진로 차단')">진로 차단 압박</button>
+                    <button class="option-btn" onclick="selectTactic('오프사이드 유도')">오프사이드 유도</button>
+                </div>
+            </div>
+
+            <div id="action-buttons">
+                <button id="btn-hint" onclick="showAnalystHint()">전력 분석관</button>
+                <button id="execute-btn" onclick="executeTactic()" disabled>작전 지시하기</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- 교과서 기반 데이터 ---
+    
+    // 포메이션별 교과서 설명 및 좌표 (우리팀은 왼쪽(수비) 진영)
+    const formations = {
+        '4-3-3': {
+            desc: "<span class='text-blue'>[특징]</span> 공격수(FW)가 3명이라 공격이 강합니다.<br>단점: 미드필더 압박이 힘듭니다.",
+            positions: [
+                {id: 1, type: 'gk', label: 'GK', x: 5, y: 50},
+                {id: 2, type: 'df', label: 'LB', x: 20, y: 20}, {id: 3, type: 'df', label: 'CB', x: 18, y: 40}, {id: 4, type: 'df', label: 'CB', x: 18, y: 60}, {id: 5, type: 'df', label: 'RB', x: 20, y: 80},
+                {id: 6, type: 'mf', label: 'MF', x: 40, y: 30}, {id: 7, type: 'mf', label: 'MF', x: 38, y: 50}, {id: 8, type: 'mf', label: 'MF', x: 40, y: 70},
+                {id: 9, type: 'fw', label: 'LW', x: 65, y: 25}, {id: 10, type: 'fw', label: 'ST', x: 70, y: 50}, {id: 11, type: 'fw', label: 'RW', x: 65, y: 75}
+            ]
+        },
+        '3-5-2': {
+            desc: "<span class='text-blue'>[특징]</span> 중앙에 배치된 인원이 많으므로 중앙에서 공격할 때 유리하며 상대 미드필더 압박할 수 있습니다.<br>단점: 측면 공격에 약합니다.",
+            positions: [
+                {id: 1, type: 'gk', label: 'GK', x: 5, y: 50},
+                {id: 2, type: 'df', label: 'CB', x: 20, y: 25}, {id: 3, type: 'df', label: 'CB', x: 18, y: 50}, {id: 4, type: 'df', label: 'CB', x: 20, y: 75},
+                {id: 5, type: 'mf', label: 'LM', x: 40, y: 15}, {id: 6, type: 'mf', label: 'CM', x: 35, y: 35}, {id: 7, type: 'mf', label: 'CM', x: 33, y: 50}, {id: 8, type: 'mf', label: 'CM', x: 35, y: 65}, {id: 9, type: 'mf', label: 'RM', x: 40, y: 85},
+                {id: 10, type: 'fw', label: 'FW', x: 65, y: 35}, {id: 11, type: 'fw', label: 'FW', x: 65, y: 65}
+            ]
+        },
+        '4-4-2': {
+            desc: "<span class='text-blue'>[특징]</span> 공격과 수비가 균형 있게 배치되어 협력 수비에 유리하여 강한 압박으로 공간 점유가 가능합니다.<br>단점: 수비 시 간격이 벌어지면 취약해집니다.",
+            positions: [
+                {id: 1, type: 'gk', label: 'GK', x: 5, y: 50},
+                {id: 2, type: 'df', label: 'LB', x: 20, y: 20}, {id: 3, type: 'df', label: 'CB', x: 18, y: 40}, {id: 4, type: 'df', label: 'CB', x: 18, y: 60}, {id: 5, type: 'df', label: 'RB', x: 20, y: 80},
+                {id: 6, type: 'mf', label: 'LM', x: 40, y: 20}, {id: 7, type: 'mf', label: 'CM', x: 38, y: 40}, {id: 8, type: 'mf', label: 'CM', x: 38, y: 60}, {id: 9, type: 'mf', label: 'RM', x: 40, y: 80},
+                {id: 10, type: 'fw', label: 'FW', x: 65, y: 35}, {id: 11, type: 'fw', label: 'FW', x: 65, y: 65}
+            ]
+        },
+        '4-2-3-1': {
+            desc: "<span class='text-blue'>[특징]</span> 중앙 미드필더를 통해 공격과 수비를 조율하며 수비의 밸런스가 적절하여 패스 플레이가 용이합니다.<br>단점: 수비형 미드필더에게 부담이 있습니다.",
+            positions: [
+                {id: 1, type: 'gk', label: 'GK', x: 5, y: 50},
+                {id: 2, type: 'df', label: 'LB', x: 20, y: 20}, {id: 3, type: 'df', label: 'CB', x: 18, y: 40}, {id: 4, type: 'df', label: 'CB', x: 18, y: 60}, {id: 5, type: 'df', label: 'RB', x: 20, y: 80},
+                {id: 6, type: 'mf', label: 'CDM', x: 30, y: 35}, {id: 7, type: 'mf', label: 'CDM', x: 30, y: 65},
+                {id: 8, type: 'mf', label: 'LAM', x: 45, y: 20}, {id: 9, type: 'mf', label: 'CAM', x: 48, y: 50}, {id: 10, type: 'mf', label: 'RAM', x: 45, y: 80},
+                {id: 11, type: 'fw', label: 'ST', x: 70, y: 50}
+            ]
+        }
+    };
+
+    // 철저하게 교과서 내용에 기반한 미션 구성 및 해설
+    const missions = [
+        {
+            id: 1,
+            title: "중원 장악 (허리 싸움)",
+            situation: "전반 25분, 상대의 미드필더진이 매우 강해 계속해서 주도권을 뺏기고 있습니다. 이대로면 밀려서 선제골을 내줍니다! <br><br><b>중앙 주도권을 되찾고 상대의 패스 줄기를 차단하세요.</b>",
+            analystHint: "📊 <b>전력 분석관 리포트:</b><br>중앙에 미드필더 인원을 늘리는 대형(3-5-2 또는 4-2-3-1)이 유리합니다. 수비 시에는 공을 가진 선수의 주변을 에워싸 패스 길을 막는 <b>'진로 차단'</b> 수비 전술이 교과서적 정석입니다.",
+            ansFormation: ['3-5-2', '4-2-3-1'], 
+            ansTactic: ['진로 차단'],
+            animType: 'counter_score', // 공뺏고 역습 골
+            successMsg: "<span class='text-green'>[작전 대성공!]</span><br><br>중앙에 선수가 많은 대형으로 허리 싸움에서 이겼습니다!<br>지시하신 대로 상대 팀 공격수 주위를 에워싸서 <b>'진로 차단'</b> 압박을 가하여 완벽하게 공을 되찾고 득점했습니다.",
+            textbookNote: "📖 <b>교과서 핵심:</b> 3-5-2 대형은 중앙에 인원이 많아 미드필더 압박에 유리합니다. 진로 차단 전술은 공을 가진 상대 주위를 수비수들이 에워싸서 압박하는 효과적인 방법입니다."
+        },
+        {
+            id: 2,
+            title: "종료 직전의 절체절명 역습",
+            situation: "후반 44분, 스코어 1:2로 지고 있습니다. 남은 시간은 단 5분! 상대는 수비 라인을 내리고 볼을 돌리며 시간을 끌고 있습니다. <br><br><b>무조건 상대의 공을 빼앗아 즉시 득점해야 합니다!</b>",
+            analystHint: "📊 <b>전력 분석관 리포트:</b><br>가장 공격이 강한 대형(4-3-3)으로 전방을 압박해야 합니다. 수비는 상대 선수를 한 명씩 확실히 맡아 공격을 저지하는 <b>'대인 방어'</b>를 통해 적극적으로 실수를 유발하세요.",
+            ansFormation: ['4-3-3'], 
+            ansTactic: ['대인 방어'],
+            animType: 'counter_score', // 공뺏고 역습 골
+            successMsg: "<span class='text-green'>[모범적인 승부수! 극장골!]</span><br><br>공격력이 강한 <b>4-3-3</b> 대형으로 전방을 압박한 판단이 좋았습니다.<br>선수를 1명씩 맡아 저지하는 <b>'대인 방어'</b>로 패스를 끊어내고 극적인 동점골을 만들었습니다!",
+            textbookNote: "📖 <b>교과서 핵심:</b> 4-3-3 대형은 공격수가 3명이라 공격이 강합니다. 대인 방어는 상대 선수를 한 명씩 맡아 거리를 유지하며 움직임을 예측하여 방어하는 수비 전술입니다."
+        },
+        {
+            id: 3,
+            title: "안정적인 리드 지키기",
+            situation: "후반 30분, 스코어 1:0으로 리드 중입니다. 선수들의 체력이 많이 떨어진 상태이며 상대는 동점골을 위해 거세게 몰아치고 있습니다. <br><br><b>남은 시간 동안 체력을 아끼며 침착하게 실점을 막아야 합니다.</b>",
+            analystHint: "📊 <b>전력 분석관 리포트:</b><br>공격과 수비 밸런스가 균형 있는 대형(4-4-2)을 추천합니다. 무리하게 상대를 쫓기보다 수비할 구역을 정해두고 자신의 지역을 책임지는 <b>'지역 방어'</b>로 체력을 안배하세요.",
+            ansFormation: ['4-4-2'], 
+            ansTactic: ['지역 방어'],
+            animType: 'defend_hold', // 수비 성공 후 볼 돌리기 (골 X)
+            successMsg: "<span class='text-green'>[안정적인 리드 수성!]</span><br><br>공격과 수비가 균형 있게 배치된 <b>4-4-2</b> 포메이션으로 협력 수비를 해냈습니다.<br>수비 구역을 미리 정해 놓는 <b>'지역 방어'</b>로 체력 소모를 줄이며 끝까지 1:0 승리를 지켰습니다!",
+            textbookNote: "📖 <b>교과서 핵심:</b> 4-4-2 대형은 공수 균형이 좋아 협력 수비에 유리합니다. 지역 방어는 대인 방어에 비해 움직임이 적어 체력 소모가 적다는 장점이 있습니다."
+        },
+        {
+            id: 4,
+            title: "상대 에이스 집중 마크",
+            situation: "전반 10분, 상대 팀에 돌파력이 매우 뛰어난 스타 플레이어가 있습니다. 이 선수에게 공간을 내주면 언제든 실점할 수 있습니다. <br><br><b>이 에이스 선수의 공격을 저지해야 합니다.</b>",
+            analystHint: "📊 <b>전력 분석관 리포트:</b><br>수비의 밸런스가 적절한 4백 대형(4-2-3-1 또는 4-4-2)이 좋습니다. 상대 에이스를 한 명이 전담하여 예측 수비하는 <b>'대인 방어'</b>를 지시하세요.",
+            ansFormation: ['4-2-3-1', '4-4-2'], 
+            ansTactic: ['대인 방어'],
+            animType: 'defend_hold', // 수비 성공 (골 X)
+            successMsg: "<span class='text-green'>[에이스 완벽 봉쇄!]</span><br><br>수비 밸런스가 안정적인 대형을 구축하고, 위험 인물을 1대1로 예측하며 방어하는 <b>'대인 방어'</b>를 통해 상대방의 공격 루트를 완전히 차단했습니다!",
+            textbookNote: "📖 <b>교과서 핵심:</b> 4-2-3-1은 중앙 미드필더를 통해 공수를 조율하며 수비 밸런스가 적절합니다. 특정 선수의 움직임을 예측하며 거리를 유지하고 방어할 때는 대인 방어가 효과적입니다."
+        },
+        {
+            id: 5,
+            title: "롱 패스 침투 대비 (라인 이동)",
+            situation: "전반 35분, 상대 팀이 우리 수비 뒷공간으로 계속해서 롱 패스를 시도하고 있습니다. 달리기로 쫓아가기엔 위험 부담이 큽니다! <br><br><b>수비 라인을 의도적으로 이동시켜 반칙을 유도해야 합니다.</b>",
+            analystHint: "📊 <b>전력 분석관 리포트:</b><br>수비 라인을 일자로 맞추기 쉬운 대형(4-4-2 또는 4-2-3-1)이 좋습니다. 패스가 들어오는 순간 일제히 수비 라인을 끌어올려 <b>'오프사이드 유도'</b>를 거는 것이 교과서적 해답입니다.",
+            ansFormation: ['4-4-2', '4-2-3-1', '4-3-3'], 
+            ansTactic: ['오프사이드 유도'],
+            animType: 'offside_trap', // 오프사이드 판정 연출
+            successMsg: "<span class='text-green'>[함정 성공! 오프사이드 판정]</span><br><br>수비 라인을 잘 맞춘 상태에서, 패스가 연결되는 순간 의도적으로 전진하는 <b>'오프사이드 유도'</b> 전술이 완벽하게 들어맞았습니다!",
+            textbookNote: "📖 <b>교과서 핵심:</b> 오프사이드 유도 전술은 상대 공격수에게 패스가 연결되는 순간 의도적으로 수비 라인을 이동하여 상대의 오프사이드를 유도하는 수비 방법입니다."
+        }
+    ];
+
+    let currentMissionIndex = 0;
+    let selectedFormation = null;
+    let selectedTactic = null;
+    let players = [];
+    let isAnimating = false;
+
+    // --- DOM Elements ---
+    const board = document.getElementById('tactics-board');
+    const missionDesc = document.getElementById('mission-desc');
+    const formationHint = document.getElementById('formation-hint');
+    const executeBtn = document.getElementById('execute-btn');
+    const progressText = document.getElementById('progress-indicator');
+    
+    // 모달/결과창 Elements
+    const resultArea = document.getElementById('match-result-area');
+    const resultTitle = document.getElementById('result-title');
+    const resultDesc = document.getElementById('result-desc');
+    const textbookNote = document.getElementById('textbook-note');
+    const nextBtn = document.getElementById('next-btn');
+    const retryBtn = document.getElementById('retry-btn');
+    const actionText = document.getElementById('action-text');
+    const ball = document.getElementById('ball');
+
+    // --- 초기화 및 미션 로드 ---
+    function initGame() {
+        createPlayerTokens();
+        loadMission(0);
+    }
+
+    function createPlayerTokens() {
+        for(let i=1; i<=11; i++) {
+            let el = document.createElement('div');
+            el.className = 'player-token';
+            el.id = 'player-' + i;
+            el.innerText = i;
+            board.appendChild(el);
+            players.push(el);
+            makeDraggable(el);
+        }
+    }
+
+    function loadMission(index) {
+        currentMissionIndex = index;
+        let m = missions[index];
+        progressText.innerText = `MISSION ${index + 1} / ${missions.length}`;
+        missionDesc.innerHTML = m.situation; 
+        
+        selectedFormation = null;
+        selectedTactic = null;
+        formationHint.innerHTML = "버튼을 누르면 포메이션의 장단점이 보입니다.";
+        
+        document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+        executeBtn.disabled = true;
+        resultArea.style.display = 'none';
+        actionText.style.display = 'none';
+        ball.style.display = 'none';
+
+        // 상대 선수 리셋
+        for(let i=1; i<=5; i++){
+            document.getElementById('opp-'+i).style.display = 'none';
+        }
+
+        players.forEach(p => {
+            p.style.left = '50%';
+            p.style.top = '50%';
+            p.style.background = '#94a3b8';
+            p.innerText = '?';
+        });
+    }
+
+    // --- UI 인터랙션 ---
+    function selectFormation(formKey) {
+        if(isAnimating) return;
+        selectedFormation = formKey;
+        
+        document.querySelectorAll('#formation-grid .option-btn').forEach(b => {
+            b.classList.remove('selected');
+            if(b.innerText.includes(formKey)) b.classList.add('selected');
+        });
+
+        formationHint.innerHTML = formations[formKey].desc;
+
+        let posData = formations[formKey].positions;
+        players.forEach((el, index) => {
+            let data = posData[index];
+            el.style.transition = 'top 0.5s cubic-bezier(0.25, 1, 0.5, 1), left 0.5s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s';
+            el.style.left = data.x + '%';
+            el.style.top = data.y + '%';
+            el.innerText = data.label;
+
+            el.className = 'player-token'; 
+            if(data.type === 'gk') el.classList.add('player-gk');
+            else if(data.type === 'df') el.classList.add('player-df');
+            else if(data.type === 'mf') el.classList.add('player-mf');
+            else if(data.type === 'fw') el.classList.add('player-fw');
+        });
+
+        checkReady();
+    }
+
+    function selectTactic(tactic) {
+        if(isAnimating) return;
+        selectedTactic = tactic;
+        
+        document.querySelectorAll('#tactic-grid .option-btn').forEach(b => {
+            b.classList.remove('selected');
+            if(b.innerText.includes(tactic)) b.classList.add('selected');
+        });
+
+        checkReady();
+    }
+
+    function checkReady() {
+        if(selectedFormation && selectedTactic) {
+            executeBtn.disabled = false;
+        }
+    }
+
+    // 분석관 리포트 (힌트)
+    function showAnalystHint() {
+        if(isAnimating) return;
+        resultArea.style.display = 'block';
+        resultTitle.innerHTML = "📊 전력 분석관 리포트";
+        resultTitle.style.color = "#2563eb";
+        resultDesc.innerHTML = missions[currentMissionIndex].analystHint;
+        textbookNote.style.display = 'none';
+        
+        retryBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        
+        resultArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    // 트리거 팝업 애니메이션 헬퍼 (스타일리시 버전)
+    function triggerActionText(text, color, size) {
+        actionText.style.display = 'none';
+        
+        // 약간의 딜레이를 주어 애니메이션이 매번 트리거되게 함
+        setTimeout(() => {
+            actionText.innerHTML = text.replace('\n', '<br>');
+            actionText.style.color = color;
+            actionText.style.fontSize = size;
+            actionText.style.display = 'block';
+        }, 50);
+    }
+
+    // --- 정답 확인 및 전술 시뮬레이션 애니메이션 ---
+    function executeTactic() {
+        if(isAnimating) return;
+        isAnimating = true;
+        executeBtn.disabled = true;
+        resultArea.style.display = 'none';
+
+        let m = missions[currentMissionIndex];
+        let isFormCorrect = m.ansFormation.includes(selectedFormation);
+        let isTacticCorrect = m.ansTactic.includes(selectedTactic);
+        let isSuccess = isFormCorrect && isTacticCorrect;
+
+        runMatchAnimation(isSuccess, m.animType, () => {
+            isAnimating = false;
+            executeBtn.disabled = false;
+            showMatchResult(isSuccess, m, isFormCorrect, isTacticCorrect);
+        });
+    }
+
+    // 미션 목표에 따른 동적 전술판 애니메이션 구현
+    function runMatchAnimation(isSuccess, animType, onComplete) {
+        // 상대편 생성 (오른쪽에서 왼쪽으로 공격)
+        let opps = [];
+        for(let i=1; i<=5; i++){
+            let o = document.getElementById('opp-'+i);
+            o.style.display = 'flex';
+            o.style.transition = 'top 0.8s ease, left 0.8s ease';
+            o.style.left = '75%'; 
+            o.style.top = (20 + i*10) + '%'; 
+            opps.push(o);
+        }
+
+        ball.style.display = 'block';
+        ball.style.transition = 'top 0.5s linear, left 0.5s linear';
+        ball.style.left = '75%'; ball.style.top = '50%'; // 상대편 중앙 미드필더에게 공
+
+        triggerActionText("TACTIC ENGAGED", "#ffffff", "50px");
+        setTimeout(() => { actionText.style.display = 'none'; }, 800);
+
+        setTimeout(() => {
+            if(!isSuccess) {
+                // [실패 시나리오: 실점]
+                opps[2].style.left = '30%'; ball.style.left = '30%'; // 상대가 쉽게 돌파
+
+                setTimeout(() => {
+                    ball.style.left = '5%'; // 우리 골망
+                    triggerActionText("실 점", "#ef4444", "65px"); // 세련된 폰트와 텍스트
+
+                    setTimeout(() => { actionText.style.display = 'none'; onComplete(); }, 1500);
+                }, 1000);
+                return;
+            }
+
+            // [성공 시나리오 분기]
+            if (animType === 'counter_score') {
+                // 타입 1. 공 뺏고 역습 골 (미션 1, 2)
+                opps[2].style.left = '50%'; ball.style.left = '50%';
+                let interceptor = players[7] || players[6]; // 미드필더
+                interceptor.style.transition = 'top 0.5s, left 0.5s';
+                interceptor.style.left = '48%'; interceptor.style.top = '50%';
+
+                setTimeout(() => {
+                    triggerActionText("INTERCEPT", "#2dd4bf", "55px");
+
+                    ball.style.left = '80%'; ball.style.top = '50%'; // 롱패스
+                    let striker = players[9] || players[10]; 
+                    striker.style.transition = 'top 0.5s, left 0.5s';
+                    striker.style.left = '82%'; striker.style.top = '50%'; 
+                    
+                    setTimeout(() => {
+                        triggerActionText("G O A L", "#fbbf24", "75px");
+                        ball.style.left = '95%'; // 상대 골망
+                        
+                        setTimeout(() => { actionText.style.display = 'none'; onComplete(); }, 1500);
+                    }, 800);
+                }, 1000);
+
+            } else if (animType === 'defend_hold') {
+                // 타입 2. 수비 성공 후 볼 점유/안정화 (미션 3, 4)
+                opps[2].style.left = '40%'; ball.style.left = '40%'; // 상대 공격
+                
+                let defender = players.find(p => p.classList.contains('player-df') || p.classList.contains('player-mf'));
+                defender.style.transition = 'top 0.5s, left 0.5s';
+                defender.style.left = '38%'; defender.style.top = '50%'; // 압박 수비
+
+                setTimeout(() => {
+                    triggerActionText("DEFENDED", "#34d399", "55px");
+
+                    ball.style.left = '15%'; ball.style.top = '50%'; // 골키퍼나 수비 쪽으로 백패스 (안정)
+                    
+                    setTimeout(() => {
+                        triggerActionText("TIME OVER\n승 리", "#fbbf24", "55px");
+                        
+                        setTimeout(() => { actionText.style.display = 'none'; onComplete(); }, 1500);
+                    }, 1000);
+                }, 1000);
+
+            } else if (animType === 'offside_trap') {
+                // 타입 3. 오프사이드 유도 성공 (미션 5)
+                opps[2].style.left = '60%'; ball.style.left = '60%'; // 중앙에서 패스 준비
+                opps[4].style.left = '15%'; opps[4].style.top = '50%'; // 상대 공격수 깊게 침투
+
+                setTimeout(() => {
+                    // 우리 수비라인 일제히 전진!
+                    players.filter(p => p.classList.contains('player-df')).forEach(df => {
+                        let currentLeft = parseFloat(df.style.left);
+                        df.style.transition = 'top 0.3s, left 0.3s';
+                        df.style.left = (currentLeft + 12) + '%';
+                    });
+
+                    ball.style.left = '15%'; ball.style.top = '50%'; // 패스 연결됨
+
+                    setTimeout(() => {
+                        triggerActionText("OFFSIDE", "#f87171", "65px");
+                        
+                        setTimeout(() => { actionText.style.display = 'none'; onComplete(); }, 1500);
+                    }, 500);
+                }, 800);
+            }
+        }, 1000);
+    }
+
+    function showMatchResult(isSuccess, m, isFormCorrect, isTacticCorrect) {
+        resultArea.style.display = 'block';
+        
+        if(isSuccess) {
+            resultTitle.innerHTML = "🎉 작전 대성공!";
+            resultTitle.style.color = "#059669";
+            resultDesc.innerHTML = m.successMsg;
+            textbookNote.style.display = 'block';
+            textbookNote.innerHTML = m.textbookNote;
+            
+            retryBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+            nextBtn.innerText = (currentMissionIndex === missions.length - 1) ? "훈련 모두 완료! (처음으로)" : "다음 상황으로 ▶";
+        } else {
+            resultTitle.innerHTML = "⚠️ 작전 실패";
+            resultTitle.style.color = "#ea580c";
+            textbookNote.style.display = 'none';
+            
+            let failText = "선택하신 지시는 <b>교과서의 기본 원리</b>에 비추어 보았을 때 위험 요소가 많아 공격이 뚫리고 말았습니다.<br><br>";
+            
+            if (!isFormCorrect && !isTacticCorrect) {
+                failText += "⭐ <span class='text-point'>포메이션</span>과 <span class='text-point'>수비 전술</span> 모두 상황에 부적합합니다. 상황 브리핑을 다시 읽어보세요!";
+            } else if (isFormCorrect && !isTacticCorrect) {
+                failText += "⭐ 포메이션 배치는 정석입니다! 하지만 <span class='text-point'>수비 전술</span>이 교과서 원리와 다소 맞지 않아 틈을 내줬습니다.";
+            } else if (!isFormCorrect && isTacticCorrect) {
+                failText += "⭐ 수비 전술 선택은 아주 좋습니다! 하지만 <span class='text-point'>포메이션 배치</span>가 상황에 적합하지 않아 공간을 내줬습니다.";
+            }
+
+            resultDesc.innerHTML = failText + "<br><br>📝 <i>(막힐 때는 '전력 분석관 리포트'를 확인하여 교과서 원리를 체크해보세요.)</i>";
+            
+            retryBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none'; 
+        }
+
+        resultArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function retryMission() {
+        selectFormation(selectedFormation); // 원래 위치로 선수들 복구
+        ball.style.display = 'none';
+        for(let i=1; i<=5; i++) document.getElementById('opp-'+i).style.display = 'none';
+        resultArea.style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function nextMission() {
+        if(currentMissionIndex < missions.length - 1) {
+            loadMission(currentMissionIndex + 1);
+        } else {
+            loadMission(0); // 처음부터 다시
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- 드래그 앤 드롭 로직 ---
+    function makeDraggable(elmnt) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        
+        elmnt.onmousedown = dragMouseDown;
+        elmnt.ontouchstart = dragTouchStart; 
+
+        function dragMouseDown(e) {
+            if(isAnimating) return; 
+            e = e || window.event;
+            e.preventDefault();
+            elmnt.style.transition = 'none'; 
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function dragTouchStart(e) {
+            if(isAnimating) return;
+            e = e || window.event;
+            let touch = e.touches[0];
+            elmnt.style.transition = 'none';
+            pos3 = touch.clientX;
+            pos4 = touch.clientY;
+            document.ontouchend = closeDragElement;
+            document.ontouchmove = elementTouchDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            updatePosition();
+        }
+
+        function elementTouchDrag(e) {
+            e = e || window.event;
+            let touch = e.touches[0];
+            pos1 = pos3 - touch.clientX;
+            pos2 = touch.clientY;
+            pos3 = touch.clientX;
+            pos4 = touch.clientY;
+            updatePosition();
+        }
+
+        function updatePosition() {
+            let newTop = elmnt.offsetTop - pos2;
+            let newLeft = elmnt.offsetLeft - pos1;
+            
+            if(newTop < 0) newTop = 0;
+            if(newTop > board.offsetHeight) newTop = board.offsetHeight;
+            if(newLeft < 0) newLeft = 0;
+            if(newLeft > board.offsetWidth) newLeft = board.offsetWidth;
+
+            elmnt.style.top = newTop + "px";
+            elmnt.style.left = newLeft + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            document.ontouchend = null;
+            document.ontouchmove = null;
+        }
+    }
+
+    // 게임 시작
+    window.onload = initGame;
+
+</script>
+</body>
+</html>
