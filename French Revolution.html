@@ -387,7 +387,7 @@
         <p style="color:#ddd; font-style:italic;">"자유가 아니면 죽음을"</p>
         <div style="font-size:1.1rem; line-height:1.8; margin:30px 0; color:#ecf0f1; border-top:1px solid #777; border-bottom:1px solid #777; padding:20px 0;">
             당신은 혁명의 소용돌이 속에 선 <strong>프랑스 혁명 정부의 고위 관료</strong>입니다.<br>
-            민중, 국고, 혁명 열기, 군사력<br>
+            민심, 국고, 혁명 열기, 군사력<br>
             4가지 힘의 균형을 유지하며<br>
             <strong>1799년 나폴레옹 집권 전까지 생존하십시오.</strong>
         </div>
@@ -402,7 +402,7 @@
                 <span class="emoji-layer">🥖</span><div class="stat-bar" id="fill-bread" style="height:50%"></div>
             </div>
             <div class="indicator-dot" id="dot-bread"></div>
-            <div class="stat-label">민중</div>
+            <div class="stat-label">민심</div>
         </div>
         <div class="stat-wrapper">
             <div class="stat-icon" id="icon-money">
@@ -486,7 +486,7 @@
         'diamond': { icon: '💎', name: '왕비의 다이아몬드', desc: '[소모품] 국고가 바닥날 때 비밀 자금으로 +35 회복합니다.' },
         'contract': { icon: '📜', name: '인간과 시민의 권리 선언', desc: '[패시브] 혁명(🔥) 수치가 80을 넘지 않도록 억제합니다.' },
         'cannon': { icon: '💣', name: '방데미에르의 대포', desc: '[패시브] 군사(⚔️) 증가량이 약 1.5배가 됩니다.' },
-        'bread': { icon: '🥖', name: '비상 식량', desc: '[소모품] 거리의 분노가 폭발하기 직전 식량 배급으로 +40 회복합니다.' }
+        'bread': { icon: '🥖', name: '비상 식량', desc: '[소모품] 민심이 무너지기 직전 식량 배급으로 +40 회복합니다.' }
     };
 
     const BALANCE = {
@@ -712,7 +712,7 @@
 
         if (s.bread <= 20 && hasItem('bread')) {
             useItem('bread'); s.bread += 40;
-            showPopup("🥖 비상 식량 사용!", "민중이 등을 돌리자 식량을 풀어 거리를 달랬습니다 (+40)", "🥖");
+            showPopup("🥖 비상 식량 사용!", "민심이 무너지자 식량을 풀어 거리를 달랬습니다 (+40)", "🥖");
             updateStatsUI(); return; 
         }
         if (s.money <= 20 && hasItem('diamond')) {
@@ -721,11 +721,11 @@
             updateStatsUI(); return;
         }
 
-        if (s.bread <= BALANCE.gameOverLow) { deadReason = "민중 봉기"; deadDesc = "빵과 신뢰를 잃은 군중이 거리로 쏟아져 나왔습니다. 혁명 정부의 이름은 더 이상 그들을 설득하지 못했습니다."; }
+        if (s.bread <= BALANCE.gameOverLow) { deadReason = "민심 붕괴"; deadDesc = "빵과 신뢰를 잃은 군중이 거리로 쏟아져 나왔습니다. 혁명 정부의 이름은 더 이상 그들을 설득하지 못했습니다."; }
         else if (s.money <= BALANCE.gameOverLow) { deadReason = "국가 파산"; deadDesc = "세금을 걷을 행정도, 전쟁을 버틸 자금도 남지 않았습니다. 혁명 정부는 재정 붕괴 속에서 무너졌습니다."; }
         else if (s.rev <= BALANCE.gameOverLow) { deadReason = "왕정복고"; deadDesc = "혁명의 명분이 꺼지자 왕당파와 보수 세력이 다시 힘을 얻었습니다. 공화국은 제도도 기억도 되기 전에 밀려났습니다."; }
         else if (s.army <= BALANCE.gameOverLow) { deadReason = "외세 점령"; deadDesc = "전선을 지킬 군대가 무너지자 반혁명 전쟁의 압력이 파리까지 밀려왔습니다. 혁명은 외부의 군홧발 아래 꺾였습니다."; }
-        else if (s.bread >= BALANCE.gameOverHigh) { deadReason = "거리의 정치"; deadDesc = "민중의 요구와 거리의 동원이 의회를 압도했습니다. 정부는 여론을 달래느라 어떤 결정도 오래 유지하지 못했습니다."; }
+        else if (s.bread >= BALANCE.gameOverHigh) { deadReason = "민심 과열"; deadDesc = "민심은 지지를 넘어 거리의 요구와 대중 동원으로 번졌습니다. 의회와 정부는 여론을 달래느라 어떤 결정도 오래 유지하지 못했습니다."; }
         else if (s.money >= BALANCE.gameOverHigh) { deadReason = "재정 독점"; deadDesc = "국고는 찼지만 그 과정에서 세금, 몰수, 특권이 권력의 도구가 되었습니다. 당신은 혁명을 배신한 관료로 몰렸습니다."; }
         else if (s.rev >= BALANCE.gameOverHigh) { deadReason = "공포정치"; deadDesc = "순수한 혁명을 지킨다는 명분이 의심과 숙청으로 번졌습니다. 단두대는 적뿐 아니라 혁명가 자신에게도 향했습니다."; }
         else if (s.army >= BALANCE.gameOverHigh) { deadReason = "군사독재"; deadDesc = "공화국을 지킨다는 명분으로 군대가 정치를 장악했습니다. 혁명의 균형은 총검 앞에서 사라졌습니다."; }
@@ -798,7 +798,7 @@
 
     function getEndingStatsSummary() {
         const s = STATE.stats;
-        return `<br><span class="ending-stats">최종 균형: 민중 ${Math.round(s.bread)} · 국고 ${Math.round(s.money)} · 혁명 ${Math.round(s.rev)} · 군사 ${Math.round(s.army)}</span>`;
+        return `<br><span class="ending-stats">최종 균형: 민심 ${Math.round(s.bread)} · 국고 ${Math.round(s.money)} · 혁명 ${Math.round(s.rev)} · 군사 ${Math.round(s.army)}</span>`;
     }
 
     function triggerEnding(type, desc) {
@@ -808,11 +808,11 @@
         const dEl = document.getElementById('end-desc');
 
         const endingMeta = {
-            "민중 봉기": { icon: "🔥", color: "#e74c3c" },
+            "민심 붕괴": { icon: "🔥", color: "#e74c3c" },
             "국가 파산": { icon: "💰", color: "#d35400" },
             "왕정복고": { icon: "👑", color: "#8e44ad" },
             "외세 점령": { icon: "⚔️", color: "#c0392b" },
-            "거리의 정치": { icon: "📣", color: "#e67e22" },
+            "민심 과열": { icon: "📣", color: "#e67e22" },
             "재정 독점": { icon: "🏦", color: "#d4ac0d" },
             "공포정치": { icon: "⚖️", color: "#c0392b" },
             "군사독재": { icon: "🪖", color: "#7f8c8d" }
