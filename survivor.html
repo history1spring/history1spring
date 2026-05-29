@@ -200,10 +200,103 @@
         .typewriter-cursor::after { content: '█'; animation: blink 0.8s infinite; color: var(--accent-gold); margin-left: 5px;}
         .highlight-text { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.3); }
         .danger { color: #ff4444 !important; animation: blink 1.5s infinite; }
+        .item-result {
+            margin-top: 16px; padding-top: 14px; border-top: 1px solid #514838;
+            display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.9em;
+        }
+        .item-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 10px; border-radius: 999px; background: #151f16;
+            border: 1px solid #4caf50; color: #9be7a3; font-weight: bold;
+        }
+        .ending-record {
+            margin-top: 28px; padding: 18px; background: rgba(0,0,0,0.22);
+            border: 1px solid #5c5042; border-radius: 6px; color: #d8c6a5;
+        }
+        .ending-record h3 { color: var(--accent-gold); margin: 0 0 10px; font-size: 1.05em; }
+        .ending-record ol { margin: 0; padding-left: 22px; }
+        .ending-record li { margin: 8px 0; }
         
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { opacity: 0; height: 0; } to { opacity: 1; height: auto; } }
+
+        @media (max-width: 700px) {
+            body {
+                align-items: flex-start;
+                min-height: 100svh;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            #start-screen, #game-container {
+                width: 100%;
+                max-width: 100%;
+                padding: 22px 16px;
+                box-sizing: border-box;
+            }
+            h1 {
+                font-size: 2em;
+                line-height: 1.15;
+            }
+            .game-header {
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .game-title {
+                font-size: 1.05em;
+                line-height: 1.2;
+            }
+            .stage-box {
+                min-width: 72px;
+                font-size: 0.9em;
+            }
+            .stats-panel {
+                flex-direction: column;
+                gap: 12px;
+                padding: 14px;
+            }
+            .inventory-wrapper {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
+                padding: 14px;
+            }
+            .inv-slots {
+                width: 100%;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .inv-slot {
+                width: 48px;
+                height: 48px;
+                font-size: 1.6em;
+            }
+            #scenario-text {
+                font-size: 1.05em;
+                line-height: 1.7;
+                padding: 16px;
+                margin-bottom: 22px;
+            }
+            .choice-btn, .difficulty-btn {
+                padding: 16px;
+                font-size: 1em;
+                line-height: 1.5;
+            }
+            .choice-btn:hover {
+                padding-left: 16px;
+                border-left-width: 1px;
+            }
+            .tag {
+                float: none;
+                display: inline-block;
+                margin-top: 8px;
+                margin-left: 0;
+            }
+            #feedback-area {
+                padding: 20px;
+                font-size: 1em;
+            }
+        }
     </style>
 </head>
 <body>
@@ -246,7 +339,7 @@
             <div class="stat-bar-bg"><div id="moral-bar" class="stat-bar-fill" style="width:100%; background:#4dabf7;"></div></div>
         </div>
         <div class="stat-box">
-            <div class="stat-header"><span>HUMANITY (인류애)</span> <span id="human-text">??</span></div>
+            <div class="stat-header"><span>HUMANITY (인간성)</span> <span id="human-text">50</span></div>
             <div class="stat-bar-bg"><div id="human-bar" class="stat-bar-fill" style="width:50%; background:#69db7c;"></div></div>
         </div>
     </div>
@@ -274,10 +367,10 @@
         '주머니칼': { icon: '🔪', desc: '주머니칼' },
         '초콜릿': { icon: '🍫', desc: '초콜릿' },
         '금회중시계': { icon: '🕰️', desc: '금회중시계' },
-        '약': { icon: '💊', desc: '항생제' }
+        '약': { icon: '💊', desc: '응급 약품' }
     };
 
-    let state = { difficulty: 'normal', hp: 100, moral: 100, humanity: 50, inventory: [], step: 0, scene: 'intro' };
+    let state = { difficulty: 'normal', hp: 100, moral: 100, humanity: 50, inventory: [], history: [], step: 0, scene: 'intro' };
 
     function selectDifficulty(mode) {
         state.difficulty = mode;
@@ -287,22 +380,102 @@
         updateUI(); renderScene();
     }
 
-    function updateInventoryUI() {
-        const grid = document.getElementById('inv-grid');
-        grid.innerHTML = '';
-        for (let i = 0; i < 4; i++) {
-            const slot = document.createElement('div');
-            if (i < state.inventory.length) {
-                const itemName = state.inventory[i];
-                const item = itemData[itemName] || { icon: '📦', desc: itemName };
-                slot.className = 'inv-slot';
-                slot.innerHTML = `${item.icon}<span class="tooltip">${item.desc}</span>`;
-            } else { slot.className = 'inv-slot empty'; slot.innerText = '+'; }
-            grid.appendChild(slot);
-        }
+    const randomDrops = { 's3': '주머니칼', 's7': '가족사진', 's11': '초콜릿' };
+
+    function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[char]));
     }
 
-    const randomDrops = { 's3': '주머니칼', 's7': '가족사진', 's11': '초콜릿' };
+    function getSceneTitle(sceneId) {
+        if (sceneId === 'intro') return '입대일';
+        const scene = scenarios[sceneId];
+        if (!scene || !scene.text) return sceneId;
+        return scene.text.split('\n')[0].replace(/^\[(\d+)\/20\]\s*/, '');
+    }
+
+    function getChoiceEffects(choice) {
+        const effects = [];
+        if (choice.req) effects.push(`사용: ${choice.req}`);
+        if (choice.loseItem) effects.push(`소모: ${choice.loseItem}`);
+        if (choice.item) effects.push(`획득: ${choice.item}`);
+        if (choice.damage) effects.push(`부상 위험 +${choice.damage}`);
+        if (choice.hp) effects.push(`신체 ${choice.hp > 0 ? '+' : ''}${choice.hp}`);
+        if (choice.bonus) effects.push(`회복 +${choice.bonus}`);
+        if (choice.moral) effects.push(`정신 ${choice.moral > 0 ? '+' : ''}${choice.moral}`);
+        if (choice.humanity) effects.push(`인간성 ${choice.humanity > 0 ? '+' : ''}${choice.humanity}`);
+        if (choice.checkStat) effects.push('정신력 판정');
+        return effects;
+    }
+
+    function getItemResultHtml(choice) {
+        const chips = [];
+        if (choice.req) chips.push(`사용한 물건: ${choice.req}`);
+        if (choice.loseItem) chips.push(`잃은 물건: ${choice.loseItem}`);
+        if (choice.item) chips.push(`새로 얻은 물건: ${choice.item}`);
+        if (chips.length === 0) return '';
+        return `<div class="item-result">${chips.map(text => `<span class="item-chip">${escapeHtml(text)}</span>`).join('')}</div>`;
+    }
+
+    function getEndingProfile(isDead) {
+        if (isDead) {
+            return {
+                title: '전사 통지서',
+                label: '전장의 이름 없는 희생자',
+                body: '귀하의 가족은 전장에서 돌아오지 못했습니다.<br>그가 남긴 선택들은 짧은 기록으로만 남았지만, 그 삶은 숫자 하나로 줄어들 수 없습니다.'
+            };
+        }
+        if (state.humanity >= 80) {
+            return {
+                title: '성자의 귀환',
+                label: '인간성을 지킨 생존자',
+                body: '1918년 11월 11일, 전쟁이 끝났습니다.<br>당신은 살아 돌아왔고, 더 어려운 일도 해냈습니다. 참호 속에서도 사람을 사람으로 보았습니다.<br><br>고향 사람들은 당신을 영웅이라 부르지만, 당신은 조용히 답합니다. <span class="highlight-text">“나는 끝까지 사람이려 했다.”</span>'
+            };
+        }
+        if (state.moral <= 30) {
+            return {
+                title: '부서진 생존자',
+                label: '몸은 돌아왔지만 마음은 전선에 남은 병사',
+                body: '1918년 11월 11일, 총성은 멎었습니다.<br>그러나 당신의 밤에는 여전히 포탄이 떨어집니다. 식탁 앞에서도 흙냄새와 비명소리가 사라지지 않습니다.<br><br>당신은 살아남았습니다. 하지만 <span class="highlight-text">살아남는 일과 회복되는 일은 서로 달랐습니다.</span>'
+            };
+        }
+        if (state.humanity <= 25) {
+            return {
+                title: '냉혹한 베테랑',
+                label: '살아남기 위해 많은 것을 버린 병사',
+                body: '1918년 11월 11일, 당신은 고향으로 돌아왔습니다.<br>살아남기 위해 외면했고, 빼앗았고, 때로는 먼저 쏘았습니다. 사람들은 당신의 침묵을 강인함이라 착각합니다.<br><br>하지만 당신은 알고 있습니다. <span class="highlight-text">전쟁은 당신 안의 어떤 문을 닫아버렸습니다.</span>'
+            };
+        }
+        if (state.hp >= 70 && state.moral >= 70) {
+            return {
+                title: '훈장을 받은 생존자',
+                label: '침착함으로 버틴 베테랑',
+                body: '1918년 11월 11일, 당신은 부대의 생존자 명단에 이름을 올렸습니다.<br>상관은 당신의 침착함과 판단을 칭찬했고, 가슴에는 작은 훈장이 달렸습니다.<br><br>그러나 훈장은 가벼웠고, 기억은 무거웠습니다. <span class="highlight-text">영광보다 오래 남은 것은 얼굴들이었습니다.</span>'
+            };
+        }
+        return {
+            title: '평범한 귀환병',
+            label: '역사의 틈에서 살아남은 병사',
+            body: '1918년 11월 11일, 전쟁이 끝났습니다.<br>당신은 특별한 영웅도, 완전한 악인도 아니었습니다. 춥고 두려운 날들 속에서 흔들리며 선택했고, 운 좋게 살아 돌아왔습니다.<br><br>기차 창밖으로 고향이 보일 때, 당신은 깨닫습니다. <span class="highlight-text">평범하게 살아 돌아온 것 자체가 기적이었다는 것을.</span>'
+        };
+    }
+
+    function getWarRecordHtml() {
+        const recent = state.history.slice(-5);
+        const list = recent.length
+            ? recent.map(entry => {
+                const effects = entry.effects.length ? ` <small>(${escapeHtml(entry.effects.join(', '))})</small>` : '';
+                return `<li><strong>${escapeHtml(entry.stage)}</strong>: ${escapeHtml(entry.choice)}${effects}</li>`;
+            }).join('')
+            : '<li>기록된 선택이 없습니다.</li>';
+        const inventoryText = state.inventory.length ? state.inventory.map(escapeHtml).join(', ') : '남은 물건 없음';
+        return `<div class="ending-record"><h3>나의 전쟁 기록</h3><ol>${list}</ol><p><strong>마지막 상태</strong>: 신체 ${state.hp}, 정신 ${state.moral}, 인간성 ${state.humanity}</p><p><strong>남은 물건</strong>: ${inventoryText}</p></div>`;
+    }
 
     function checkRandomDrop(scene) {
         if (!randomDrops[scene]) return; 
@@ -322,32 +495,33 @@
     // 20단계 시나리오
     const scenarios = {
         'intro': { text: "1914년 8월, 전쟁이 시작되었습니다.\n'낙엽이 지기 전에 집에 돌아온다'는 말을 믿고 입대했습니다.\n떠나는 기차 안, 불안한 마음에 집에서 가져온 물건 하나를 주머니에 넣습니다. 무엇입니까?", choices: [ { text: "어머니가 주신 '가족사진'", next: 's1', item: '가족사진', feedback: "가족사진을 챙겼습니다." }, { text: "아버지가 쓰시던 '주머니칼'", next: 's1', item: '주머니칼', feedback: "주머니칼을 챙겼습니다." }, { text: "동생이 챙겨준 '초콜릿'", next: 's1', item: '초콜릿', feedback: "초콜릿을 챙겼습니다." } ] },
-        's1': { text: "[1/20] 1914년 9월: 끝없는 삽질\n프랑스 전선에 도착했습니다. 전투 대신 삽을 받았습니다.\n적의 포격이 언제 시작될지 모르는 긴박한 상황입니다.", choices: [ { text: "체력을 아끼기 위해 얕게 판다.", next: 's2', hp: +5, moral: -5, feedback: "🩹 [판단 미스] 몸은 편했지만, 얕은 참호는 포격에 취약합니다." }, { text: "손이 터지더라도 깊고 튼튼하게 판다.", next: 's2', hp: -10, moral: +10, feedback: "🛠️ [올바른 판단] 깊은 참호만이 포탄 파편을 막아줍니다." } ] },
-        's2': { text: "[2/20] 1914년 10월: 참호의 불청객\n씻지 못해 온몸이 가렵고, 시체를 먹고 자란 쥐들이 식량을 노립니다.\n어떻게 대처하시겠습니까?", choices: [ { text: "옷을 벗어 털고 찬물로 씻는다.", next: 's3', hp: -5, moral: -5, feedback: "❌ [오답] 차가운 참호에서 씻는 건 저체온증의 지름길입니다. 이(Lice)는 물로 죽지 않습니다." }, { text: "옷 솔기의 이를 촛불로 태워 죽인다.", next: 's3', moral: +5, feedback: "🔥 [정답] 병사들의 일상인 '이 잡기'입니다. 이것만이 해결책입니다." } ] },
+        's1': { text: "[1/20] 1914년 9월: 끝없는 삽질\n프랑스 전선에 도착했습니다. 전투 대신 삽을 받았습니다.\n적의 포격이 언제 시작될지 모르는 긴박한 상황입니다.", choices: [ { text: "체력을 아끼기 위해 얕게 판다.", next: 's2', hp: +5, moral: -5, feedback: "🩹 [위험한 판단] 몸은 편했지만, 얕은 참호는 포격에 취약합니다." }, { text: "손이 터지더라도 깊고 튼튼하게 판다.", next: 's2', hp: -10, moral: +10, feedback: "🛠️ [살아남기 위한 노동] 깊은 참호만이 포탄 파편을 막아줍니다." } ] },
+        's2': { text: "[2/20] 1914년 10월: 참호의 불청객\n씻지 못해 온몸이 가렵고, 시체를 먹고 자란 쥐들이 식량을 노립니다.\n어떻게 대처하시겠습니까?", choices: [ { text: "옷을 벗어 털고 찬물로 씻는다.", next: 's3', hp: -5, moral: -5, feedback: "🥶 [참호의 대가] 차가운 참호에서 씻는 건 저체온증의 지름길입니다. 이(Lice)는 물로 죽지 않습니다." }, { text: "옷 솔기의 이를 촛불로 태워 죽인다.", next: 's3', moral: +5, feedback: "🔥 [병사들의 일상] 참호의 병사들은 옷 솔기에 붙은 이를 불로 잡곤 했습니다." } ] },
         's3': { text: "[3/20] 1914년 11월: 야간 보초\n어둠 속, 철조망에서 부스럭거리는 소리가 들립니다.\n적의 침투일까요?", choices: [ { text: "위험하다. 즉시 사격하여 제압한다.", next: 's4', moral: -10, feedback: "💥 [실수] 단순한 들쥐였습니다. 총성 때문에 아군 위치가 노출되었습니다." }, { text: "숨을 죽이고 끝까지 관찰한다.", next: 's4', moral: +5, feedback: "👀 [냉철함] 바람에 날린 덤불이었습니다. 불필요한 교전을 막았습니다." } ] },
         's4': { text: "[4/20] 1914년 12월 24일: 크리스마스 정전\n적군 참호에서 캐럴이 들립니다. 병사들이 무기를 놓고 나갑니다.\n상부의 명령은 '적과 내통 금지'입니다.", choices: [ { text: "명령을 어기고 나가 선물을 교환한다.", next: 's5', humanity: +30, moral: +20, feedback: "🎄 [역사적 사건] 서부전선 곳곳에서 기적 같은 평화가 찾아왔습니다." }, { text: "함정일 수 있다. 참호를 지킨다.", next: 's5', humanity: -10, feedback: "🛡️ [군인 정신] 안전을 택했지만, 역사상 가장 아름다운 순간을 놓쳤습니다." } ] },
-        's5': { text: "[5/20] 1915년 2월: 진흙탕\n겨울비로 참호가 물바다입니다. 발이 퉁퉁 붓습니다.\n어떻게 하시겠습니까?", choices: [ { text: "체온 유지를 위해 젖은 양말 위에 담요를 덮는다.", next: 's6', damage: 20, feedback: "❌ [오답] 습기가 갇혀 발이 더 빨리 썩습니다. 참호족의 원인은 습기입니다." }, { text: "마른 양말을 신고 고래 기름을 바른다.", next: 's6', bonus: 10, feedback: "✅ [정답] 발을 건조하게 하고 기름으로 코팅해야 합니다." } ] },
+        's5': { text: "[5/20] 1915년 2월: 진흙탕\n겨울비로 참호가 물바다입니다. 발이 퉁퉁 붓습니다.\n어떻게 하시겠습니까?", choices: [ { text: "체온 유지를 위해 젖은 양말 위에 담요를 덮는다.", next: 's6', damage: 20, feedback: "🦶 [참호족 악화] 습기가 갇혀 발이 더 빨리 썩습니다. 참호족의 원인은 오래 지속된 습기입니다." }, { text: "마른 양말을 신고 고래 기름을 바른다.", next: 's6', bonus: 10, feedback: "🧦 [현장의 처치] 발을 건조하게 하고 기름으로 코팅해야 버틸 수 있습니다." } ] },
         's6': { text: "[6/20] 1915년 3월: 무인 지대의 전리품\n순찰 중 전사한 독일군 장교의 시신에서 '금회중시계'를 발견했습니다.", choices: [ { text: "죽은 자의 물건이다. 건드리지 않는다.", next: 's7', humanity: +20, feedback: "🕊️ [양심] 빈손으로 돌아왔지만, 존엄은 지켰습니다." }, { text: "챙긴다. 전쟁터에서 양심이 밥 먹여주나?", next: 's7', item: '금회중시계', humanity: -20, feedback: "💰 [획득] '금회중시계'를 챙겼습니다." } ] },
-        's7': { text: "[7/20] 1915년 4월: 이프르의 안개\n독일군 진영에서 녹황색 가스(염소)가 피어오릅니다.\n방독면은 아직 없습니다.", choices: [ { text: "본능적으로 참호 바닥 깊은 곳에 엎드린다.", next: 's8', damage: 40, feedback: "❌ [사망 위험] 독가스는 공기보다 무거워 바닥에 고입니다." }, { text: "오줌 묻은 천으로 입을 막고 높은 곳으로 뛴다.", next: 's8', hp: -10, bonus: 10, feedback: "✅ [과학적 대처] 암모니아가 염소를 중화시킵니다." } ] },
-        's8': { text: "[8/20] 1915년 밤: 철조망\n정찰 중 옷이 철조망에 걸렸습니다. 적의 조명탄이 터지기 직전입니다.", choices: [ { text: "살점이 뜯기더라도 억지로 몸을 비튼다.", next: 's9', damage: 20, feedback: "🩸 [부상] 탈출했지만 깊은 상처를 입었습니다." }, { text: "주머니칼을 꺼내 철조망을 끊는다.", next: 's9', req: '주머니칼', bonus: 5, feedback: "✨ [아이템 사용] 칼 덕분에 조용히 탈출했습니다." } ] },
-        's9': { text: "[9/20] 1916년 2월: 베르됭 전투\n3일 밤낮으로 포탄이 떨어집니다. 공포가 당신을 집어삼키려 합니다.", choices: [ { text: "참호 구석에서 귀를 막고 비명을 지른다.", next: 's10', moral: -30, feedback: "📉 [멘탈 붕괴] 공포에 잠식당했습니다." }, { text: "가족사진을 보며 '살아서 돌아간다'고 되뇐다.", next: 's10', req: '가족사진', moral: +30, feedback: "✨ [아이템 사용] 가족의 얼굴이 공포를 이겨낼 힘을 주었습니다." } ] },
-        's10': { text: "[10/20] 1916년 7월: 솜 전투 (준비)\n사령부 명령: '적진은 초토화되었다. 뛰지 말고 걸어서 점령하라.'\n믿으시겠습니까?", choices: [ { text: "명령은 절대적이다. 지시대로 걷는다.", next: 's11', moral: +10, feedback: "🫡 [충성] 명령에 따르기로 했습니다. 최악의 오판이었습니다." }, { text: "불안하다. 뛸 준비를 한다.", next: 's11', hp: +5, moral: -5, feedback: "🤔 [의심] 당신의 직감이 맞았습니다." } ] },
-        's11': { text: "[11/20] 1916년 7월: 솜 전투 (돌격)\n참호 위로 올라가자마자 독일군 기관총이 불을 뿜습니다.", choices: [ { text: "명령대로 대열을 유지하며 걷는다.", next: 's12', damage: 60, feedback: "💀 [참사] 이날 영국군 5만 8천 명이 사상당했습니다." }, { text: "즉시 포탄 구덩이로 뛰어들어 숨는다.", next: 's12', bonus: 10, feedback: "✅ [생존] 빗발치는 총탄 속에서 엄폐만이 살길입니다." } ] },
+        's7': { text: "[7/20] 1915년 4월: 이프르의 안개\n독일군 진영에서 녹황색 가스(염소)가 피어오릅니다.\n방독면은 아직 없습니다.", choices: [ { text: "본능적으로 참호 바닥 깊은 곳에 엎드린다.", next: 's8', damage: 40, feedback: "☠️ [치명적인 본능] 독가스는 공기보다 무거워 바닥에 고입니다." }, { text: "오줌 묻은 천으로 입을 막고 높은 곳으로 뛴다.", next: 's8', hp: -10, bonus: 10, feedback: "🧪 [임시 대응] 암모니아가 염소를 어느 정도 중화해 숨 쉴 시간을 벌어줍니다." } ] },
+        's8': { text: "[8/20] 1915년 밤: 철조망\n정찰 중 옷이 철조망에 걸렸습니다. 적의 조명탄이 터지기 직전입니다.", choices: [ { text: "살점이 뜯기더라도 억지로 몸을 비튼다.", next: 's9', damage: 20, feedback: "🩸 [거친 탈출] 빠져나오긴 했지만 깊은 상처를 입었습니다." }, { text: "주머니칼을 꺼내 철조망을 끊는다.", next: 's9', req: '주머니칼', bonus: 5, feedback: "🔪 [주머니칼 사용] 칼날로 철조망을 끊어 소리 없이 빠져나왔습니다." } ] },
+        's9': { text: "[9/20] 1916년 2월: 베르됭 전투\n3일 밤낮으로 포탄이 떨어집니다. 공포가 당신을 집어삼키려 합니다.", choices: [ { text: "참호 구석에서 귀를 막고 비명을 지른다.", next: 's10', moral: -30, feedback: "📉 [정신의 균열] 공포에 잠식당했습니다." }, { text: "가족사진을 보며 '살아서 돌아간다'고 되뇐다.", next: 's10', req: '가족사진', moral: +30, feedback: "🖼️ [가족사진 사용] 가족의 얼굴이 공포를 이겨낼 힘을 주었습니다." } ] },
+        's10': { text: "[10/20] 1916년 7월: 솜 전투 (준비)\n사령부 명령: '적진은 초토화되었다. 뛰지 말고 걸어서 점령하라.'\n믿으시겠습니까?", choices: [ { text: "명령은 절대적이다. 지시대로 걷는다.", next: 's11', moral: +10, feedback: "🎖️ [충성] 명령에 따르기로 했습니다. 최악의 오판이었습니다." }, { text: "불안하다. 뛸 준비를 한다.", next: 's11', hp: +5, moral: -5, feedback: "🤔 [의심] 당신의 직감이 맞았습니다." } ] },
+        's11': { text: "[11/20] 1916년 7월: 솜 전투 (돌격)\n참호 위로 올라가자마자 독일군 기관총이 불을 뿜습니다.", choices: [ { text: "명령대로 대열을 유지하며 걷는다.", next: 's12', damage: 60, feedback: "💀 [전장의 참사] 이날 영국군 5만 8천 명이 사상당했습니다." }, { text: "즉시 포탄 구덩이로 뛰어들어 숨는다.", next: 's12', bonus: 10, feedback: "🕳️ [본능적인 엄폐] 빗발치는 총탄 속에서 몸을 낮추는 것만이 살길입니다." } ] },
         's12': { text: "[12/20] 1916년: 부상병의 절규\n후퇴 중 다친 신병이 살려달라고 애원합니다.\n그를 부축하면 당신도 위험합니다.", choices: [ { text: "미안하다고 말하고 혼자 뛴다.", next: 's13', moral: -20, humanity: -20, feedback: "🏃‍♂️ [생존] 살았지만 죄책감은 평생 남을 것입니다." }, { text: "위험을 감수하고 업고 뛴다.", next: 's13', hp: -20, humanity: +30, feedback: "🤝 [전우애] 어깨에 부상을 입었지만 전우를 구했습니다." } ] },
-        's13': { text: "[13/20] 1917년: 순무의 겨울\n보급이 끊겼습니다. 굶주린 소녀가 당신을 쳐다봅니다.\n당신도 배가 고픕니다.", choices: [ { text: "나 먹을 것도 없다. 외면한다.", next: 's14', humanity: -20, feedback: "💔 [비정함] 전쟁은 사람을 이기적으로 만듭니다." }, { text: "아껴둔 초콜릿을 꺼내 준다.", next: 's14', req: '초콜릿', humanity: +40, moral: +10, feedback: "✨ [아이템 사용] 소녀의 미소에 배고픔을 잠시 잊습니다." } ] },
-        's14': { text: "[14/20] 1917년: 암시장 거래\n보급 부대가 귀한 '항생제'를 가지고 있습니다.\n대가를 지불해야 합니다.", choices: [ { text: "거래할 물건이 없다.", next: 's15', feedback: "🚶 [빈손] 아쉽게도 거래를 하지 못했습니다." }, { text: "[금회중시계]를 주고 약을 구한다.", next: 's15', req: '금회중시계', item: '약', loseItem: '금회중시계', feedback: "💊 [거래] 훔친 시계를 팔아 약을 구했습니다." }, { text: "[초콜릿]을 주고 약을 구한다.", next: 's15', req: '초콜릿', item: '약', loseItem: '초콜릿', feedback: "🍫 [정당한 거래] 아껴둔 식량으로 약을 구했습니다." } ] },
+        's13': { text: "[13/20] 1917년: 순무의 겨울\n보급이 끊겼습니다. 굶주린 소녀가 당신을 쳐다봅니다.\n당신도 배가 고픕니다.", choices: [ { text: "나 먹을 것도 없다. 외면한다.", next: 's14', humanity: -20, feedback: "💔 [굳어지는 마음] 전쟁은 사람을 이기적으로 만듭니다." }, { text: "아껴둔 초콜릿을 꺼내 준다.", next: 's14', req: '초콜릿', humanity: +40, moral: +10, feedback: "🍫 [초콜릿 사용] 소녀의 미소에 배고픔을 잠시 잊습니다." } ] },
+        's14': { text: "[14/20] 1917년: 암시장 거래\n보급 부대가 귀한 '응급 약품'을 가지고 있습니다.\n대가를 지불해야 합니다.", choices: [ { text: "거래할 물건이 없다.", next: 's15', feedback: "🚶 [빈손] 아쉽게도 거래를 하지 못했습니다." }, { text: "[금회중시계]를 주고 약을 구한다.", next: 's15', req: '금회중시계', item: '약', loseItem: '금회중시계', feedback: "💊 [거래] 훔친 시계를 팔아 붕대와 소독약을 구했습니다." }, { text: "[초콜릿]을 주고 약을 구한다.", next: 's15', req: '초콜릿', item: '약', loseItem: '초콜릿', feedback: "🍫 [정당한 거래] 아껴둔 식량으로 붕대와 소독약을 구했습니다." } ] },
         's15': { text: "[15/20] 1917년: 추락한 조종사\n추락한 독일군 조종사가 기어 나옵니다. 부상당했고 무기가 없습니다.", choices: [ { text: "적이다. 즉시 사살한다.", next: 's16', humanity: -20, feedback: "🔫 [증오] 무방비 상태의 적을 사살했습니다." }, { text: "포로로 잡는다.", next: 's16', humanity: +20, feedback: "⚖️ [기사도] 국제법에 따라 포로로 대우했습니다." } ] },
-        's16': { text: "[16/20] 1917년: 강철 괴물 (탱크)\n아군의 신무기 '탱크'가 등장했습니다.\n보병 진격 명령!", choices: [ { text: "사기를 높이기 위해 탱크보다 앞장서서 달린다.", next: 's17', damage: 40, feedback: "❌ [위험] 탱크 앞은 적의 화력이 집중되는 곳입니다." }, { text: "탱크 뒤에 바짝 붙어 따라간다.", next: 's17', bonus: 10, feedback: "✅ [엄폐] 탱크는 훌륭한 이동식 방패입니다." } ] },
-        's17': { text: "[17/20] 1918년 3월: 루덴도르프 대공세\n독일군 정예 돌격대가 아군 참호를 돌파했습니다.\n전선이 무너지고 있습니다!", choices: [ { text: "무너진 참호에서 끝까지 사수한다.", next: 's18', damage: 50, feedback: "💀 [피해] 적의 집중 포화에 휩쓸려 큰 부상을 입었습니다. 무모한 저항이었습니다." }, { text: "2선으로 후퇴하여 방어선을 재구축한다.", next: 's18', bonus: 10, feedback: "✅ [전술적 후퇴] '유동적 방어' 전술로 병력을 보존했습니다." } ] },
-        's18': { text: "[18/20] 1918년 봄: 스페인 독감\n전염병이 돕니다. 고열이 나고 기침이 멈추지 않습니다.\n약이 있습니까?", choices: [ { text: "약은 없다. 정신력으로 버틴다.", next: 's19', hp: -10, checkStat: 'moral', feedback: "🤒 [투혼] 강인한 정신력으로 이겨냈지만 후유증이 남았습니다." }, { text: "아껴둔 '약'을 먹는다.", next: 's19', req: '약', bonus: 30, feedback: "✨ [아이템 사용] 약 덕분에 씻은 듯이 나았습니다!" } ] },
+        's16': { text: "[16/20] 1917년: 강철 괴물 (탱크)\n아군의 신무기 '탱크'가 등장했습니다.\n보병 진격 명령!", choices: [ { text: "사기를 높이기 위해 탱크보다 앞장서서 달린다.", next: 's17', damage: 40, feedback: "🎯 [무모한 용기] 탱크 앞은 적의 화력이 집중되는 곳입니다." }, { text: "탱크 뒤에 바짝 붙어 따라간다.", next: 's17', bonus: 10, feedback: "🛡️ [움직이는 엄폐물] 탱크는 훌륭한 이동식 방패입니다." } ] },
+        's17': { text: "[17/20] 1918년 3월: 루덴도르프 대공세\n독일군 정예 돌격대가 아군 참호를 돌파했습니다.\n전선이 무너지고 있습니다!", choices: [ { text: "무너진 참호에서 끝까지 사수한다.", next: 's18', damage: 50, feedback: "💀 [버티기엔 늦은 자리] 적의 집중 포화에 휩쓸려 큰 부상을 입었습니다. 무모한 저항이었습니다." }, { text: "2선으로 후퇴하여 방어선을 재구축한다.", next: 's18', bonus: 10, feedback: "↩️ [전술적 후퇴] '유동적 방어' 전술로 병력을 보존했습니다." } ] },
+        's18': { text: "[18/20] 1918년 봄: 스페인 독감\n전염병이 돕니다. 고열이 나고 기침이 멈추지 않습니다.\n쓸 수 있는 약품이 있습니까?", choices: [ { text: "약은 없다. 정신력으로 버틴다.", next: 's19', hp: -10, checkStat: 'moral', feedback: "🤒 [버티는 밤] 강인한 정신력으로 버텼지만 후유증이 남았습니다." }, { text: "아껴둔 '약'을 사용한다.", next: 's19', req: '약', bonus: 30, feedback: "💊 [응급 약품 사용] 약품 덕분에 열이 조금 내리고 버틸 힘을 얻었습니다." } ] },
         's19': { text: "[19/20] 1918년: 백일 공세\n독일군이 무너지고 있습니다. 항복하는 소년병과 마주쳤습니다.", choices: [ { text: "복수다. 쏜다.", next: 's20', humanity: -40, feedback: "🔥 [복수] 분노는 해소되었지만 손은 피로 물들었습니다." }, { text: "총을 거두고 보내준다.", next: 's20', humanity: +30, feedback: "🕊️ [용서] 당신은 끝까지 인간다움을 지켰습니다." } ] },
-        's20': { text: "[20/20] 1918년 11월 11일: 마지막 15분\n11시에 휴전입니다. 현재 10시 45분.\n소대장이 마지막 돌격을 명령합니다.", choices: [ { text: "명령에 따라 마지막 돌격을 감행한다.", next: 'ending', damage: 100, feedback: "☠️ [비극] 휴전 2분 전 전사했습니다. 1차 대전의 마지막 전사자입니다." }, { text: "척만 하고 포탄 구덩이에 엎드린다.", next: 'ending', bonus: 10, feedback: "🔔 [종전] 11시 정각, 나팔 소리가 울립니다. 살았습니다." } ] },
+        's20': { text: "[20/20] 1918년 11월 11일: 마지막 15분\n11시에 휴전입니다. 현재 10시 45분.\n소대장이 마지막 돌격을 명령합니다.", choices: [ { text: "명령에 따라 마지막 돌격을 감행한다.", next: 'ending', damage: 100, feedback: "☠️ [비극] 휴전 직전 전사했습니다. 전쟁의 마지막 순간에도 희생자는 계속 나왔습니다." }, { text: "척만 하고 포탄 구덩이에 엎드린다.", next: 'ending', bonus: 10, feedback: "🔔 [종전] 11시 정각, 나팔 소리가 울립니다. 살았습니다." } ] },
         'ending': {}
     };
 
     function renderScene() {
         if (state.hp <= 0) { showEnding(true); return; }
         if (state.scene === 'ending') { showEnding(false); return; }
+        document.getElementById('random-event-msg').style.display = 'none';
         checkRandomDrop(state.scene);
         const data = scenarios[state.scene];
         document.getElementById('scenario-text').innerText = data.text;
@@ -387,6 +561,13 @@
     }
 
     function handleChoice(choice) {
+        const currentStageTitle = getSceneTitle(state.scene);
+        state.history.push({
+            stage: currentStageTitle,
+            choice: choice.text,
+            effects: getChoiceEffects(choice)
+        });
+
         if (choice.item) state.inventory.push(choice.item);
         if (choice.loseItem) {
             const idx = state.inventory.indexOf(choice.loseItem);
@@ -422,7 +603,7 @@
         const choicesDiv = document.getElementById('choices');
         choicesDiv.innerHTML = '';
         const fbArea = document.getElementById('feedback-area');
-        fbArea.innerHTML = `<span class="fact-title">📝 종군 일지</span>${feedback}`;
+        fbArea.innerHTML = `<span class="fact-title">📝 종군 일지</span>${feedback}${getItemResultHtml(choice)}`;
         fbArea.style.display = 'block';
 
         const nextBtn = document.createElement('button');
@@ -502,24 +683,17 @@
     function showEnding(isDead) {
         document.getElementById('choices').innerHTML = '<button class="choice-btn next-btn" onclick="location.reload()">처음부터 다시 하기</button>';
         document.getElementById('feedback-area').style.display = 'none';
-        
-        let title = isDead ? "전사 통지서" : "생존자의 편지";
-        let content = "";
-        
-        if(isDead) {
-            content = "귀하의 가족은 1차 세계대전의 전장에서 명예롭게 전사하였습니다.<br>그의 희생은 역사에 영원히 기록될 것입니다.";
-        } else {
-            content = "1918년 11월 11일, 전쟁이 끝났습니다.<br>4년의 지옥에서 살아남아 고향으로 돌아갑니다.<br><br>";
-            if(state.humanity >= 80) content += "저는 전쟁터에서도 인간성을 잃지 않은 <span class='highlight-text'>성자</span>였습니다.<br>";
-            else if(state.moral <= 30) content += "몸은 돌아왔지만, 제 영혼은 <span class='highlight-text'>부서졌습니다</span>.<br>";
-            else content += "저는 역사의 산증인, <span class='highlight-text'>베테랑</span>입니다.<br>";
-            
-            if(state.inventory.includes('가족사진')) content += "<br>품속의 가족사진을 꺼내 입을 맞춥니다.";
-            if(state.inventory.includes('금회중시계')) content += "<br>주머니 속 훔친 시계가 무겁게 느껴집니다.";
-        }
-        
-        document.getElementById('scenario-text').innerHTML = `<h2 style="color:#c5a065;">${title}</h2><div id="ending-typewriter" style="line-height:2.0; font-size:1.1em;"></div>`;
-        typeWriter(content, 'ending-typewriter', 40);
+
+        const ending = getEndingProfile(isDead);
+        let content = ending.body;
+        if (state.inventory.includes('가족사진')) content += "<br><br>품속의 가족사진은 구겨졌지만, 마지막까지 당신을 붙들어 주었습니다.";
+        if (state.inventory.includes('금회중시계')) content += "<br>주머니 속 금회중시계가 유난히 무겁게 느껴집니다. 살아남았다는 안도감 뒤로, 양심의 무게가 오래 남습니다.";
+
+        document.getElementById('stage-text').innerText = isDead ? '전사' : '종전';
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('scenario-text').innerHTML = `<h2 style="color:#c5a065;">${ending.title}</h2><div class="highlight-text" style="font-weight:bold; margin-bottom:14px;">${ending.label}</div><div id="ending-typewriter" style="line-height:2.0; font-size:1.1em;"></div><div id="ending-record"></div>`;
+        document.getElementById('ending-record').innerHTML = getWarRecordHtml();
+        typeWriter(content, 'ending-typewriter', 28);
     }
 </script>
 

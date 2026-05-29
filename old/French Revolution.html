@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>French Revolution</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+
+        :root {
+            --bg-color: #2c3e50;
+            --card-bg: #fdf5e6;
+            --text-color: #2c3e50;
+            --accent: #c0392b; 
+            --bar-fill: rgba(39, 174, 96, 0.9);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Nanum Myeongjo', serif;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden;
+            user-select: none;
+        }
+
+        /* [1] 시작 화면 */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #002395 0%, #1a1a1a 50%, #ed2939 100%);
+            z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center; padding: 20px;
+        }
+        .start-box {
+            background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.5); box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            max-width: 500px; width: 95%; backdrop-filter: blur(5px); animation: fadeIn 1s ease-out;
+        }
+        .start-btn {
+            padding: 15px 50px; font-size: 1.3rem; font-weight: bold; cursor: pointer;
+            background: #fdf5e6; color: #2c3e50; border: none; border-radius: 50px;
+            font-family: 'Nanum Myeongjo'; transition: transform 0.2s; margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .start-btn:hover { transform: scale(1.05); }
+
+        /* [2] 게임 화면 */
+        #game-screen {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; padding-top: 10px; animation: slideUp 0.8s ease-out;
+        }
+
+        /* 스탯 UI */
+        .stats-container { display: flex; gap: 10px; margin-bottom: 20px; width: 340px; justify-content: space-between; }
+        .stat-wrapper { 
+            display: flex; flex-direction: column; align-items: center; gap: 5px; width: 25%; 
+            position: relative; 
+        }
+        
+        .stat-icon {
+            width: 50px; height: 50px; border-radius: 50%; background: #34495e; color: white;
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            overflow: hidden; 
+            border: 2px solid #ecf0f1; z-index: 1;
+        }
+        
+        .indicator-dot {
+            position: absolute; top: 0px; right: 5px; width: 12px; height: 12px;
+            background-color: #f1c40f; border: 2px solid #fff; border-radius: 50%;
+            display: none; z-index: 10; box-shadow: 0 0 5px #f1c40f; 
+            animation: bounceDot 0.5s infinite alternate;
+        }
+
+        .emoji-layer { position: relative; z-index: 5; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .stat-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; background: var(--bar-fill); height: 50%; 
+            transition: height 0.5s; z-index: 1; opacity: 0.8;
+        }
+        .stat-danger .stat-bar { background: #e74c3c !important; animation: pulseBar 0.5s infinite alternate; }
+        .stat-label { font-size: 0.8rem; font-weight: bold; color: #ecf0f1; text-shadow: 1px 1px 2px black; }
+
+        /* 인벤토리 */
+        .inventory-container {
+            display: flex; gap: 10px; margin-bottom: 20px; width: 340px; justify-content: center;
+            background: rgba(0,0,0,0.2); padding: 8px; border-radius: 10px;
+            position: relative; z-index: 50; /* 인벤토리 자체 레이어 높임 */
+        }
+        .item-slot {
+            width: 45px; height: 45px; background: rgba(255,255,255,0.1); border: 1px dashed #7f8c8d;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; cursor: help; position: relative; transition: all 0.3s;
+        }
+        .item-slot.active { background: rgba(255,255,255,0.9); border: 2px solid #f1c40f; box-shadow: 0 0 15px #f1c40f; transform: scale(1.1); cursor: pointer; }
+        
+        /* 툴팁 스타일 (수정됨) */
+        .item-slot[data-tooltip]:hover::after {
+            content: attr(data-tooltip); 
+            position: absolute; 
+            bottom: 130%; /* 슬롯보다 더 위로 */
+            left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.95); 
+            color: #fff; 
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 0.85rem; 
+            z-index: 9999; /* 최상단 보장 */
+            pointer-events: none;
+            
+            /* 줄바꿈 및 크기 설정 */
+            white-space: pre-wrap; /* 줄바꿈 문자(\n) 인식 */
+            width: 200px; /* 넉넉한 너비 */
+            text-align: center;
+            line-height: 1.4;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 1px solid #7f8c8d;
+        }
+        /* 툴팁 화살표 */
+        .item-slot[data-tooltip]:hover::before {
+            content: ''; position: absolute; bottom: 110%; left: 50%; margin-left: -6px;
+            border-width: 6px; border-style: solid; border-color: transparent transparent transparent transparent;
+            border-top-color: rgba(0,0,0,0.95); z-index: 9999;
+        }
+
+        /* 카드 영역 */
+        .game-area { position: relative; width: 320px; height: 440px; margin-top: 20px; z-index: 1; }
+        .year-display {
+            position: absolute; top: -50px; width: 100%; text-align: center;
+            color: #ecf0f1; font-family: 'Cinzel'; font-size: 2.2rem; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .card {
+            width: 100%; height: 100%; background: var(--card-bg); border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: absolute; top: 0; left: 0;
+            display: flex; flex-direction: column; align-items: center; padding: 25px;
+            border: 6px solid #8b7355; 
+        }
+        .card-image {
+            width: 100%; height: 160px; background: #ecf0f1; margin-bottom: 20px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 5rem;
+            color: #7f8c8d; border: 2px dashed #bdc3c7; position: relative;
+        }
+        .npc-badge {
+            position: absolute; top: -10px; right: -10px; background: #e67e22; color: white;
+            padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3); transform: rotate(10deg);
+        }
+        .card-title {
+            font-family: 'Cinzel', serif; font-size: 1.4rem; margin-bottom: 10px; text-align: center;
+            border-bottom: 2px double var(--accent); padding-bottom: 5px; color: var(--accent); width: 100%;
+        }
+        .card-desc { 
+            font-size: 1.1rem; text-align: center; line-height: 1.5; flex: 1; 
+            display: flex; align-items: center; justify-content: center; 
+            word-break: normal; word-wrap: break-word; overflow-wrap: break-word;
+        }
+
+        /* 컨트롤 */
+        .controls { width: 320px; display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 20px; }
+        .btn {
+            width: 48%; min-height: 60px; padding: 10px; border: none; border-radius: 12px;
+            font-family: 'Nanum Myeongjo'; font-weight: bold; font-size: 0.95rem;
+            cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,0.3); transition: transform 0.1s; color: white;
+            display: flex; align-items: center; justify-content: center; text-align: center; word-break: keep-all; line-height: 1.3;
+        }
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+        .btn-left { background: #c0392b; }
+        .btn-right { background: #27ae60; }
+
+        /* 애니메이션 */
+        .swipe-left { transform: translateX(-150%) rotate(-30deg) !important; opacity: 0; transition: 0.3s ease-in !important; }
+        .swipe-right { transform: translateX(150%) rotate(30deg) !important; opacity: 0; transition: 0.3s ease-in !important; }
+
+        /* 팝업 */
+        #ending-overlay, #item-popup, #passive-popup {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 300;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center; padding: 30px;
+        }
+        #item-popup, #passive-popup { background: rgba(0,0,0,0.85); z-index: 200; }
+        .pop-card { background: #fff; color: #333; padding: 30px; border-radius: 20px; width: 320px; box-shadow: 0 0 50px rgba(255,255,255,0.2); animation: popIn 0.3s; }
+
+        @keyframes pulseBar { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity:0; } 100% { transform: scale(1); opacity:1; } }
+        @keyframes bounceDot { 0% { transform: scale(1); } 100% { transform: scale(1.3); } }
+
+    </style>
+</head>
+<body>
+
+<div id="start-screen">
+    <div class="start-box">
+        <div style="font-size:4rem; margin-bottom:15px;">🇫🇷</div>
+        <h1 style="font-family:'Cinzel'; font-size:2.5rem; margin:0; text-shadow:2px 2px 0 #c0392b;">RÉVOLUTION<br>1789-1799</h1>
+        <p style="color:#ddd; font-style:italic;">"자유가 아니면 죽음을"</p>
+        <div style="font-size:1.1rem; line-height:1.8; margin:30px 0; color:#ecf0f1; border-top:1px solid #777; border-bottom:1px solid #777; padding:20px 0;">
+            당신은 혁명의 소용돌이 속에 선 <strong>운명의 조정자</strong>입니다.<br>
+            민심, 국고, 혁명 열기, 군사력<br>
+            4가지 힘의 균형을 유지하며<br>
+            <strong>1799년 나폴레옹 집권 전까지 생존하십시오.</strong>
+        </div>
+        <button class="start-btn" onclick="startGame()">혁명의 소용돌이로 (START)</button>
+    </div>
+</div>
+
+<div id="game-screen">
+    <div class="stats-container">
+        <div class="stat-wrapper">
+            <div class="stat-icon" id="icon-bread">
+                <span class="emoji-layer">🥖</span><div class="stat-bar" id="fill-bread" style="height:50%"></div>
+            </div>
+            <div class="indicator-dot" id="dot-bread"></div>
+            <div class="stat-label">민심</div>
+        </div>
+        <div class="stat-wrapper">
+            <div class="stat-icon" id="icon-money">
+                <span class="emoji-layer">💰</span><div class="stat-bar" id="fill-money" style="height:50%"></div>
+            </div>
+            <div class="indicator-dot" id="dot-money"></div>
+            <div class="stat-label">국고</div>
+        </div>
+        <div class="stat-wrapper">
+            <div class="stat-icon" id="icon-rev">
+                <span class="emoji-layer">🔥</span><div class="stat-bar" id="fill-rev" style="height:50%"></div>
+            </div>
+            <div class="indicator-dot" id="dot-rev"></div>
+            <div class="stat-label">혁명</div>
+        </div>
+        <div class="stat-wrapper">
+            <div class="stat-icon" id="icon-army">
+                <span class="emoji-layer">⚔️</span><div class="stat-bar" id="fill-army" style="height:50%"></div>
+            </div>
+            <div class="indicator-dot" id="dot-army"></div>
+            <div class="stat-label">군사</div>
+        </div>
+    </div>
+
+    <div class="inventory-container">
+        <div class="item-slot" id="slot-0" onclick="showItemDesc(this)"></div>
+        <div class="item-slot" id="slot-1" onclick="showItemDesc(this)"></div>
+        <div class="item-slot" id="slot-2" onclick="showItemDesc(this)"></div>
+    </div>
+
+    <div class="game-area">
+        <div class="year-display" id="year-display">1789</div>
+        <div class="card" id="current-card">
+            <div class="card-image" id="card-img">👑</div>
+            <div id="npc-badge" class="npc-badge" style="display:none;">NPC</div>
+            <div class="card-title" id="card-speaker">Speaker</div>
+            <div class="card-desc" id="card-text">Text</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-left" id="btn-left" 
+            onmouseenter="previewEffect('left')" onmouseleave="clearPreview()"
+            onclick="playerSwipe('left')">좌측 선택</button>
+        <button class="btn btn-right" id="btn-right" 
+            onmouseenter="previewEffect('right')" onmouseleave="clearPreview()"
+            onclick="playerSwipe('right')">우측 선택</button>
+    </div>
+</div>
+
+<div id="item-popup">
+    <div class="pop-card">
+        <div style="font-size:4rem; margin-bottom:10px;" id="popup-icon">🎁</div>
+        <h2 style="margin:0 0 10px 0; color:var(--accent);" id="popup-title">아이템 획득!</h2>
+        <p id="popup-desc" style="font-size:1rem; line-height:1.5;">설명</p>
+        <button class="btn" style="background:#2c3e50; width:100%; margin-top:20px;" onclick="closePopup()">확인</button>
+    </div>
+</div>
+
+<div id="passive-popup">
+    <div class="pop-card" style="border: 3px solid #2ecc71;">
+        <div style="font-size:4rem; margin-bottom:10px;" id="passive-icon">🛡️</div>
+        <h2 style="margin:0 0 10px 0; color:#2ecc71;" id="passive-title">아이템 효과 발동!</h2>
+        <p id="passive-desc" style="font-size:1rem; line-height:1.5;">설명</p>
+    </div>
+</div>
+
+<div id="ending-overlay">
+    <div style="font-size:5rem; margin-bottom:20px;" id="end-icon">💀</div>
+    <h1 style="font-family:'Cinzel'; margin:0; color:#e74c3c;" id="end-reason">GAME OVER</h1>
+    <p id="end-desc" style="font-size:1.2rem; margin:20px 0; max-width:80%;">설명</p>
+    <button class="btn" style="background:white; color:black; width:auto; padding:15px 40px;" onclick="location.reload()">처음으로</button>
+</div>
+
+<script>
+    const STATE = { year: 1789, stats: { bread: 50, money: 50, rev: 50, army: 50 }, items: [], deckIndex: 0 };
+
+    const ITEMS = {
+        'diamond': { icon: '💎', name: '마리 앙투아네트의 다이아', desc: '[패시브] 국고(💰) 감소량을 절반으로 줄여줍니다.' },
+        'contract': { icon: '📜', name: '인간과 시민의 권리 선언', desc: '[패시브] 혁명(🔥) 수치가 80을 넘지 않도록 억제합니다.' },
+        'cannon': { icon: '💣', name: '나폴레옹의 대포', desc: '[패시브] 군사(⚔️) 증가량이 2배가 됩니다.' },
+        'bread': { icon: '🥖', name: '비상 식량', desc: '[소모품] 민심(🥖)이 0이 될 때 자동 사용하여 +40 회복합니다.' }
+    };
+
+    // [카드 덱]
+    const HISTORICAL_DECK = [
+        { year: 1789, speaker: "재무 장관 네케르", img: "📉", isNpc: true, text: "각하, 국고가 비었습니다. 세금을 걷을까요?", left: { text: "그럴 순 없소!", effect: { bread: 10, money: -20, rev: 5 } }, right: { text: "어쩔 수 없군. 걷어라.", effect: { bread: -25, money: 20, rev: 15 } } },
+        { year: 1789, speaker: "삼부회", img: "🗳️", text: "제3신분이 머릿수 표결을 요구합니다.", left: { text: "무시해!", effect: { rev: 15, bread: -5 } }, right: { text: "그들의 말을 들어보자.", effect: { rev: -5, money: -5 } } },
+        { year: 1789, speaker: "테니스 코트", img: "✋", text: "의원들이 헌법 제정 전엔 해산하지 않겠다고 합니다.", left: { text: "군대로 쫓아내라!", effect: { rev: 25, bread: -10 } }, right: { text: "방관하라.", effect: { rev: 5, army: -5 } } },
+        { year: 1789, speaker: "바스티유", img: "🏰", text: "성난 군중이 무기를 찾아 바스티유로 몰려갑니다!", left: { text: "쏘지 마라!", effect: { rev: 20, army: -15, bread: 10 } }, right: { text: "진압하라!", effect: { rev: 5, army: 10, bread: -30 } } },
+        { year: 1789, speaker: "대공포 (Great Fear)", img: "😱", text: "지방 농민들이 영주들을 공격합니다. 봉건제를 폐지할까요?", left: { text: "폐지 선언!", effect: { bread: 20, rev: 10, money: -10 } }, right: { text: "군대로 진압하라.", effect: { army: -10, bread: -20, rev: 5 } } },
+        { year: 1789, speaker: "라파예트", img: "⚜️", isNpc: true, text: "시민들이 새로운 권리를 원합니다. [인간과 시민의 권리 선언]을 받아주십시오.", left: { text: "아직 시기상조다.", effect: { rev: -10, bread: -5 } }, right: { text: "서명하겠소.", effect: { rev: 10, getItem: 'contract' } } },
+        { year: 1789, speaker: "부녀자들의 행진", img: "🥐", text: "베르사유 앞입니다! 빵을 주지 않으면 궁으로 쳐들어가겠답니다!", left: { text: "창고 개방!", effect: { bread: 15, money: -15, getItem: 'bread' } }, right: { text: "무시해라.", effect: { bread: -25, rev: 15 } } },
+        
+        { year: 1790, speaker: "탈레랑", img: "✝️", isNpc: true, text: "교회의 막대한 재산을 몰수하여 국고를 채웁시다.", left: { text: "신성모독이다!", effect: { money: -10, rev: -5 } }, right: { text: "몰수하라!", effect: { money: 30, rev: 5, bread: 5 } } },
+        { year: 1790, speaker: "낭시 반란", img: "⚔️", text: "군대 내에서 병사들이 반란을 일으켰습니다. 처벌할까요?", left: { text: "대화로 해결하자.", effect: { army: -10, rev: 5 } }, right: { text: "본보기를 보여줘라!", effect: { army: 15, bread: -10 } } },
+        
+        { year: 1791, speaker: "미라보", img: "⚰️", isNpc: true, text: "혁명의 중재자 미라보가 사망했습니다.", left: { text: "애도하라.", effect: { bread: 5, rev: 5 } }, right: { text: "무시해.", effect: { bread: -5 } } },
+        { year: 1791, speaker: "마리 앙투아네트", img: "👸", isNpc: true, text: "여긴 위험해요. 오스트리아로 도망쳐요. [다이아몬드]를 챙기세요.", left: { text: "거절한다.", effect: { rev: -5 } }, right: { text: "받아두마.", effect: { rev: 5, getItem: 'diamond' } } },
+        { year: 1791, speaker: "바렌 도주", img: "🏃", text: "왕이 도망치다 잡혔습니다. 처분은?", left: { text: "왕권 유지.", effect: { rev: -15, money: 10 } }, right: { text: "폐위하라!", effect: { rev: 25, money: -5 } } },
+        { year: 1791, speaker: "샹드마르스", img: "🔫", text: "공화정을 요구하는 시위대가 모였습니다. 발포할까요?", left: { text: "발포하라!", effect: { army: 10, bread: -20, rev: -10 } }, right: { text: "설득해라.", effect: { army: -5, bread: 5, rev: 5 } } },
+        
+        { year: 1792, speaker: "오스트리아", img: "✉️", text: "왕을 복위시키지 않으면 전쟁이다!", left: { text: "굴복한다.", effect: { army: -20, rev: 15 } }, right: { text: "전쟁 선포!", effect: { army: 15, money: -25, rev: 5 } } },
+        { year: 1792, speaker: "상 큘로트", img: "🔥", text: "왕이 적과 내통했다! 튈르리 궁전을 습격하자!", left: { text: "멈춰라! 이건 반역이다!", effect: { bread: -15, rev: -10 } }, right: { text: "시민들이여, 무기를 들어라!", effect: { bread: 15, rev: 20, money: 5 } } },
+        { year: 1792, speaker: "발미 전투", img: "⚔️", text: "프로이센군이 파리 근교까지 왔습니다. 승산이 없습니다.", left: { text: "후퇴하라.", effect: { army: -30, rev: -20 } }, right: { text: "죽을 때까지 싸워라!", effect: { army: 20, rev: 10, bread: 5 } } },
+        
+        { year: 1793, speaker: "루이 16세", img: "🩸", text: "국왕의 처분을 결정하십시오.", left: { text: "자비롭게 유배를...", effect: { rev: -15, bread: -10 } }, right: { text: "단두대가 답이다!", effect: { rev: 25, bread: 10, army: 5 } } },
+        { year: 1793, speaker: "마라", img: "📰", isNpc: true, text: "반혁명 분자 10만 명의 목을 쳐야 조국이 삽니다!", left: { text: "미친 소리!", effect: { rev: -10 } }, right: { text: "동의하네. 명단을 가져오게.", effect: { rev: 20, bread: -5 } } },
+        { year: 1793, speaker: "샤를로트 코르데", img: "🔪", isNpc: true, text: "나는 한 사람(마라)을 죽여 십만 명을 구했다.", left: { text: "암살범을 처형하라!", effect: { rev: 10 } }, right: { text: "마라의 죽음을 묵인한다.", effect: { rev: -10, bread: 5 } } },
+        
+        { year: 1794, speaker: "당통", img: "⚖️", isNpc: true, text: "이제 공포 정치를 끝냅시다. 관용이 필요합니다.", left: { text: "처형하라!", effect: { rev: 15, bread: -10 } }, right: { text: "자네 말이 맞네.", effect: { rev: -15, bread: 10 } } },
+        { year: 1794, speaker: "로베스피에르", img: "📜", isNpc: true, text: "공화국의 적들을 모두 단두대로 보내야 합니다.", left: { text: "그만해!", effect: { rev: -20, army: -10 } }, right: { text: "동의한다.", effect: { rev: 30, bread: -5 } } },
+        { year: 1794, speaker: "테르미도르", img: "💀", text: "의회에서 로베스피에르를 체포하려 합니다.", left: { text: "보호하라!", effect: { rev: 20, army: -10 } }, right: { text: "체포해라!", effect: { rev: -30, bread: 10 } } },
+        
+        { year: 1795, speaker: "나폴레옹", img: "💣", isNpc: true, text: "반란군 진압을 위해 대포가 필요합니다.", left: { text: "위험하다.", effect: { army: -10 } }, right: { text: "허가한다.", effect: { army: 20, rev: -10, getItem: 'cannon' } } },
+        { year: 1797, speaker: "바뵈프", img: "✊", isNpc: true, text: "사유 재산을 철폐하고 평등한 세상을 만듭시다.", left: { text: "체포하라!", effect: { rev: -10, money: 5 } }, right: { text: "지지한다.", effect: { rev: 20, money: -30 } } },
+        
+        // 1799년 엔딩 분기
+        { 
+            year: 1799, speaker: "브뤼메르 18일", img: "🏛️", 
+            text: "나폴레옹이 쿠데타를 일으켰습니다! 권력을 넘기시겠습니까?", 
+            left: { text: "끝까지 저항한다!", effect: { ending: "RESISTANCE" } }, 
+            right: { text: "시대를 받아들인다.", effect: { ending: "SURVIVAL" } } 
+        }
+    ];
+
+    const RANDOM_EVENTS = [
+        { speaker: "부패한 관료", img: "💰", text: "뇌물을 드릴 테니 눈감아 주십시오.", left: { text: "썩 꺼져라!", effect: { money: -5, bread: 5 } }, right: { text: "받아두마.", effect: { money: 20, rev: -5 } } },
+        { speaker: "제빵사 조합", img: "🥖", text: "밀가루 가격을 올려주지 않으면 파업하겠습니다.", left: { text: "안 된다!", effect: { bread: -15, money: 5 } }, right: { text: "올려라.", effect: { bread: 10, money: -10 } } },
+        { speaker: "군대 사열", img: "💂", text: "군대의 기강을 잡아야 합니다.", left: { text: "좀 쉬게 해줘라.", effect: { army: -10, bread: 5 } }, right: { text: "지옥 훈련 실시!", effect: { army: 15, bread: -5 } } },
+        { speaker: "외국 사절", img: "✉️", text: "평화 조약을 제안합니다.", left: { text: "거절한다!", effect: { army: 10, money: -5 } }, right: { text: "수락한다.", effect: { army: -15, money: 15 } } }
+    ];
+
+    let GAME_DECK = [];
+
+    window.startGame = function() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        initGame();
+    }
+
+    function initGame() {
+        buildDeck();
+        updateStatsUI();
+        updateInventoryUI();
+        loadCard(0);
+    }
+
+    function buildDeck() {
+        GAME_DECK = [];
+        let randomPool = [...RANDOM_EVENTS];
+        HISTORICAL_DECK.forEach((histEvent, index) => {
+            GAME_DECK.push(histEvent);
+            if (index < HISTORICAL_DECK.length - 1 && Math.random() > 0.4) {
+                const rIndex = Math.floor(Math.random() * randomPool.length);
+                const randomEvt = {...randomPool[rIndex]};
+                randomEvt.year = histEvent.year; 
+                GAME_DECK.push(randomEvt);
+            }
+        });
+    }
+
+    function loadCard(idx) {
+        if (idx >= GAME_DECK.length) return;
+        const data = GAME_DECK[idx];
+        STATE.year = data.year || STATE.year;
+        document.getElementById('year-display').innerText = STATE.year || "???";
+        document.getElementById('npc-badge').style.display = data.isNpc ? 'block' : 'none';
+        document.getElementById('card-img').innerText = data.img;
+        document.getElementById('card-speaker').innerText = data.speaker;
+        document.getElementById('card-text').innerText = data.text;
+        
+        document.getElementById('btn-left').innerText = "◀ " + data.left.text;
+        document.getElementById('btn-right').innerText = data.right.text + " ▶";
+
+        const card = document.getElementById('current-card');
+        card.style.transition = 'none'; 
+        card.style.transform = 'translate(0, 0) rotate(0deg)';
+        card.style.opacity = 1;
+    }
+
+    window.previewEffect = function(dir) {
+        const data = GAME_DECK[STATE.deckIndex];
+        const effect = (dir === 'left') ? data.left.effect : data.right.effect;
+        for(let key in effect) if(STATE.stats.hasOwnProperty(key)) document.getElementById('dot-'+key).style.display = 'block';
+    };
+
+    window.clearPreview = function() {
+        document.querySelectorAll('.indicator-dot').forEach(dot => dot.style.display = 'none');
+    };
+
+    window.playerSwipe = function(direction) {
+        clearPreview();
+        const card = document.getElementById('current-card');
+        const data = GAME_DECK[STATE.deckIndex];
+        const choice = direction === 'left' ? data.left : data.right;
+
+        card.style.transition = 'transform 0.3s ease-in, opacity 0.3s ease-in';
+        if (direction === 'left') {
+            card.classList.add('swipe-left');
+        } else {
+            card.classList.add('swipe-right');
+        }
+
+        setTimeout(() => {
+            card.classList.remove('swipe-left', 'swipe-right');
+            applyEffect(choice.effect);
+            STATE.deckIndex++;
+            loadCard(STATE.deckIndex);
+        }, 300);
+    };
+
+    function applyEffect(effect) {
+        if(effect.getItem) addItem(effect.getItem);
+        
+        if(effect.ending) { 
+            triggerEnding(effect.ending); 
+            return; 
+        }
+
+        let passiveTriggered = false;
+        let passiveMsg = "";
+
+        for (let key in effect) {
+            if (STATE.stats.hasOwnProperty(key)) {
+                let delta = effect[key];
+                if (key === 'money' && delta < 0 && hasItem('diamond')) { delta = Math.floor(delta * 0.5); passiveTriggered = true; passiveMsg = "💎 다이아몬드가 국고 감소율을 낮춤!"; }
+                if (key === 'army' && delta > 0 && hasItem('cannon')) { delta = delta * 2; passiveTriggered = true; passiveMsg = "💣 대포가 군사력을 증폭!"; }
+                STATE.stats[key] += delta;
+            }
+        }
+        
+        if (hasItem('contract') && STATE.stats.rev > 80) {
+            STATE.stats.rev = 80; passiveTriggered = true; passiveMsg = "📜 인간과 시민의 권리 선언이 공포정치를 억제!";
+        }
+
+        if(passiveTriggered) showPassive(passiveMsg);
+        checkGameOver();
+        updateStatsUI();
+    }
+
+    function checkGameOver() {
+        const s = STATE.stats;
+        let deadReason = null; let deadDesc = ""; let savedByItem = null;
+
+        if (s.bread <= 20 && hasItem('bread')) {
+            useItem('bread'); s.bread += 40;
+            showPopup("🥖 비상 식량 사용!", "민심이 폭락하여 식량을 풀었습니다 (+40)", "🥖");
+            updateStatsUI(); return; 
+        }
+
+        if (s.bread <= 0) { deadReason = "폭동"; deadDesc = "굶주린 군중이 당신을 처단했습니다."; }
+        else if (s.money <= 0) { deadReason = "파산"; deadDesc = "국가 부도로 정부가 전복되었습니다."; }
+        else if (s.rev <= 0) { deadReason = "왕정복고"; deadDesc = "혁명이 실패하고 왕이 돌아왔습니다."; }
+        else if (s.army <= 0) { deadReason = "점령"; deadDesc = "오스트리아군이 파리를 점령했습니다."; }
+        else if (s.bread >= 100) { deadReason = "중우정치"; deadDesc = "국가가 복지병으로 마비되었습니다."; }
+        else if (s.money >= 100) { deadReason = "부패"; deadDesc = "타락한 권력자로 처형당했습니다."; }
+        else if (s.rev >= 100) { deadReason = "공포정치"; deadDesc = "단두대의 이슬로 사라졌습니다."; }
+        else if (s.army >= 100) { deadReason = "군사독재"; deadDesc = "군인들이 당신을 몰아냈습니다."; }
+
+        if (deadReason) triggerEnding(deadReason, deadDesc);
+    }
+
+    function hasItem(key) { return STATE.items.includes(key); }
+    function addItem(itemKey) {
+        if(STATE.items.length >= 3 || STATE.items.includes(itemKey)) return;
+        STATE.items.push(itemKey);
+        updateInventoryUI();
+        const item = ITEMS[itemKey];
+        showPopup(item.name + " 획득!", item.desc, item.icon);
+    }
+    function useItem(key) {
+        const idx = STATE.items.indexOf(key);
+        if(idx > -1) { STATE.items.splice(idx, 1); updateInventoryUI(); }
+    }
+    function showPopup(title, desc, icon="🎁") {
+        document.getElementById('popup-icon').innerText = icon;
+        document.getElementById('popup-title').innerText = title;
+        document.getElementById('popup-desc').innerText = desc;
+        document.getElementById('item-popup').style.display = 'flex';
+    }
+    function showPassive(msg) {
+        const p = document.getElementById('passive-popup');
+        document.getElementById('passive-desc').innerText = msg;
+        p.style.display = 'flex';
+        setTimeout(() => { p.style.display = 'none'; }, 2000);
+    }
+    window.closePopup = function() { document.getElementById('item-popup').style.display = 'none'; }
+    
+    // [중요 수정] 아이템 내용 표시: 이름 + 설명 포함
+    window.showItemDesc = function(slotElement) {
+        const tooltipText = slotElement.getAttribute('data-tooltip');
+        // 툴팁 텍스트에서 아이템 이름을 파싱 (줄바꿈 앞부분만)
+        const itemName = tooltipText.split('\n')[0];
+        
+        if (itemName && itemName !== "비어있음") {
+            let itemKey = null;
+            for(let key in ITEMS) {
+                if(ITEMS[key].name === itemName) { itemKey = key; break; }
+            }
+            if(itemKey) {
+                const item = ITEMS[itemKey];
+                showPopup(item.name, item.desc, item.icon);
+            }
+        }
+    }
+
+    // [중요 수정] 인벤토리 UI 업데이트 시 설명도 데이터에 포함
+    function updateInventoryUI() {
+        for(let i=0; i<3; i++) {
+            const slot = document.getElementById('slot-'+i);
+            const itemKey = STATE.items[i];
+            if(itemKey) {
+                const item = ITEMS[itemKey];
+                slot.innerText = item.icon;
+                slot.classList.add('active');
+                // 툴팁에 이름과 설명 같이 넣음 (줄바꿈으로 구분)
+                slot.setAttribute('data-tooltip', item.name + "\n" + item.desc);
+            } else {
+                slot.innerText = "";
+                slot.classList.remove('active');
+                slot.setAttribute('data-tooltip', "비어있음");
+            }
+        }
+    }
+
+    function triggerEnding(type, desc) {
+        const overlay = document.getElementById('ending-overlay');
+        const rEl = document.getElementById('end-reason');
+        const iEl = document.getElementById('end-icon');
+        const dEl = document.getElementById('end-desc');
+
+        if(type === "SURVIVAL") {
+            rEl.style.color = "#2ecc71";
+            iEl.innerText = "👑";
+            rEl.innerText = "나폴레옹 제국";
+            dEl.innerHTML = "축하합니다!<br>격동의 시대를 견뎌내고<br>새로운 제국의 개국공신이 되셨습니다.";
+        } 
+        else if(type === "RESISTANCE") {
+            rEl.style.color = "#3498db"; 
+            iEl.innerText = "🏛️";
+            rEl.innerText = "공화정의 수호자";
+            dEl.innerHTML = "당신은 총칼 앞에서도 굴복하지 않았습니다.<br>비록 쿠데타는 막지 못했지만,<br>당신의 신념은 공화정의 불씨로 남았습니다.";
+        }
+        else {
+            rEl.style.color = "#c0392b";
+            iEl.innerText = "💀";
+            rEl.innerText = type; 
+            dEl.innerText = desc;
+        }
+        overlay.style.display = 'flex';
+    }
+
+    function updateStatsUI() { setBar('bread', STATE.stats.bread); setBar('money', STATE.stats.money); setBar('rev', STATE.stats.rev); setBar('army', STATE.stats.army); }
+    function setBar(id, val) {
+        val = Math.max(0, Math.min(100, val));
+        document.getElementById('fill-'+id).style.height = val + '%';
+        const wrapper = document.getElementById('icon-'+id).parentElement;
+        if(val <= 20 || val >= 80) wrapper.classList.add('stat-danger'); else wrapper.classList.remove('stat-danger');
+    }
+
+</script>
+</body>
+</html>

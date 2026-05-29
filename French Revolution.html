@@ -9,10 +9,14 @@
 
         :root {
             --bg-color: #2c3e50;
-            --card-bg: #fdf5e6;
+            --card-bg: #d8d0bd;
             --text-color: #2c3e50;
             --accent: #c0392b; 
             --bar-fill: rgba(39, 174, 96, 0.9);
+            --choice-left: #315f9a;
+            --choice-left-shadow: #1f3f6d;
+            --choice-right: #b97812;
+            --choice-right-shadow: #7f4f08;
         }
 
         * { box-sizing: border-box; }
@@ -24,7 +28,7 @@
             font-family: 'Nanum Myeongjo', serif;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            height: 100vh; overflow: hidden;
+            min-height: 100vh; overflow: hidden;
             user-select: none;
         }
 
@@ -51,11 +55,11 @@
         /* [2] 게임 화면 */
         #game-screen {
             display: none; flex-direction: column; align-items: center; justify-content: center;
-            width: 100%; height: 100%; padding-top: 10px; animation: slideUp 0.8s ease-out;
+            width: 100%; min-height: 100vh; padding: 12px; animation: slideUp 0.8s ease-out;
         }
 
         /* 스탯 UI */
-        .stats-container { display: flex; gap: 10px; margin-bottom: 20px; width: 340px; justify-content: space-between; }
+        .stats-container { display: flex; gap: 10px; margin-bottom: 16px; width: min(340px, calc(100vw - 24px)); justify-content: space-between; }
         .stat-wrapper { 
             display: flex; flex-direction: column; align-items: center; gap: 5px; width: 25%; 
             position: relative; 
@@ -75,18 +79,46 @@
             display: none; z-index: 10; box-shadow: 0 0 5px #f1c40f; 
             animation: bounceDot 0.5s infinite alternate;
         }
+        .indicator-dot.dot-small {
+            width: 8px; height: 8px; right: 8px; top: 3px;
+            box-shadow: 0 0 4px #f1c40f;
+        }
+        .indicator-dot.dot-large {
+            width: 18px; height: 18px; right: 1px; top: -4px;
+            background-color: #ff8f00; box-shadow: 0 0 10px #ff8f00;
+        }
 
         .emoji-layer { position: relative; z-index: 5; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .stat-bar {
             position: absolute; bottom: 0; left: 0; width: 100%; background: var(--bar-fill); height: 50%; 
             transition: height 0.5s; z-index: 1; opacity: 0.8;
         }
+        .stat-danger .stat-icon {
+            border-color: #ff6b5f;
+            box-shadow: 0 0 0 3px rgba(231,76,60,0.35), 0 0 18px rgba(231,76,60,0.75);
+        }
         .stat-danger .stat-bar { background: #e74c3c !important; animation: pulseBar 0.5s infinite alternate; }
+        .stat-danger .stat-label { color: #ffb8b0; }
+        .stat-danger::after {
+            content: "!";
+            position: absolute; top: -5px; right: 7px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #e74c3c; color: #fff; border: 2px solid #fff;
+            display: flex; align-items: center; justify-content: center;
+            font: 800 0.85rem Arial, sans-serif;
+            z-index: 20; box-shadow: 0 0 10px rgba(231,76,60,0.85);
+        }
+        .stat-critical .stat-icon {
+            border-color: #ff2d1f;
+            box-shadow: 0 0 0 4px rgba(231,76,60,0.5), 0 0 26px rgba(231,76,60,0.95);
+            animation: dangerShake 0.35s infinite alternate;
+        }
+        .stat-critical::after { transform: scale(1.12); }
         .stat-label { font-size: 0.8rem; font-weight: bold; color: #ecf0f1; text-shadow: 1px 1px 2px black; }
 
         /* 인벤토리 */
         .inventory-container {
-            display: flex; gap: 10px; margin-bottom: 20px; width: 340px; justify-content: center;
+            display: flex; gap: 10px; margin-bottom: 14px; width: min(340px, calc(100vw - 24px)); justify-content: center;
             background: rgba(0,0,0,0.2); padding: 8px; border-radius: 10px;
             position: relative; z-index: 50; /* 인벤토리 자체 레이어 높임 */
         }
@@ -127,26 +159,61 @@
         }
 
         /* 카드 영역 */
-        .game-area { position: relative; width: 320px; height: 440px; margin-top: 20px; z-index: 1; }
+        .game-area { position: relative; width: min(320px, calc(100vw - 24px)); height: min(440px, calc(100vh - 290px)); min-height: 340px; margin-top: 18px; z-index: 1; }
         .year-display {
             position: absolute; top: -50px; width: 100%; text-align: center;
             color: #ecf0f1; font-family: 'Cinzel'; font-size: 2.2rem; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         .card {
-            width: 100%; height: 100%; background: var(--card-bg); border-radius: 15px;
+            width: 100%; height: 100%; background:
+                linear-gradient(180deg, rgba(236,231,216,0.96), rgba(205,196,176,0.98)),
+                repeating-linear-gradient(90deg, rgba(62,43,32,0.045) 0 1px, transparent 1px 58px),
+                repeating-linear-gradient(0deg, rgba(62,43,32,0.055) 0 1px, transparent 1px 7px);
+            border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: absolute; top: 0; left: 0;
             display: flex; flex-direction: column; align-items: center; padding: 25px;
-            border: 6px solid #8b7355; 
+            border: 6px solid #4f4639;
+            overflow: hidden;
+        }
+        .card::before {
+            content: "";
+            position: absolute; inset: 12px;
+            border: 1px solid rgba(62,43,32,0.28);
+            pointer-events: none;
+        }
+        .card > * {
+            position: relative;
+            z-index: 1;
         }
         .card-image {
-            width: 100%; height: 160px; background: #ecf0f1; margin-bottom: 20px; border-radius: 10px;
+            width: 100%; height: 150px; background:
+                radial-gradient(circle at 50% 54%, rgba(238,234,221,0.52) 0 25%, transparent 26%),
+                repeating-linear-gradient(90deg, rgba(62,43,32,0.08) 0 1px, transparent 1px 36px),
+                repeating-linear-gradient(0deg, rgba(62,43,32,0.08) 0 1px, transparent 1px 6px),
+                linear-gradient(135deg, rgba(33,70,139,0.1), transparent 36%, rgba(174,28,40,0.1)),
+                #c9c0ad;
+            margin-bottom: 18px; border-radius: 4px;
             display: flex; align-items: center; justify-content: center; font-size: 5rem;
-            color: #7f8c8d; border: 2px dashed #bdc3c7; position: relative;
+            color: #3b332b; border: 3px solid #4f4639; position: relative;
+            box-shadow: inset 0 0 26px rgba(36,28,22,0.22), 0 2px 0 rgba(255,255,255,0.18);
+            overflow: hidden; line-height: 1; text-shadow: 0 2px 0 rgba(238,234,221,0.42), 0 8px 12px rgba(36,28,22,0.24);
+            filter: grayscale(0.25) sepia(0.12) saturate(0.78);
+        }
+        .card-image::before {
+            content: "";
+            position: absolute; inset: 8px;
+            border: 1px solid rgba(62,43,32,0.34);
+            pointer-events: none;
+        }
+        .card-image::after {
+            display: none;
         }
         .npc-badge {
-            position: absolute; top: -10px; right: -10px; background: #e67e22; color: white;
+            position: absolute; top: 14px; right: 14px; background: #5c3a21; color: #f4e4bc;
             padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3); transform: rotate(10deg);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3); transform: rotate(4deg);
+            border: 1px solid rgba(244,228,188,0.6);
+            z-index: 5;
         }
         .card-title {
             font-family: 'Cinzel', serif; font-size: 1.4rem; margin-bottom: 10px; text-align: center;
@@ -159,16 +226,17 @@
         }
 
         /* 컨트롤 */
-        .controls { width: 320px; display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 20px; }
+        .controls { width: min(320px, calc(100vw - 24px)); display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; margin-bottom: 8px; }
         .btn {
             width: 48%; min-height: 60px; padding: 10px; border: none; border-radius: 12px;
             font-family: 'Nanum Myeongjo'; font-weight: bold; font-size: 0.95rem;
-            cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,0.3); transition: transform 0.1s; color: white;
+            cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,0.3); transition: transform 0.1s, filter 0.15s; color: white;
             display: flex; align-items: center; justify-content: center; text-align: center; word-break: keep-all; line-height: 1.3;
         }
+        .btn:hover { filter: brightness(1.08); }
         .btn:active { transform: translateY(4px); box-shadow: none; }
-        .btn-left { background: #c0392b; }
-        .btn-right { background: #27ae60; }
+        .btn-left { background: var(--choice-left); box-shadow: 0 5px 0 var(--choice-left-shadow); }
+        .btn-right { background: var(--choice-right); box-shadow: 0 5px 0 var(--choice-right-shadow); }
 
         /* 애니메이션 */
         .swipe-left { transform: translateX(-150%) rotate(-30deg) !important; opacity: 0; transition: 0.3s ease-in !important; }
@@ -181,14 +249,132 @@
             display: none; flex-direction: column; justify-content: center; align-items: center;
             color: white; text-align: center; padding: 30px;
         }
+        #ending-overlay {
+            background:
+                radial-gradient(circle at 50% 35%, rgba(231,76,60,0.18), transparent 34%),
+                rgba(16, 11, 9, 0.94);
+        }
         #item-popup, #passive-popup { background: rgba(0,0,0,0.85); z-index: 200; }
         .pop-card { background: #fff; color: #333; padding: 30px; border-radius: 20px; width: 320px; box-shadow: 0 0 50px rgba(255,255,255,0.2); animation: popIn 0.3s; }
+        .ending-card {
+            width: min(560px, calc(100vw - 36px));
+            max-height: calc(100vh - 36px);
+            overflow-y: auto;
+            background:
+                linear-gradient(180deg, rgba(224,219,204,0.98), rgba(195,187,168,0.99)),
+                repeating-linear-gradient(90deg, rgba(42,29,21,0.045) 0 1px, transparent 1px 64px),
+                repeating-linear-gradient(0deg, rgba(42,29,21,0.06) 0 1px, transparent 1px 7px);
+            color: #2a1d15;
+            border: 7px double #3d3328;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.7), inset 0 0 44px rgba(36,28,22,0.18);
+            padding: 64px 28px 32px;
+            position: relative;
+            animation: popIn 0.3s;
+        }
+        .ending-card::before {
+            content: "혁명 정부 공보";
+            position: absolute; top: 18px; left: 28px; right: 28px;
+            padding-bottom: 8px;
+            border-bottom: 3px double rgba(42,29,21,0.56);
+            color: rgba(42,29,21,0.74);
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0;
+            pointer-events: none;
+        }
+        .ending-card::after {
+            content: "";
+            display: block;
+            width: 100%;
+            height: 8px;
+            margin: 20px auto 0;
+            background: linear-gradient(90deg, rgba(33,70,139,0.72) 0 33.33%, rgba(224,219,204,0.7) 33.33% 66.66%, rgba(174,28,40,0.72) 66.66% 100%);
+            opacity: 0.85;
+        }
+        #ending-overlay #end-icon {
+            width: 92px; height: 92px; margin: 0 auto 18px !important;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(224,219,204,0.72);
+            border: 4px double #4f4639;
+            border-radius: 50%;
+            box-shadow: inset 0 0 18px rgba(42,29,21,0.22);
+            font-size: 4rem !important;
+            filter: grayscale(0.18) sepia(0.1);
+        }
+        #ending-overlay #end-reason {
+            font-family: 'Nanum Myeongjo', serif !important;
+            font-size: clamp(1.7rem, 8vw, 2.6rem);
+            font-weight: 800;
+            letter-spacing: 0;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.55);
+        }
+        #ending-overlay #end-desc {
+            max-width: 100% !important;
+            margin: 20px auto 0 !important;
+            color: #3e2b20;
+            font-size: clamp(1rem, 4vw, 1.18rem) !important;
+            line-height: 1.72;
+        }
+        #ending-overlay .btn {
+            background: #2c3e50 !important;
+            color: #fdf5e6 !important;
+            width: auto !important;
+            min-height: 50px;
+            border-radius: 6px !important;
+            box-shadow: 0 5px 0 #182633 !important;
+            margin: 24px auto 0;
+        }
+        .ending-stats {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 10px 14px;
+            background: rgba(42,29,21,0.13);
+            border: 1px solid rgba(42,29,21,0.48);
+            color: #2a1d15;
+            font-size: 0.98rem;
+            font-weight: 800;
+            line-height: 1.5;
+            box-shadow: inset 0 0 12px rgba(224,219,204,0.42);
+        }
 
         @keyframes pulseBar { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes dangerShake { 0% { transform: translateX(-1px); } 100% { transform: translateX(1px); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes popIn { 0% { transform: scale(0.5); opacity:0; } 100% { transform: scale(1); opacity:1; } }
         @keyframes bounceDot { 0% { transform: scale(1); } 100% { transform: scale(1.3); } }
+
+        @media (max-height: 760px) {
+            #game-screen { justify-content: flex-start; overflow-y: auto; }
+            .stats-container { margin-bottom: 10px; }
+            .inventory-container { margin-bottom: 10px; padding: 6px; }
+            .game-area { height: 360px; min-height: 320px; margin-top: 12px; }
+            .year-display { top: -42px; font-size: 1.9rem; }
+            .card { padding: 18px; border-width: 5px; }
+            .card-image { height: 110px; margin-bottom: 12px; font-size: 4rem; }
+            .card-title { font-size: 1.18rem; margin-bottom: 8px; }
+            .card-desc { font-size: 1rem; line-height: 1.42; }
+            .controls { margin-top: 14px; }
+            .btn { min-height: 54px; }
+        }
+
+        @media (max-width: 420px) {
+            body { overflow-y: auto; }
+            #game-screen { justify-content: flex-start; padding: 10px; overflow-y: auto; }
+            .start-box { padding: 26px 18px; }
+            .start-box h1 { font-size: 2rem !important; }
+            .stat-icon { width: 44px; height: 44px; font-size: 1.28rem; }
+            .stat-label { font-size: 0.72rem; }
+            .item-slot { width: 40px; height: 40px; font-size: 1.55rem; }
+            .game-area { width: min(310px, calc(100vw - 20px)); height: 380px; min-height: 340px; }
+            .card { padding: 17px; border-width: 5px; }
+            .card-image { height: 118px; font-size: 4.1rem; }
+            .card-title { font-size: 1.15rem; }
+            .card-desc { font-size: 0.98rem; line-height: 1.45; }
+            .controls { width: min(310px, calc(100vw - 20px)); gap: 10px; }
+            .btn { min-height: 58px; font-size: 0.88rem; padding: 9px; }
+            .pop-card { width: min(320px, calc(100vw - 32px)); padding: 24px 18px; }
+        }
 
     </style>
 </head>
@@ -200,8 +386,8 @@
         <h1 style="font-family:'Cinzel'; font-size:2.5rem; margin:0; text-shadow:2px 2px 0 #c0392b;">RÉVOLUTION<br>1789-1799</h1>
         <p style="color:#ddd; font-style:italic;">"자유가 아니면 죽음을"</p>
         <div style="font-size:1.1rem; line-height:1.8; margin:30px 0; color:#ecf0f1; border-top:1px solid #777; border-bottom:1px solid #777; padding:20px 0;">
-            당신은 혁명의 소용돌이 속에 선 <strong>운명의 조정자</strong>입니다.<br>
-            민심, 국고, 혁명 열기, 군사력<br>
+            당신은 혁명의 소용돌이 속에 선 <strong>프랑스 혁명 정부의 고위 관료</strong>입니다.<br>
+            민중, 국고, 혁명 열기, 군사력<br>
             4가지 힘의 균형을 유지하며<br>
             <strong>1799년 나폴레옹 집권 전까지 생존하십시오.</strong>
         </div>
@@ -216,7 +402,7 @@
                 <span class="emoji-layer">🥖</span><div class="stat-bar" id="fill-bread" style="height:50%"></div>
             </div>
             <div class="indicator-dot" id="dot-bread"></div>
-            <div class="stat-label">민심</div>
+            <div class="stat-label">민중</div>
         </div>
         <div class="stat-wrapper">
             <div class="stat-icon" id="icon-money">
@@ -251,7 +437,7 @@
         <div class="year-display" id="year-display">1789</div>
         <div class="card" id="current-card">
             <div class="card-image" id="card-img">👑</div>
-            <div id="npc-badge" class="npc-badge" style="display:none;">NPC</div>
+            <div id="npc-badge" class="npc-badge" style="display:none;">인물</div>
             <div class="card-title" id="card-speaker">Speaker</div>
             <div class="card-desc" id="card-text">Text</div>
         </div>
@@ -285,55 +471,85 @@
 </div>
 
 <div id="ending-overlay">
-    <div style="font-size:5rem; margin-bottom:20px;" id="end-icon">💀</div>
-    <h1 style="font-family:'Cinzel'; margin:0; color:#e74c3c;" id="end-reason">GAME OVER</h1>
-    <p id="end-desc" style="font-size:1.2rem; margin:20px 0; max-width:80%;">설명</p>
-    <button class="btn" style="background:white; color:black; width:auto; padding:15px 40px;" onclick="location.reload()">처음으로</button>
+    <div class="ending-card">
+        <div style="font-size:5rem; margin-bottom:20px;" id="end-icon">💀</div>
+        <h1 style="font-family:'Cinzel'; margin:0; color:#e74c3c;" id="end-reason">GAME OVER</h1>
+        <p id="end-desc" style="font-size:1.2rem; margin:20px 0; max-width:80%;">설명</p>
+        <button class="btn" style="background:white; color:black; width:auto; padding:15px 40px;" onclick="location.reload()">처음으로</button>
+    </div>
 </div>
 
 <script>
     const STATE = { year: 1789, stats: { bread: 50, money: 50, rev: 50, army: 50 }, items: [], deckIndex: 0 };
 
     const ITEMS = {
-        'diamond': { icon: '💎', name: '마리 앙투아네트의 다이아', desc: '[패시브] 국고(💰) 감소량을 절반으로 줄여줍니다.' },
+        'diamond': { icon: '💎', name: '왕비의 다이아몬드', desc: '[소모품] 국고가 바닥날 때 비밀 자금으로 +35 회복합니다.' },
         'contract': { icon: '📜', name: '인간과 시민의 권리 선언', desc: '[패시브] 혁명(🔥) 수치가 80을 넘지 않도록 억제합니다.' },
-        'cannon': { icon: '💣', name: '나폴레옹의 대포', desc: '[패시브] 군사(⚔️) 증가량이 2배가 됩니다.' },
-        'bread': { icon: '🥖', name: '비상 식량', desc: '[소모품] 민심(🥖)이 0이 될 때 자동 사용하여 +40 회복합니다.' }
+        'cannon': { icon: '💣', name: '방데미에르의 대포', desc: '[패시브] 군사(⚔️) 증가량이 약 1.5배가 됩니다.' },
+        'bread': { icon: '🥖', name: '비상 식량', desc: '[소모품] 거리의 분노가 폭발하기 직전 식량 배급으로 +40 회복합니다.' }
     };
+
+    const BALANCE = {
+        gameOverLow: -10,
+        gameOverHigh: 110,
+        dangerLow: 25,
+        dangerHigh: 75,
+        criticalLow: 10,
+        criticalHigh: 90
+    };
+
+    function getBalancedDelta(delta) {
+        const sign = Math.sign(delta);
+        const amount = Math.abs(delta);
+        if(amount >= 30) return sign * 20;
+        if(amount >= 25) return sign * 18;
+        if(amount >= 20) return sign * 14;
+        if(amount >= 15) return sign * 10;
+        if(amount >= 10) return sign * 7;
+        return delta;
+    }
+
+    function getEffectiveDelta(key, delta) {
+        let adjusted = getBalancedDelta(delta);
+        if (key === 'army' && adjusted > 0 && hasItem('cannon')) {
+            adjusted = Math.round(adjusted * 1.5);
+        }
+        return adjusted;
+    }
 
     // [카드 덱]
     const HISTORICAL_DECK = [
         { year: 1789, speaker: "재무 장관 네케르", img: "📉", isNpc: true, text: "각하, 국고가 비었습니다. 세금을 걷을까요?", left: { text: "그럴 순 없소!", effect: { bread: 10, money: -20, rev: 5 } }, right: { text: "어쩔 수 없군. 걷어라.", effect: { bread: -25, money: 20, rev: 15 } } },
-        { year: 1789, speaker: "삼부회", img: "🗳️", text: "제3신분이 머릿수 표결을 요구합니다.", left: { text: "무시해!", effect: { rev: 15, bread: -5 } }, right: { text: "그들의 말을 들어보자.", effect: { rev: -5, money: -5 } } },
-        { year: 1789, speaker: "테니스 코트", img: "✋", text: "의원들이 헌법 제정 전엔 해산하지 않겠다고 합니다.", left: { text: "군대로 쫓아내라!", effect: { rev: 25, bread: -10 } }, right: { text: "방관하라.", effect: { rev: 5, army: -5 } } },
-        { year: 1789, speaker: "바스티유", img: "🏰", text: "성난 군중이 무기를 찾아 바스티유로 몰려갑니다!", left: { text: "쏘지 마라!", effect: { rev: 20, army: -15, bread: 10 } }, right: { text: "진압하라!", effect: { rev: 5, army: 10, bread: -30 } } },
+        { year: 1789, speaker: "삼부회", img: "🗳️", text: "제3신분이 머릿수 표결을 요구합니다.", left: { text: "무시해!", effect: { rev: 15, bread: -5, money: -5 } }, right: { text: "그들의 말을 들어보자.", effect: { rev: -5, money: -5 } } },
+        { year: 1789, speaker: "테니스 코트", img: "✋", text: "의원들이 헌법 제정 전엔 해산하지 않겠다고 합니다.", left: { text: "군대로 쫓아내라!", effect: { rev: 25, bread: -10, army: -5 } }, right: { text: "방관하라.", effect: { rev: 5, army: -5 } } },
+        { year: 1789, speaker: "바스티유", img: "🏰", text: "성난 군중이 무기를 찾아 바스티유로 몰려갑니다!", left: { text: "쏘지 마라!", effect: { rev: 20, army: -15, bread: 10 } }, right: { text: "진압하라!", effect: { rev: 12, army: 10, bread: -30 } } },
         { year: 1789, speaker: "대공포 (Great Fear)", img: "😱", text: "지방 농민들이 영주들을 공격합니다. 봉건제를 폐지할까요?", left: { text: "폐지 선언!", effect: { bread: 20, rev: 10, money: -10 } }, right: { text: "군대로 진압하라.", effect: { army: -10, bread: -20, rev: 5 } } },
-        { year: 1789, speaker: "라파예트", img: "⚜️", isNpc: true, text: "시민들이 새로운 권리를 원합니다. [인간과 시민의 권리 선언]을 받아주십시오.", left: { text: "아직 시기상조다.", effect: { rev: -10, bread: -5 } }, right: { text: "서명하겠소.", effect: { rev: 10, getItem: 'contract' } } },
+        { year: 1789, speaker: "라파예트", img: "📜", isNpc: true, text: "시민들이 새로운 권리를 원합니다. [인간과 시민의 권리 선언]을 받아주십시오.", left: { text: "아직 시기상조다.", effect: { rev: -10, bread: -8 } }, right: { text: "서명하겠소.", effect: { rev: 8, bread: 8, getItem: 'contract' } } },
         { year: 1789, speaker: "부녀자들의 행진", img: "🥐", text: "베르사유 앞입니다! 빵을 주지 않으면 궁으로 쳐들어가겠답니다!", left: { text: "창고 개방!", effect: { bread: 15, money: -15, getItem: 'bread' } }, right: { text: "무시해라.", effect: { bread: -25, rev: 15 } } },
         
-        { year: 1790, speaker: "탈레랑", img: "✝️", isNpc: true, text: "교회의 막대한 재산을 몰수하여 국고를 채웁시다.", left: { text: "신성모독이다!", effect: { money: -10, rev: -5 } }, right: { text: "몰수하라!", effect: { money: 30, rev: 5, bread: 5 } } },
-        { year: 1790, speaker: "낭시 반란", img: "⚔️", text: "군대 내에서 병사들이 반란을 일으켰습니다. 처벌할까요?", left: { text: "대화로 해결하자.", effect: { army: -10, rev: 5 } }, right: { text: "본보기를 보여줘라!", effect: { army: 15, bread: -10 } } },
+        { year: 1790, speaker: "탈레랑", img: "✝️", isNpc: true, text: "교회의 막대한 재산을 몰수하여 국고를 채웁시다.", left: { text: "신성모독이다!", effect: { money: -10, rev: -5, bread: 5 } }, right: { text: "몰수하라!", effect: { money: 30, rev: 8, bread: -5 } } },
+        { year: 1790, speaker: "국민의회", img: "⛪", text: "성직자 민사기본법으로 교회를 국가가 관리하자는 제안이 나왔습니다.", left: { text: "교회를 건드리지 마라.", effect: { rev: -8, bread: 6, money: -8 } }, right: { text: "국가에 충성하게 하라.", effect: { rev: 12, money: 12, bread: -10 } } },
         
-        { year: 1791, speaker: "미라보", img: "⚰️", isNpc: true, text: "혁명의 중재자 미라보가 사망했습니다.", left: { text: "애도하라.", effect: { bread: 5, rev: 5 } }, right: { text: "무시해.", effect: { bread: -5 } } },
-        { year: 1791, speaker: "마리 앙투아네트", img: "👸", isNpc: true, text: "여긴 위험해요. 오스트리아로 도망쳐요. [다이아몬드]를 챙기세요.", left: { text: "거절한다.", effect: { rev: -5 } }, right: { text: "받아두마.", effect: { rev: 5, getItem: 'diamond' } } },
-        { year: 1791, speaker: "바렌 도주", img: "🏃", text: "왕이 도망치다 잡혔습니다. 처분은?", left: { text: "왕권 유지.", effect: { rev: -15, money: 10 } }, right: { text: "폐위하라!", effect: { rev: 25, money: -5 } } },
+        { year: 1791, speaker: "헌법위원회", img: "🏛️", text: "1791년 헌법이 완성되었습니다. 왕을 헌법 아래에 두는 입헌군주제를 선포할까요?", left: { text: "왕권을 더 남겨둔다.", effect: { rev: -12, army: 5, bread: -8 } }, right: { text: "헌법을 선포한다.", effect: { rev: 8, money: -5, bread: 6 } } },
+        { year: 1791, speaker: "마리 앙투아네트", img: "👸", isNpc: true, text: "여긴 위험해요. 오스트리아로 도망쳐요. [다이아몬드]를 챙기세요.", left: { text: "거절한다.", effect: { rev: -5, bread: 5 } }, right: { text: "받아두마.", effect: { rev: 8, bread: -10, getItem: 'diamond' } } },
+        { year: 1791, speaker: "바렌 도주", img: "🏃", text: "왕이 도망치다 잡혔습니다. 처분은?", left: { text: "왕권 유지.", effect: { rev: -15, money: 10, bread: -15 } }, right: { text: "폐위하라!", effect: { rev: 25, money: -5, bread: 10 } } },
         { year: 1791, speaker: "샹드마르스", img: "🔫", text: "공화정을 요구하는 시위대가 모였습니다. 발포할까요?", left: { text: "발포하라!", effect: { army: 10, bread: -20, rev: -10 } }, right: { text: "설득해라.", effect: { army: -5, bread: 5, rev: 5 } } },
         
-        { year: 1792, speaker: "오스트리아", img: "✉️", text: "왕을 복위시키지 않으면 전쟁이다!", left: { text: "굴복한다.", effect: { army: -20, rev: 15 } }, right: { text: "전쟁 선포!", effect: { army: 15, money: -25, rev: 5 } } },
-        { year: 1792, speaker: "상 큘로트", img: "🔥", text: "왕이 적과 내통했다! 튈르리 궁전을 습격하자!", left: { text: "멈춰라! 이건 반역이다!", effect: { bread: -15, rev: -10 } }, right: { text: "시민들이여, 무기를 들어라!", effect: { bread: 15, rev: 20, money: 5 } } },
-        { year: 1792, speaker: "발미 전투", img: "⚔️", text: "프로이센군이 파리 근교까지 왔습니다. 승산이 없습니다.", left: { text: "후퇴하라.", effect: { army: -30, rev: -20 } }, right: { text: "죽을 때까지 싸워라!", effect: { army: 20, rev: 10, bread: 5 } } },
+        { year: 1792, speaker: "오스트리아", img: "👑", text: "왕을 복위시키지 않으면 전쟁이다!", left: { text: "굴복한다.", effect: { army: -20, rev: 15, bread: -10 } }, right: { text: "전쟁 선포!", effect: { army: 15, money: -25, rev: 5 } } },
+        { year: 1792, speaker: "상 큘로트", img: "🔥", text: "왕이 적과 내통했다! 튈르리 궁전을 습격하자!", left: { text: "멈춰라! 이건 반역이다!", effect: { bread: -15, rev: -10, army: 5 } }, right: { text: "시민들이여, 무기를 들어라!", effect: { bread: 15, rev: 20, money: -8, army: -5 } } },
+        { year: 1792, speaker: "발미 전투", img: "⚔️", text: "프로이센군이 파리 근교까지 왔습니다. 승산이 없습니다.", left: { text: "후퇴하라.", effect: { army: -30, rev: -20, bread: -10 } }, right: { text: "죽을 때까지 싸워라!", effect: { army: 20, rev: 10, bread: 5 } } },
+        { year: 1792, speaker: "9월 학살", img: "🗡️", text: "감옥의 반혁명파가 외세와 내통한다는 소문이 퍼졌습니다. 군중이 처형을 요구합니다.", left: { text: "군중을 막아라.", effect: { bread: -12, rev: -8, army: -8 } }, right: { text: "눈감아라.", effect: { bread: 15, rev: 25, army: -10, money: -5 } } },
         
-        { year: 1793, speaker: "루이 16세", img: "🩸", text: "국왕의 처분을 결정하십시오.", left: { text: "자비롭게 유배를...", effect: { rev: -15, bread: -10 } }, right: { text: "단두대가 답이다!", effect: { rev: 25, bread: 10, army: 5 } } },
-        { year: 1793, speaker: "마라", img: "📰", isNpc: true, text: "반혁명 분자 10만 명의 목을 쳐야 조국이 삽니다!", left: { text: "미친 소리!", effect: { rev: -10 } }, right: { text: "동의하네. 명단을 가져오게.", effect: { rev: 20, bread: -5 } } },
-        { year: 1793, speaker: "샤를로트 코르데", img: "🔪", isNpc: true, text: "나는 한 사람(마라)을 죽여 십만 명을 구했다.", left: { text: "암살범을 처형하라!", effect: { rev: 10 } }, right: { text: "마라의 죽음을 묵인한다.", effect: { rev: -10, bread: 5 } } },
+        { year: 1793, speaker: "루이 16세", img: "🩸", text: "국왕의 처분을 결정하십시오.", left: { text: "자비롭게 유배를...", effect: { rev: -15, bread: -8, money: -5 } }, right: { text: "단두대가 답이다!", effect: { rev: 25, bread: 8, army: -5 } } },
+        { year: 1793, speaker: "국민공회", img: "📣", text: "전쟁이 커지고 있습니다. 국민 총동원령을 내려 병력과 물자를 모을까요?", left: { text: "징집을 늦춰라.", effect: { army: -18, rev: -8, bread: 5 } }, right: { text: "전 국민을 동원하라.", effect: { army: 25, money: -18, bread: 12, rev: 8 } } },
+        { year: 1793, speaker: "파리 시장", img: "🥖", text: "빵값이 치솟고 있습니다. 최고가격법으로 생필품 가격을 통제하자는 요구가 거셉니다.", left: { text: "시장에 맡겨라.", effect: { money: 8, bread: -18, rev: -5 } }, right: { text: "가격을 통제하라.", effect: { bread: 18, money: -15, rev: 8 } } },
+        { year: 1793, speaker: "방데", img: "⛪", text: "서부 농민과 왕당파가 징집과 종교 정책에 반발해 반란을 일으켰습니다.", left: { text: "협상하라.", effect: { army: -10, rev: -10, bread: 8 } }, right: { text: "토벌군을 보내라.", effect: { army: 12, money: -12, bread: -12, rev: 10 } } },
         
-        { year: 1794, speaker: "당통", img: "⚖️", isNpc: true, text: "이제 공포 정치를 끝냅시다. 관용이 필요합니다.", left: { text: "처형하라!", effect: { rev: 15, bread: -10 } }, right: { text: "자네 말이 맞네.", effect: { rev: -15, bread: 10 } } },
-        { year: 1794, speaker: "로베스피에르", img: "📜", isNpc: true, text: "공화국의 적들을 모두 단두대로 보내야 합니다.", left: { text: "그만해!", effect: { rev: -20, army: -10 } }, right: { text: "동의한다.", effect: { rev: 30, bread: -5 } } },
-        { year: 1794, speaker: "테르미도르", img: "💀", text: "의회에서 로베스피에르를 체포하려 합니다.", left: { text: "보호하라!", effect: { rev: 20, army: -10 } }, right: { text: "체포해라!", effect: { rev: -30, bread: 10 } } },
+        { year: 1794, speaker: "로베스피에르", img: "⚖️", isNpc: true, text: "공화국의 적들을 모두 단두대로 보내야 합니다.", left: { text: "그만해!", effect: { rev: -20, army: -10 } }, right: { text: "동의한다.", effect: { rev: 30, bread: -5, money: -5 } } },
+        { year: 1794, speaker: "테르미도르", img: "💀", text: "의회에서 로베스피에르를 체포하려 합니다.", left: { text: "보호하라!", effect: { rev: 20, army: -10 } }, right: { text: "체포해라!", effect: { rev: -30, bread: 10, army: 5 } } },
         
-        { year: 1795, speaker: "나폴레옹", img: "💣", isNpc: true, text: "반란군 진압을 위해 대포가 필요합니다.", left: { text: "위험하다.", effect: { army: -10 } }, right: { text: "허가한다.", effect: { army: 20, rev: -10, getItem: 'cannon' } } },
-        { year: 1797, speaker: "바뵈프", img: "✊", isNpc: true, text: "사유 재산을 철폐하고 평등한 세상을 만듭시다.", left: { text: "체포하라!", effect: { rev: -10, money: 5 } }, right: { text: "지지한다.", effect: { rev: 20, money: -30 } } },
-        
+        { year: 1795, speaker: "나폴레옹", img: "💣", isNpc: true, text: "반란군 진압을 위해 대포가 필요합니다.", left: { text: "위험하다.", effect: { army: -10, bread: 5 } }, right: { text: "허가한다.", effect: { army: 20, rev: -10, bread: -8, getItem: 'cannon' } } },
+
         // 1799년 엔딩 분기
         { 
             year: 1799, speaker: "브뤼메르 18일", img: "🏛️", 
@@ -343,11 +559,31 @@
         }
     ];
 
-    const RANDOM_EVENTS = [
-        { speaker: "부패한 관료", img: "💰", text: "뇌물을 드릴 테니 눈감아 주십시오.", left: { text: "썩 꺼져라!", effect: { money: -5, bread: 5 } }, right: { text: "받아두마.", effect: { money: 20, rev: -5 } } },
-        { speaker: "제빵사 조합", img: "🥖", text: "밀가루 가격을 올려주지 않으면 파업하겠습니다.", left: { text: "안 된다!", effect: { bread: -15, money: 5 } }, right: { text: "올려라.", effect: { bread: 10, money: -10 } } },
-        { speaker: "군대 사열", img: "💂", text: "군대의 기강을 잡아야 합니다.", left: { text: "좀 쉬게 해줘라.", effect: { army: -10, bread: 5 } }, right: { text: "지옥 훈련 실시!", effect: { army: 15, bread: -5 } } },
-        { speaker: "외국 사절", img: "✉️", text: "평화 조약을 제안합니다.", left: { text: "거절한다!", effect: { army: 10, money: -5 } }, right: { text: "수락한다.", effect: { army: -15, money: 15 } } }
+    const VARIABLE_EVENT_SLOTS = [
+        {
+            afterSpeaker: "부녀자들의 행진",
+            year: 1789,
+            events: [
+                { year: 1789, speaker: "파리 제빵사", img: "🥖", text: "빵값이 다시 오르고 있습니다. 제빵사들은 밀가루가 부족하다고 호소합니다.", left: { text: "가격 인상을 막아라.", effect: { bread: 10, money: -8, rev: 5 } }, right: { text: "시장에 맡겨라.", effect: { bread: -15, money: 5 } } },
+                { year: 1789, speaker: "곡물 창고", img: "🌾", text: "곡물 창고를 열면 군중은 잠잠해지겠지만 국고 부담이 큽니다.", left: { text: "창고를 지켜라.", effect: { bread: -10, money: 6 } }, right: { text: "창고를 열어라.", effect: { bread: 15, money: -12 } } }
+            ]
+        },
+        {
+            afterSpeaker: "발미 전투",
+            year: 1792,
+            events: [
+                { year: 1792, speaker: "공화국 선포", img: "🏛️", text: "왕정이 무너진 뒤 공화국 선포를 요구하는 목소리가 커집니다.", left: { text: "선포를 미뤄라.", effect: { rev: -10, bread: -8 } }, right: { text: "공화국을 선포하라.", effect: { rev: 14, bread: 8, money: -5 } } },
+                { year: 1792, speaker: "전선 보급", img: "🧾", text: "전쟁을 계속하려면 군수품과 식량을 더 사들여야 합니다.", left: { text: "아껴라.", effect: { army: -10, money: 8 } }, right: { text: "전부 사들여라.", effect: { army: 15, money: -15, bread: -5 } } }
+            ]
+        },
+        {
+            afterSpeaker: "파리 시장",
+            year: 1793,
+            events: [
+                { year: 1793, speaker: "암시장 단속", img: "🕯️", text: "최고가격법 이후 물자가 숨어들고 있습니다. 암시장을 단속할까요?", left: { text: "눈감아라.", effect: { money: 8, bread: -10 } }, right: { text: "단속하라.", effect: { bread: 8, money: -8, rev: 5 } } },
+                { year: 1793, speaker: "파리 코뮌 대표", img: "📣", text: "상퀼로트들이 더 강한 가격 통제와 배급을 요구합니다.", left: { text: "거절한다.", effect: { bread: -12, rev: -5 } }, right: { text: "요구를 받아들인다.", effect: { bread: 12, money: -10, rev: 8 } } }
+            ]
+        }
     ];
 
     let GAME_DECK = [];
@@ -367,13 +603,14 @@
 
     function buildDeck() {
         GAME_DECK = [];
-        let randomPool = [...RANDOM_EVENTS];
+        const slotBySpeaker = new Map(VARIABLE_EVENT_SLOTS.map(slot => [slot.afterSpeaker, slot]));
         HISTORICAL_DECK.forEach((histEvent, index) => {
             GAME_DECK.push(histEvent);
-            if (index < HISTORICAL_DECK.length - 1 && Math.random() > 0.4) {
-                const rIndex = Math.floor(Math.random() * randomPool.length);
-                const randomEvt = {...randomPool[rIndex]};
-                randomEvt.year = histEvent.year; 
+            const slot = slotBySpeaker.get(histEvent.speaker);
+            if (slot && index < HISTORICAL_DECK.length - 1) {
+                const sameYearEvents = slot.events.filter(evt => evt.year === slot.year);
+                if(sameYearEvents.length === 0) return;
+                const randomEvt = {...sameYearEvents[Math.floor(Math.random() * sameYearEvents.length)]};
                 GAME_DECK.push(randomEvt);
             }
         });
@@ -401,11 +638,23 @@
     window.previewEffect = function(dir) {
         const data = GAME_DECK[STATE.deckIndex];
         const effect = (dir === 'left') ? data.left.effect : data.right.effect;
-        for(let key in effect) if(STATE.stats.hasOwnProperty(key)) document.getElementById('dot-'+key).style.display = 'block';
+        for(let key in effect) {
+            if(STATE.stats.hasOwnProperty(key)) {
+                const dot = document.getElementById('dot-'+key);
+                const amount = Math.abs(getEffectiveDelta(key, effect[key]));
+                dot.classList.remove('dot-small', 'dot-large');
+                if(amount < 10) dot.classList.add('dot-small');
+                if(amount >= 20) dot.classList.add('dot-large');
+                dot.style.display = 'block';
+            }
+        }
     };
 
     window.clearPreview = function() {
-        document.querySelectorAll('.indicator-dot').forEach(dot => dot.style.display = 'none');
+        document.querySelectorAll('.indicator-dot').forEach(dot => {
+            dot.style.display = 'none';
+            dot.classList.remove('dot-small', 'dot-large');
+        });
     };
 
     window.playerSwipe = function(direction) {
@@ -442,9 +691,8 @@
 
         for (let key in effect) {
             if (STATE.stats.hasOwnProperty(key)) {
-                let delta = effect[key];
-                if (key === 'money' && delta < 0 && hasItem('diamond')) { delta = Math.floor(delta * 0.5); passiveTriggered = true; passiveMsg = "💎 다이아몬드가 국고 감소율을 낮춤!"; }
-                if (key === 'army' && delta > 0 && hasItem('cannon')) { delta = delta * 2; passiveTriggered = true; passiveMsg = "💣 대포가 군사력을 증폭!"; }
+                let delta = getEffectiveDelta(key, effect[key]);
+                if (key === 'army' && effect[key] > 0 && hasItem('cannon')) { passiveTriggered = true; passiveMsg = "💣 대포가 군사력을 증폭!"; }
                 STATE.stats[key] += delta;
             }
         }
@@ -464,18 +712,23 @@
 
         if (s.bread <= 20 && hasItem('bread')) {
             useItem('bread'); s.bread += 40;
-            showPopup("🥖 비상 식량 사용!", "민심이 폭락하여 식량을 풀었습니다 (+40)", "🥖");
+            showPopup("🥖 비상 식량 사용!", "민중이 등을 돌리자 식량을 풀어 거리를 달랬습니다 (+40)", "🥖");
             updateStatsUI(); return; 
         }
+        if (s.money <= 20 && hasItem('diamond')) {
+            useItem('diamond'); s.money += 35; s.rev += 5;
+            showPopup("💎 왕비의 다이아몬드 사용!", "왕실의 비밀 자금으로 파산을 잠시 피했습니다. 그러나 의심도 커졌습니다. (국고 +35, 혁명 열기 +5)", "💎");
+            updateStatsUI(); return;
+        }
 
-        if (s.bread <= 0) { deadReason = "폭동"; deadDesc = "굶주린 군중이 당신을 처단했습니다."; }
-        else if (s.money <= 0) { deadReason = "파산"; deadDesc = "국가 부도로 정부가 전복되었습니다."; }
-        else if (s.rev <= 0) { deadReason = "왕정복고"; deadDesc = "혁명이 실패하고 왕이 돌아왔습니다."; }
-        else if (s.army <= 0) { deadReason = "점령"; deadDesc = "오스트리아군이 파리를 점령했습니다."; }
-        else if (s.bread >= 100) { deadReason = "중우정치"; deadDesc = "국가가 복지병으로 마비되었습니다."; }
-        else if (s.money >= 100) { deadReason = "부패"; deadDesc = "타락한 권력자로 처형당했습니다."; }
-        else if (s.rev >= 100) { deadReason = "공포정치"; deadDesc = "단두대의 이슬로 사라졌습니다."; }
-        else if (s.army >= 100) { deadReason = "군사독재"; deadDesc = "군인들이 당신을 몰아냈습니다."; }
+        if (s.bread <= BALANCE.gameOverLow) { deadReason = "민중 봉기"; deadDesc = "빵과 신뢰를 잃은 군중이 거리로 쏟아져 나왔습니다. 혁명 정부의 이름은 더 이상 그들을 설득하지 못했습니다."; }
+        else if (s.money <= BALANCE.gameOverLow) { deadReason = "국가 파산"; deadDesc = "세금을 걷을 행정도, 전쟁을 버틸 자금도 남지 않았습니다. 혁명 정부는 재정 붕괴 속에서 무너졌습니다."; }
+        else if (s.rev <= BALANCE.gameOverLow) { deadReason = "왕정복고"; deadDesc = "혁명의 명분이 꺼지자 왕당파와 보수 세력이 다시 힘을 얻었습니다. 공화국은 제도도 기억도 되기 전에 밀려났습니다."; }
+        else if (s.army <= BALANCE.gameOverLow) { deadReason = "외세 점령"; deadDesc = "전선을 지킬 군대가 무너지자 반혁명 전쟁의 압력이 파리까지 밀려왔습니다. 혁명은 외부의 군홧발 아래 꺾였습니다."; }
+        else if (s.bread >= BALANCE.gameOverHigh) { deadReason = "거리의 정치"; deadDesc = "민중의 요구와 거리의 동원이 의회를 압도했습니다. 정부는 여론을 달래느라 어떤 결정도 오래 유지하지 못했습니다."; }
+        else if (s.money >= BALANCE.gameOverHigh) { deadReason = "재정 독점"; deadDesc = "국고는 찼지만 그 과정에서 세금, 몰수, 특권이 권력의 도구가 되었습니다. 당신은 혁명을 배신한 관료로 몰렸습니다."; }
+        else if (s.rev >= BALANCE.gameOverHigh) { deadReason = "공포정치"; deadDesc = "순수한 혁명을 지킨다는 명분이 의심과 숙청으로 번졌습니다. 단두대는 적뿐 아니라 혁명가 자신에게도 향했습니다."; }
+        else if (s.army >= BALANCE.gameOverHigh) { deadReason = "군사독재"; deadDesc = "공화국을 지킨다는 명분으로 군대가 정치를 장악했습니다. 혁명의 균형은 총검 앞에서 사라졌습니다."; }
 
         if (deadReason) triggerEnding(deadReason, deadDesc);
     }
@@ -502,7 +755,7 @@
         const p = document.getElementById('passive-popup');
         document.getElementById('passive-desc').innerText = msg;
         p.style.display = 'flex';
-        setTimeout(() => { p.style.display = 'none'; }, 2000);
+        setTimeout(() => { p.style.display = 'none'; }, 1100);
     }
     window.closePopup = function() { document.getElementById('item-popup').style.display = 'none'; }
     
@@ -543,39 +796,59 @@
         }
     }
 
+    function getEndingStatsSummary() {
+        const s = STATE.stats;
+        return `<br><span class="ending-stats">최종 균형: 민중 ${Math.round(s.bread)} · 국고 ${Math.round(s.money)} · 혁명 ${Math.round(s.rev)} · 군사 ${Math.round(s.army)}</span>`;
+    }
+
     function triggerEnding(type, desc) {
         const overlay = document.getElementById('ending-overlay');
         const rEl = document.getElementById('end-reason');
         const iEl = document.getElementById('end-icon');
         const dEl = document.getElementById('end-desc');
 
+        const endingMeta = {
+            "민중 봉기": { icon: "🔥", color: "#e74c3c" },
+            "국가 파산": { icon: "💰", color: "#d35400" },
+            "왕정복고": { icon: "👑", color: "#8e44ad" },
+            "외세 점령": { icon: "⚔️", color: "#c0392b" },
+            "거리의 정치": { icon: "📣", color: "#e67e22" },
+            "재정 독점": { icon: "🏦", color: "#d4ac0d" },
+            "공포정치": { icon: "⚖️", color: "#c0392b" },
+            "군사독재": { icon: "🪖", color: "#7f8c8d" }
+        };
+
         if(type === "SURVIVAL") {
-            rEl.style.color = "#2ecc71";
-            iEl.innerText = "👑";
-            rEl.innerText = "나폴레옹 제국";
-            dEl.innerHTML = "축하합니다!<br>격동의 시대를 견뎌내고<br>새로운 제국의 개국공신이 되셨습니다.";
+            rEl.style.color = "#d4ac0d";
+            iEl.innerText = "🦅";
+            rEl.innerText = "브뤼메르의 생존자";
+            dEl.innerHTML = "당신은 살아남았습니다.<br>그러나 혁명은 시민과 의회의 손에서<br>군대와 영웅의 이름 아래로 넘어갔습니다." + getEndingStatsSummary();
         } 
         else if(type === "RESISTANCE") {
             rEl.style.color = "#3498db"; 
             iEl.innerText = "🏛️";
-            rEl.innerText = "공화정의 수호자";
-            dEl.innerHTML = "당신은 총칼 앞에서도 굴복하지 않았습니다.<br>비록 쿠데타는 막지 못했지만,<br>당신의 신념은 공화정의 불씨로 남았습니다.";
+            rEl.innerText = "공화정의 마지막 관료";
+            dEl.innerHTML = "당신은 총칼 앞에서도 굴복하지 않았습니다.<br>쿠데타는 막지 못했지만,<br>공화국을 지키려 한 기록은 남았습니다." + getEndingStatsSummary();
         }
         else {
-            rEl.style.color = "#c0392b";
-            iEl.innerText = "💀";
+            const meta = endingMeta[type] || { icon: "💀", color: "#c0392b" };
+            rEl.style.color = meta.color;
+            iEl.innerText = meta.icon;
             rEl.innerText = type; 
-            dEl.innerText = desc;
+            dEl.innerHTML = desc + getEndingStatsSummary();
         }
         overlay.style.display = 'flex';
     }
 
     function updateStatsUI() { setBar('bread', STATE.stats.bread); setBar('money', STATE.stats.money); setBar('rev', STATE.stats.rev); setBar('army', STATE.stats.army); }
     function setBar(id, val) {
-        val = Math.max(0, Math.min(100, val));
-        document.getElementById('fill-'+id).style.height = val + '%';
+        const rawVal = val;
+        const displayVal = Math.max(0, Math.min(100, rawVal));
+        document.getElementById('fill-'+id).style.height = displayVal + '%';
         const wrapper = document.getElementById('icon-'+id).parentElement;
-        if(val <= 20 || val >= 80) wrapper.classList.add('stat-danger'); else wrapper.classList.remove('stat-danger');
+        wrapper.classList.remove('stat-danger', 'stat-critical');
+        if(rawVal <= BALANCE.dangerLow || rawVal >= BALANCE.dangerHigh) wrapper.classList.add('stat-danger');
+        if(rawVal <= BALANCE.criticalLow || rawVal >= BALANCE.criticalHigh) wrapper.classList.add('stat-critical');
     }
 
 </script>

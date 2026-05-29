@@ -8,10 +8,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Cinzel:wght@700&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
 
         :root {
-            --bg-desk: #1a1a1a;
-            --paper-color: #f3e5ca;
-            --machine-bg: #3e2723;
-            --policy-bg: #263238;
+            --bg-desk: #4a4137;
+            --paper-color: #f6e8cd;
+            --machine-bg: #5a3a2d;
+            --policy-bg: #314249;
             --ink: #2b2b2b;
             --danger-glow: rgba(183, 28, 28, 0);
         }
@@ -42,12 +42,129 @@
         }
         .critical-warning { animation: pulseRed 1s infinite alternate; }
 
-        #desk-container {
-            width: 1150px;
-            height: 780px;
+        #intro-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
             display: flex;
-            gap: 20px;
-            padding: 20px;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+            background:
+                linear-gradient(rgba(83, 65, 48, 0.5), rgba(41, 32, 27, 0.66)),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 8px);
+        }
+
+        .intro-card {
+            width: min(860px, 100%);
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+            box-sizing: border-box;
+            background: #f3e5ca;
+            border: 6px double #3e2723;
+            border-radius: 8px;
+            box-shadow: 0 22px 58px rgba(0,0,0,0.48);
+            padding: 34px;
+            color: #2b2b2b;
+        }
+
+        .intro-kicker {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 5px 10px;
+            background: #3e2723;
+            color: #f7ead0;
+            border-radius: 4px;
+            font-size: 0.78em;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .intro-title {
+            margin: 0 0 12px;
+            font-family: 'Cinzel', 'Nanum Myeongjo', serif;
+            font-size: 2.4em;
+            line-height: 1.05;
+            color: #3e2723;
+        }
+
+        .intro-lead {
+            margin: 0 0 22px;
+            font-size: 1.05em;
+            line-height: 1.7;
+            font-weight: 700;
+        }
+
+        .intro-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 22px 0;
+        }
+
+        .intro-box {
+            border: 2px solid rgba(62, 39, 35, 0.45);
+            background: rgba(255,255,255,0.42);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .intro-box h3 {
+            margin: 0 0 8px;
+            font-size: 1.02em;
+            color: #4e342e;
+        }
+
+        .intro-box p {
+            margin: 0;
+            font-size: 0.9em;
+            line-height: 1.55;
+        }
+
+        .intro-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border-top: 3px double #5d4037;
+            padding-top: 18px;
+        }
+
+        .intro-note {
+            margin: 0;
+            color: #5d4037;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        #intro-start-btn {
+            flex: 0 0 auto;
+            min-width: 180px;
+            min-height: 52px;
+            padding: 12px 24px;
+            border: none;
+            border-bottom: 5px solid #1b1110;
+            border-radius: 7px;
+            background: #3e2723;
+            color: #fff8e8;
+            font-family: 'Nanum Myeongjo', serif;
+            font-weight: 900;
+            font-size: 1.05em;
+            cursor: pointer;
+        }
+
+        #intro-start-btn:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        #desk-container {
+            width: min(1240px, calc(100vw - 24px));
+            height: min(780px, calc(100vh - 24px));
+            display: flex;
+            gap: 14px;
+            padding: 14px;
             box-sizing: border-box;
             position: relative;
             z-index: 50;
@@ -63,6 +180,8 @@
             display: flex;
             flex-direction: column;
             transform: rotate(-0.5deg);
+            min-width: 300px;
+            min-height: 0;
         }
         .paper-header { text-align: center; border-bottom: 3px double #3e2723; padding-bottom: 10px; margin-bottom: 15px; }
         .paper-title { font-family: 'Cinzel', serif; font-size: 1.8em; font-weight: 900; color: #3e2723; }
@@ -93,17 +212,82 @@
         .news-item { margin-bottom: 8px; border-bottom: 1px dashed #aaa; padding-bottom: 4px; }
 
         #alert-badge {
-            margin-top: 10px; background: #b71c1c; color: #fff; padding: 15px; border-radius: 4px;
-            font-weight: bold; text-align: center; cursor: pointer; border: 2px solid #fff;
-            animation: bounce 1s infinite; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 115;
+            width: min(380px, calc(100vw - 32px));
+            min-height: 96px;
+            background: #f7e6bd;
+            color: #3e2723;
+            padding: 18px 22px 16px 96px;
+            border-radius: 6px;
+            font-weight: 900;
+            text-align: left;
+            cursor: pointer;
+            border: 3px solid #7a4a2a;
+            animation: urgentMail 1.4s infinite;
+            display: none;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.34), inset 0 0 0 2px rgba(255,255,255,0.35);
+            box-sizing: border-box;
+            line-height: 1.25;
+        }
+
+        #alert-badge::before {
+            content: "";
+            position: absolute;
+            left: 22px;
+            top: 20px;
+            width: 54px;
+            height: 38px;
+            border: 3px solid #7a4a2a;
+            border-radius: 3px;
+            background:
+                linear-gradient(145deg, transparent 48%, #7a4a2a 49%, #7a4a2a 52%, transparent 53%),
+                linear-gradient(35deg, transparent 48%, #7a4a2a 49%, #7a4a2a 52%, transparent 53%),
+                #fff3d0;
+            box-shadow: 0 3px 0 rgba(62,39,35,0.16);
+        }
+
+        #alert-badge::after {
+            content: "긴급 우편";
+            position: absolute;
+            left: 22px;
+            bottom: 12px;
+            width: 60px;
+            padding: 2px 0;
+            border: 2px solid #b71c1c;
+            border-radius: 50%;
+            color: #b71c1c;
+            font-size: 0.66em;
+            text-align: center;
+            transform: rotate(-8deg);
+            background: rgba(255,255,255,0.28);
+        }
+
+        .alert-title {
+            display: block;
+            margin-bottom: 4px;
+            color: #b71c1c;
+            font-size: 1.05em;
+        }
+
+        .alert-subtitle {
+            display: block;
+            font-size: 0.84em;
+            color: #5d4037;
+            font-weight: 800;
         }
 
         /* --- [오른쪽] 컨트롤 패널 --- */
         .control-panel {
             flex: 1.4;
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            flex-direction: row;
+            gap: 14px;
+            min-width: 0;
+            min-height: 0;
         }
 
         /* 1. 공장 & 기술 (갈색) */
@@ -112,11 +296,13 @@
             background: var(--machine-bg);
             border-radius: 12px;
             padding: 15px;
-            border: 4px solid #281813;
-            box-shadow: inset 0 0 20px #000;
+            border: 4px solid #3f281f;
+            box-shadow: inset 0 0 18px rgba(40, 24, 19, 0.78);
             display: flex;
             flex-direction: column;
-            color: #d7ccc8;
+            color: #f0dfcf;
+            min-width: 0;
+            min-height: 0;
         }
 
         /* 2. 정책 & 관리 (남색) */
@@ -125,11 +311,13 @@
             background: var(--policy-bg);
             border-radius: 12px;
             padding: 15px;
-            border: 4px solid #102027;
-            box-shadow: inset 0 0 20px #000;
+            border: 4px solid #203038;
+            box-shadow: inset 0 0 18px rgba(12, 24, 30, 0.72);
             display: flex;
             flex-direction: column;
-            color: #cfd8dc;
+            color: #e3edf0;
+            min-width: 0;
+            min-height: 0;
         }
 
         .section-header {
@@ -208,12 +396,14 @@
 
         /* 모달 & 애니메이션 */
         #news-modal {
-            position: absolute; top:0; left:0; width:100%; height:100%;
+            position: fixed; top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.85); z-index: 200;
             display: none; justify-content: center; align-items: center;
+            padding: 16px; box-sizing: border-box;
         }
         #extra-paper {
-            width: 550px; padding: 40px; background: #fffdf0;
+            width: min(550px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
+            padding: 40px; background: #fffdf0; box-sizing: border-box;
             transform: rotate(1deg); box-shadow: 0 0 50px rgba(0,0,0,0.8);
             text-align: center; border: 1px solid #aaa; color: #333;
         }
@@ -239,12 +429,14 @@
 
         /* 엔딩 화면 - 모든 엔딩은 멸망 */
         #ending-screen {
-            position: absolute; top:0; left:0; width:100%; height:100%;
+            position: fixed; top:0; left:0; width:100%; height:100%;
             background: #1a1a1a; z-index: 300;
             display: none; justify-content: center; align-items: center;
+            padding: 16px; box-sizing: border-box;
         }
         #ending-letter {
-            width: 600px; padding: 50px; background: #fdf5e6;
+            width: min(600px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
+            padding: 50px; background: #fdf5e6; box-sizing: border-box;
             box-shadow: 0 0 100px rgba(0,0,0,0.9);
             font-family: 'Nanum Myeongjo', serif; color: #2b2b2b;
             position: relative; line-height: 1.8;
@@ -267,11 +459,215 @@
             font-family: 'Courier New', monospace;
         }
 
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes urgentMail { 0%, 100% { box-shadow: 0 10px 24px rgba(0,0,0,0.34), inset 0 0 0 2px rgba(255,255,255,0.35); } 50% { box-shadow: 0 12px 30px rgba(0,0,0,0.42), 0 0 0 4px rgba(183, 28, 28, 0.2), inset 0 0 0 2px rgba(255,255,255,0.4); } }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes blink { 0% { color: inherit; } 50% { color: red; } 100% { color: inherit; } }
         @keyframes pulseRed { 0% { box-shadow: inset 0 0 50px rgba(255,0,0,0.2); } 100% { box-shadow: inset 0 0 100px rgba(255,0,0,0.6); } }
+
+        @media (max-height: 820px) {
+            .paper-panel, .tech-section, .policy-section { padding: 12px; }
+            .paper-header { margin-bottom: 10px; }
+            .paper-title { font-size: 1.55em; }
+            .year-badge { font-size: 1em; }
+            .status-note { min-height: 110px; padding: 12px; margin-bottom: 10px; }
+            .prod-row { gap: 10px; margin-bottom: 10px; }
+            .card-base { padding: 8px; margin-bottom: 6px; }
+            .section-header { font-size: 1em; margin-bottom: 8px; }
+            #alert-badge { padding: 10px; }
+        }
+
+        @media (max-width: 980px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                align-items: flex-start;
+                overflow-y: auto;
+                user-select: auto;
+            }
+            #desk-container {
+                width: 100%;
+                height: auto;
+                min-height: 100vh;
+                flex-direction: column;
+                padding: 12px;
+            }
+            .paper-panel {
+                transform: none;
+                min-width: 0;
+                max-height: none;
+            }
+            .control-panel {
+                flex-direction: column;
+            }
+            .tech-section, .policy-section {
+                min-height: 360px;
+            }
+        }
+
+        @media (max-width: 720px) {
+            #intro-screen {
+                padding: 14px;
+                align-items: flex-start;
+                overflow-y: auto;
+            }
+            .intro-card {
+                max-height: none;
+                padding: 24px 18px;
+                border-width: 4px;
+            }
+            .intro-title {
+                font-size: 1.8em;
+            }
+            .intro-lead {
+                font-size: 0.98em;
+            }
+            .intro-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .intro-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+            #intro-start-btn {
+                width: 100%;
+            }
+            #desk-container {
+                gap: 12px;
+                padding: 10px;
+            }
+            .paper-panel, .tech-section, .policy-section {
+                border-width: 3px;
+                border-radius: 8px;
+                padding: 12px;
+            }
+            .paper-title {
+                font-size: 1.35em;
+            }
+            .year-badge {
+                font-size: 0.95em;
+            }
+            .status-note {
+                min-height: 0;
+                padding: 12px;
+            }
+            .stat-row {
+                gap: 10px;
+                align-items: center;
+                font-size: 0.88em;
+            }
+            .big-val {
+                font-size: 1.08em;
+                white-space: nowrap;
+            }
+            .news-archive {
+                max-height: 180px;
+                flex: none;
+            }
+            .section-header {
+                align-items: flex-start;
+                gap: 6px;
+                flex-direction: column;
+                font-size: 0.95em;
+            }
+            .prod-row {
+                flex-direction: column;
+            }
+            #work-btn {
+                min-height: 74px;
+            }
+            .card-base {
+                align-items: flex-start;
+                gap: 10px;
+                flex-direction: column;
+                padding: 11px;
+            }
+            .card-info h4 {
+                font-size: 0.95em;
+                line-height: 1.3;
+            }
+            .card-info p {
+                font-size: 0.78em;
+                line-height: 1.45;
+            }
+            .card-cost, .tech-cost, .tech-cost-badge, .policy-cost-badge {
+                align-self: flex-end;
+            }
+            #extra-paper {
+                transform: none;
+                padding: 24px 18px;
+            }
+            .paper-headline {
+                font-size: 1.55em;
+                line-height: 1.15;
+            }
+            .dilemma-btn-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .dilemma-btn {
+                width: 100%;
+            }
+            #ending-letter {
+                padding: 28px 20px;
+                border-width: 5px;
+            }
+            .letter-title {
+                font-size: 1.55em;
+                margin-bottom: 18px;
+            }
+            .letter-body {
+                font-size: 1em;
+                margin-bottom: 24px;
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 420px) {
+            #desk-container {
+                padding: 8px;
+            }
+            .paper-panel, .tech-section, .policy-section {
+                padding: 10px;
+            }
+            .paper-title {
+                font-size: 1.15em;
+            }
+            .stat-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+            }
+            .btn-text {
+                font-size: 1.05em;
+            }
+            .gauge-val {
+                font-size: 1.05em;
+            }
+            #alert-badge {
+                top: 50%;
+                left: 50%;
+                right: auto;
+                width: min(330px, calc(100vw - 24px));
+                min-height: 78px;
+                padding: 13px 14px 12px 76px;
+                font-size: 0.9em;
+            }
+            #alert-badge::before {
+                left: 14px;
+                top: 15px;
+                width: 44px;
+                height: 30px;
+            }
+            #alert-badge::after {
+                left: 14px;
+                bottom: 10px;
+            }
+            .float-money {
+                font-size: 1.15em;
+            }
+        }
 
     </style>
 </head>
@@ -279,6 +675,36 @@
 
 <div id="smog-layer"></div>
 <div id="anger-layer"></div>
+
+<div id="intro-screen">
+    <section class="intro-card" aria-labelledby="intro-title">
+        <div class="intro-kicker">1760년, 산업혁명의 시작</div>
+        <h1 class="intro-title" id="intro-title">The Industrial Revolution</h1>
+        <p class="intro-lead">
+            작은 공방에서 출발해 기계와 공장, 철도와 강철 산업으로 성장시키는 경영 시뮬레이션입니다.
+        </p>
+
+        <div class="intro-grid">
+            <div class="intro-box">
+                <h3>목표</h3>
+                <p>자본을 모아 기술을 발전시키고, 산업을 확장하세요.</p>
+            </div>
+            <div class="intro-box">
+                <h3>조작</h3>
+                <p>생산 버튼으로 돈을 버세요. 기술이 발전하면 돈이 자동으로 들어올지도?</p>
+            </div>
+            <div class="intro-box">
+                <h3>뉴스</h3>
+                <p>긴급 뉴스가 뜨면 사건을 확인하고, 선택하세요. 선택의 결과는 당신이 감당해야 합니다.</p>
+            </div>
+        </div>
+
+        <div class="intro-actions">
+            <p class="intro-note">시작 버튼을 누르면 시간이 흐르고, 매초 수입과 사건이 계산됩니다.</p>
+            <button id="intro-start-btn" onclick="startIndustrialGame()">게임 시작</button>
+        </div>
+    </section>
+</div>
 
 <div id="desk-container">
     
@@ -313,7 +739,10 @@
         </div>
 
         <div class="news-archive" id="news-archive"></div>
-        <div id="alert-badge" onclick="openModal()">🚨 속보 (BREAKING NEWS)</div>
+        <div id="alert-badge" onclick="openModal()">
+            <span class="alert-title">속보 도착</span>
+            <span class="alert-subtitle">봉투를 열어 사건을 확인하세요</span>
+        </div>
         <div style="margin-top:auto; text-align:center; font-size:0.7em; color:#888; opacity:0.6;">Developed by Son Seoyul</div>
     </div>
 
@@ -322,7 +751,6 @@
         <div class="tech-section">
             <div class="section-header">
                 <span>🏭 기술 연구소 (Industrial Tech)</span>
-                <span style="font-size:0.7em; color:#ffd700;">PROFIT & GROWTH</span>
             </div>
 
             <div class="prod-row">
@@ -346,7 +774,6 @@
         <div class="policy-section">
             <div class="section-header">
                 <span>⚖️ 경영 관리실 (Management)</span>
-                <span style="font-size:0.7em; color:#90a4ae;">ORDER & WELFARE</span>
             </div>
             <div class="scroll-list" id="policy-list"></div>
         </div>
@@ -393,12 +820,13 @@
         
         pollution: 0, 
         anger: 0,
-        angerRate: 0.05,
+        angerRate: 0.025,
         bubble: 0,      
         
         statsRevealed: false,
-        isPaused: false, 
+        isPaused: true, 
         isSabotaged: false,
+        gameOver: false,
 
         productStage: 0,
         purchasedTechs: [],
@@ -414,18 +842,18 @@
         history: [] // 발생한 1회성 이벤트 ID
     };
 
-    const PRODUCTS = [ "모직물 (WOOLEN CLOTH)", "면직물 (COTTON)", "철기 (IRON TOOLS)", "강철 레일 (STEEL)", "군수품 (MUNITIONS)" ];
+    const PRODUCTS = [ "모직물 (WOOLEN CLOTH)", "면직물 (COTTON)", "철기 (IRON TOOLS)", "철도용 철강재 (RAIL STEEL)", "대량 강철 제품 (STEEL GOODS)" ];
 
     // [기술 데이터]
     const TECHS = [
         { id: 'shuttle', name: '나는 북 (Flying Shuttle)', cost: 50, oneTime: true, type: 'click', val: 3, desc: '직조 속도 향상', req: null },
-        { id: 'jenny', name: '제니 방적기', cost: 200, oneTime: true, type: 'stage', stage: 1, income: 10, desc: '[생산품 변경] 면직물 공장 전환', req: 'shuttle', anger: 5 },
+        { id: 'jenny', name: '제니 방적기', cost: 200, oneTime: true, type: 'stage', stage: 1, income: 10, desc: '[생산품 변경] 면직물 공장 전환', req: 'shuttle', anger: 3, minYear: 1764 },
         { id: 'expand_looms', name: '직기 추가 설치', cost: 100, oneTime: false, type: 'auto', val: 5, desc: '생산 라인 확장 (+수익)', req: 'jenny' },
-        { id: 'steam', name: '와트 증기 기관', cost: 800, oneTime: true, type: 'stage', stage: 2, income: 40, desc: '[생산품 변경] 증기 동력 (오염 시작)', pollution: 10, revealStats: true, req: 'jenny', anger: 10 },
-        { id: 'child_labor', name: '아동 노동 확대', cost: 300, oneTime: false, type: 'auto', val: 15, desc: '값싼 노동력 고용 (수익++, 불만++)', riskAnger: 15, req: 'steam' },
-        { id: 'coke', name: '코크스 제철법', cost: 2500, oneTime: true, type: 'stage', stage: 3, clickVal: 50, desc: '[생산품 변경] 강철 생산 (오염++)', pollution: 15, req: 'steam' },
-        { id: 'railway', name: '철도망 부설', cost: 5000, oneTime: false, type: 'auto', val: 150, desc: '전국 물류 연결 (오염++, 재고++)', pollution: 10, bubble: 10, req: 'coke' },
-        { id: 'bessemer', name: '베세머 제강법', cost: 15000, oneTime: true, type: 'stage', stage: 4, income: 600, desc: '[생산품 변경] 대량 생산 체제', bubble: 30, pollution: 30, req: 'coke' }
+        { id: 'steam', name: '와트 증기 기관', cost: 800, oneTime: true, type: 'stage', stage: 2, income: 40, desc: '[생산품 변경] 증기 동력 공장', pollution: 10, revealStats: true, req: 'jenny', anger: 6, minYear: 1776 },
+        { id: 'child_labor', name: '아동 노동 확대', cost: 300, oneTime: false, type: 'auto', val: 15, desc: '값싼 노동력 고용 (수익++, 불만++)', riskAnger: 8, req: 'steam' },
+        { id: 'coke', name: '코크스 제철 확대', cost: 2500, oneTime: true, type: 'stage', stage: 3, clickVal: 50, desc: '[생산품 변경] 철강재 생산', pollution: 15, req: 'steam', minYear: 1784 },
+        { id: 'railway', name: '철도망 부설', cost: 5000, oneTime: false, type: 'auto', val: 150, desc: '전국 물류 연결 (오염++, 재고++)', pollution: 10, bubble: 10, req: 'coke', minYear: 1825 },
+        { id: 'bessemer', name: '베세머 제강법', cost: 15000, oneTime: true, type: 'stage', stage: 4, income: 600, desc: '[생산품 변경] 대량 강철 생산 체제', bubble: 30, pollution: 30, req: 'coke', minYear: 1856 }
     ];
 
     // [정책 데이터]
@@ -434,18 +862,23 @@
             id: 'police', name: '사설 경비대 고용', cost: 500, oneTime: false, 
             type: 'suppress', val: -30, 
             desc: '[강경책] 시위 강제 진압. (비용 저렴 / 부작용: 불만 누적 속도 증가)', 
-            sideEffect: 0.05, 
+            sideEffect: 0.025, 
             req: 'steam' 
         },
         { 
             id: 'church', name: '주일 학교 설립', cost: 1200, oneTime: false, 
             type: 'soothe', val: -10, 
             desc: '[유화책] 노동자 교육 및 복지. (비용 고가 / 효과: 불만 누적 속도 감소)', 
-            sideEffect: -0.02, 
+            sideEffect: -0.015, 
             req: 'steam' 
         },
-        { id: 'welfare', name: '공장법 준수', cost: 2000, oneTime: true, type: 'reform', val: -10, desc: '[개혁] 노동 시간 단축 (불만--, 수익-)', incomeNerf: 0.9, req: 'coke' },
-        { id: 'union', name: '노동조합 인정', cost: 5000, oneTime: true, type: 'reform', val: -30, desc: '[개혁] 단체 교섭권 보장 (불만 지속 감소)', incomeNerf: 0.8, autoSoothe: true, req: 'railway' },
+        { id: 'ventilation', name: '공장 환기 설비', cost: 1800, oneTime: true, type: 'facility', desc: '[개선] 매연과 분진을 잠시 줄입니다. (오염--, 불만-)', pollution: -15, anger: -8, req: 'steam', minYear: 1802 },
+        { id: 'welfare', name: '공장법 준수', cost: 2000, oneTime: true, type: 'reform', val: -10, desc: '[개혁] 노동 시간 단축 (불만--, 수익-)', incomeNerf: 0.9, req: 'coke', minYear: 1833 },
+        { id: 'workday_limit', name: '노동 시간 제한', cost: 3500, oneTime: true, type: 'reform', val: -22, desc: '[개혁] 장시간 노동을 줄여 불만을 늦춥니다. (불만---, 수익--)', incomeNerf: 0.82, req: 'coke', minYear: 1847 },
+        { id: 'training', name: '숙련공 교육', cost: 4200, oneTime: true, type: 'investment', desc: '[투자] 숙련공을 양성합니다. (수익+, 생산력+)', incomeAdd: 80, clickAdd: 20, req: 'railway', minYear: 1850 },
+        { id: 'union', name: '노동조합 인정', cost: 5000, oneTime: true, type: 'reform', val: -30, desc: '[개혁] 단체 교섭권 보장 (불만 누적 완화)', incomeNerf: 0.8, autoSoothe: true, req: 'railway', minYear: 1824 },
+        { id: 'joint_stock', name: '주식회사 전환', cost: 7000, oneTime: true, type: 'finance', desc: '[금융] 대규모 투자금을 모읍니다. (자본금++, 재고 위험+)', moneyAdd: 10000, bubble: 18, req: 'railway', minYear: 1856 },
+        { id: 'sewer_board', name: '도시 하수도 투자', cost: 9000, oneTime: true, type: 'facility', desc: '[공공사업] 도시 위생 위기를 늦춥니다. (오염---)', pollution: -28, req: 'railway', minYear: 1858 },
         
         {
             id: 'dumping', name: '📉 재고 헐값 처분', cost: 0, oneTime: false,
@@ -460,6 +893,9 @@
     const EVENT_POOL = [
         // 1. 단순 사건 (자주 뜸)
         { id: 'accident', prob: 0.2, cond: (s) => s.productStage >= 1, title: '공장 안전 사고', desc: '기계 과열로 고장이 발생했습니다.', effectStr: '수리비 -£200', action: () => addMoney(-200) },
+        { id: 'machine_breakdown', prob: 0.18, cond: (s) => s.productStage >= 2, title: '증기 기관 고장', desc: '밤새 돌아가던 증기 기관이 멈추었습니다. 수리공을 불러야 합니다.', effectStr: '수리비 -£350', action: () => addMoney(-350) },
+        { id: 'coal_shortage', prob: 0.16, cond: (s) => s.productStage >= 2 && s.year >= 1800, title: '석탄 공급 지연', desc: '탄광과 운하의 운송 차질로 공장 가동이 느려졌습니다.', effectStr: '수익 5% 감소', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.95); } },
+        { id: 'market_slump', prob: 0.14, cond: (s) => s.bubble > 35, title: '시장 침체', desc: '상인들이 주문을 미루고 있습니다. 창고의 재고가 눈에 띄게 늘어납니다.', effectStr: '재고 위험 +10%', action: () => { window.STATE.bubble += 10; } },
         
         // 2. 딜레마
         { 
@@ -473,7 +909,7 @@
             ]
         },
         {
-            id: 'phossy_jaw', oneTime: true, prob: 0.6, cond: (s) => s.productStage >= 2,
+            id: 'phossy_jaw', oneTime: true, prob: 0.6, cond: (s) => s.productStage >= 2 && s.year >= 1850,
             title: '백린 중독 (Phossy Jaw)',
             desc: '성냥 공장 여공들의 턱 뼈가 썩어들어가고 있습니다. 백린 사용을 중단하면 비용이 듭니다.',
             isDilemma: true,
@@ -483,7 +919,7 @@
             ]
         },
         {
-            id: 'stink', oneTime: true, prob: 0.6, cond: (s) => s.pollution > 50,
+            id: 'stink', oneTime: true, prob: 0.6, cond: (s) => s.pollution > 50 && s.year >= 1858,
             title: '대악취 (Great Stink)',
             desc: '템스강의 악취로 인해 도시가 마비되었습니다. 하수도를 정비하시겠습니까?',
             isDilemma: true,
@@ -492,18 +928,65 @@
                 { text: "하수도 건설 (비용 -£3000, 오염 대폭↓)", action: () => { addMoney(-3000); window.STATE.pollution -= 20; addNews("근대적 하수도 시스템을 구축했습니다."); } }
             ]
         },
+        {
+            id: 'factory_act_debate', oneTime: true, prob: 0.55, cond: (s) => s.year >= 1833 && s.anger > 30,
+            title: '공장법 논쟁',
+            desc: '아동 노동과 장시간 노동을 제한하자는 요구가 의회에서 커지고 있습니다.',
+            isDilemma: true,
+            choices: [
+                { text: "개혁을 미룬다 (수익 유지, 불만↑)", action: () => { window.STATE.anger += 8; addNews("공장 개혁 요구를 외면했습니다."); } },
+                { text: "검사관을 받아들인다 (비용 -£1200, 불만↓)", action: () => { addMoney(-1200); window.STATE.anger -= 10; addNews("공장 감독과 노동 시간 제한을 일부 받아들였습니다."); } }
+            ]
+        },
+        {
+            id: 'canal_tolls', oneTime: true, prob: 0.5, cond: (s) => s.year >= 1770 && s.year < 1830 && s.productStage >= 1,
+            title: '운하 통행료 인상',
+            desc: '새 운하가 열리며 물류는 빨라졌지만, 통행료를 둘러싼 불만도 커지고 있습니다.',
+            isDilemma: true,
+            choices: [
+                { text: "통행료를 감수한다 (비용 -£500, 재고↓)", action: () => { addMoney(-500); window.STATE.bubble = Math.max(0, window.STATE.bubble - 8); addNews("운하 운송을 이용해 재고를 빠르게 내보냈습니다."); } },
+                { text: "마차 운송을 유지한다 (비용 절감, 재고↑)", action: () => { window.STATE.bubble += 8; addNews("낡은 운송망에 의존하며 출하가 늦어졌습니다."); } }
+            ]
+        },
+        {
+            id: 'tenements', oneTime: true, prob: 0.45, cond: (s) => s.year >= 1820 && s.anger > 25,
+            title: '노동자 주거 문제',
+            desc: '공장 주변의 비좁은 주택가에 노동자 가족이 몰려들고 있습니다.',
+            isDilemma: true,
+            choices: [
+                { text: "회사 숙소를 짓는다 (비용 -£1800, 불만↓)", action: () => { addMoney(-1800); window.STATE.anger -= 12; addNews("노동자 숙소를 마련해 불만을 잠시 낮췄습니다."); } },
+                { text: "임금에서 해결하게 한다 (비용 없음, 불만↑)", action: () => { window.STATE.anger += 10; addNews("주거 문제를 방치해 불만이 커졌습니다."); } }
+            ]
+        },
+        {
+            id: 'tariff_debate', oneTime: true, prob: 0.45, cond: (s) => s.year >= 1846 && s.productStage >= 2,
+            title: '곡물법 폐지 논쟁',
+            desc: '식량 가격과 임금, 자유무역을 둘러싼 논쟁이 공장가에도 영향을 줍니다.',
+            isDilemma: true,
+            choices: [
+                { text: "자유무역을 지지한다 (수익↑, 재고↑)", action: () => { window.STATE.income += 40; window.STATE.bubble += 8; addNews("자유무역 흐름에 올라타 판로를 넓혔습니다."); } },
+                { text: "기존 보호를 원한다 (불만↓, 수익 유지)", action: () => { window.STATE.anger -= 8; addNews("급격한 변화보다 안정을 택했습니다."); } }
+            ]
+        },
 
         // 역사적 사건
-        { id: 'napoleon', oneTime: true, prob: 0.3, cond: (s) => s.productStage >= 1 && s.year < 1815, title: '식민지 쟁탈 전쟁', desc: '군수품 수요 급증! 재고가 빠르게 소진됩니다.', effectStr: '재고 감소(거품↓), 자본금 증가', action: () => { addMoney(1500); window.STATE.bubble = Math.max(0, window.STATE.bubble - 20); } },
-        { id: 'railway_mania', oneTime: true, prob: 0.3, cond: (s) => s.purchasedTechs.includes('railway'), title: '철도 열풍 (Railway Mania)', desc: '전국이 철도 투자 광풍에 휩싸였습니다. 투자자가 몰립니다.', effectStr: '재고 급증(위험!), 자본금 대폭 증가', action: () => { window.STATE.bubble += 30; addMoney(5000); } },
-        { id: 'chartism', oneTime: true, prob: 0.3, cond: (s) => s.anger > 40, title: '인민 헌장 (Chartism)', desc: '노동자들이 정치적 권리를 요구합니다.', effectStr: '노동 불만 +20%', action: () => { window.STATE.anger += 20; } },
+        { id: 'napoleon', oneTime: true, prob: 0.3, cond: (s) => s.productStage >= 1 && s.year >= 1803 && s.year < 1815, title: '나폴레옹 전쟁', desc: '유럽 전쟁으로 군수품과 직물 수요가 급증합니다.', effectStr: '재고 감소(거품↓), 자본금 증가', action: () => { addMoney(1500); window.STATE.bubble = Math.max(0, window.STATE.bubble - 20); } },
+        { id: 'cotton_embargo', oneTime: true, prob: 0.35, cond: (s) => s.year >= 1861 && s.year <= 1865 && s.productStage >= 1, title: '면화 기근', desc: '미국 내전으로 면화 공급이 끊기며 랭커셔의 방직 공장들이 흔들립니다.', effectStr: '수익 감소, 노동 불만 증가', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.82); window.STATE.anger += 7; } },
+        { id: 'peterloo', oneTime: true, prob: 0.4, cond: (s) => s.anger > 35 && s.year >= 1819, title: '맨체스터 집회 유혈 진압', desc: '개혁을 요구하던 시민과 노동자 집회가 무력으로 진압되었습니다.', effectStr: '노동 불만 증가, 치안 비용 증가', action: () => { window.STATE.anger += 12; const police = POLICIES.find(pol => pol.id === 'police'); if(police) police.cost = Math.floor(police.cost * 1.25); } },
+        { id: 'potato_famine', oneTime: true, prob: 0.35, cond: (s) => s.year >= 1845 && s.year <= 1852 && s.productStage >= 2, title: '아일랜드 대기근', desc: '기근을 피해 이주한 사람들이 공업 도시로 몰려듭니다.', effectStr: '수익 증가, 노동 불만 증가', action: () => { window.STATE.income += 60; window.STATE.anger += 8; } },
+        { id: 'bank_panic', oneTime: true, prob: 0.35, cond: (s) => s.year >= 1866 && s.bubble > 35, title: '금융 공황', desc: '투기 자금이 빠르게 식고 은행가들이 대출을 조이기 시작했습니다.', effectStr: '자본금 감소, 재고 위험 증가', action: () => { window.STATE.money = Math.floor(window.STATE.money * 0.8); window.STATE.bubble += 12; } },
+        { id: 'railway_mania', oneTime: true, prob: 0.3, cond: (s) => s.purchasedTechs.includes('railway') && s.year >= 1840, title: '철도 열풍 (Railway Mania)', desc: '전국이 철도 투자 광풍에 휩싸였습니다. 투자자가 몰립니다.', effectStr: '재고 급증(위험!), 자본금 대폭 증가', action: () => { window.STATE.bubble += 30; addMoney(5000); } },
+        { id: 'chartism', oneTime: true, prob: 0.3, cond: (s) => s.anger > 40 && s.year >= 1838, title: '인민 헌장 (Chartism)', desc: '노동자들이 정치적 권리와 선거 개혁을 요구합니다.', effectStr: '노동 불만 +12%', action: () => { window.STATE.anger += 12; } },
+        { id: 'great_exhibition', oneTime: true, prob: 0.45, cond: (s) => s.year >= 1851 && s.productStage >= 3, title: '만국박람회', desc: '수정궁에 세계의 기계와 상품이 모였습니다. 영국 산업의 자신감이 절정에 달합니다.', effectStr: '자본금 증가, 생산력 증가', action: () => { addMoney(3000); window.STATE.clickPower += 25; } },
+        { id: 'new_unionism', oneTime: true, prob: 0.35, cond: (s) => s.year >= 1888 && s.anger > 35, title: '신노동조합 운동', desc: '비숙련 노동자들까지 조직되어 더 나은 임금과 노동 조건을 요구합니다.', effectStr: '노동 불만 증가', action: () => { window.STATE.anger += 10; } },
+        { id: 'long_depression', oneTime: true, prob: 0.35, cond: (s) => s.year >= 1873 && s.bubble > 45, title: '장기 불황의 그림자', desc: '투기와 과잉 생산 뒤에 시장 침체가 찾아옵니다.', effectStr: '수익 감소, 재고 위험 증가', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.85); window.STATE.bubble += 18; } },
         
         // 반복 재난
-        { id: 'luddite', prob: 0.2, cond: (s) => s.anger > 60 && !s.isSabotaged, title: '러다이트 운동', desc: '분노한 노동자들이 기계를 파괴합니다!', effectStr: '8초간 생산 중단', action: () => sabotage(8000) },
-        { id: 'cholera', prob: 0.2, cond: (s) => s.pollution > 70, title: '콜레라 창궐', desc: '비위생적인 환경으로 전염병이 돕니다.', effectStr: '수익 10% 감소', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.9); } }
+        { id: 'luddite', oneTime: true, prob: 0.45, cond: (s) => s.anger > 45 && s.year >= 1811 && s.year <= 1816 && !s.isSabotaged, title: '러다이트 운동', desc: '일자리를 잃을까 두려워한 노동자들이 기계를 파괴합니다!', effectStr: '8초간 생산 중단', action: () => sabotage(8000) },
+        { id: 'cholera', prob: 0.2, cond: (s) => s.pollution > 70 && s.year >= 1831, title: '콜레라 창궐', desc: '비위생적인 도시 환경으로 전염병이 돕니다.', effectStr: '수익 10% 감소', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.9); } },
+        { id: 'smog_inversion', prob: 0.16, cond: (s) => s.pollution > 60 && s.year >= 1850, title: '짙은 스모그', desc: '매연이 도시 위에 내려앉아 노동자들의 결근이 늘었습니다.', effectStr: '수익 7% 감소', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.93); } },
+        { id: 'strike_wave', prob: 0.12, cond: (s) => s.anger > 80 && s.year >= 1840 && !s.isSabotaged, title: '파업 확산', desc: '여러 공장에서 임금 인상과 노동 시간 단축을 요구하는 파업이 번집니다.', effectStr: '5초간 생산 중단', action: () => sabotage(5000) }
     ];
-
-    let eventCooldown = 0; 
 
     // --- 수치 체크 함수 (Clamp) ---
     function checkLimits() {
@@ -519,17 +1002,17 @@
         
         const btn = document.getElementById('work-btn');
         const rect = btn.getBoundingClientRect();
-        const x = e.clientX || (rect.left + rect.width/2);
-        const y = e.clientY || (rect.top + rect.height/2);
+        const x = (e && e.clientX) || (rect.left + rect.width/2);
+        const y = (e && e.clientY) || (rect.top + rect.height/2);
         const el = document.createElement('div');
         el.className = 'float-money'; el.innerText = `+£${window.STATE.clickPower}`;
         el.style.left = x+'px'; el.style.top = y+'px';
         document.body.appendChild(el);
         setTimeout(()=>el.remove(), 800);
 
-        // 클릭 시 미세한 불만 증가 (완화됨: 0.3)
+        // 반복 생산은 장시간 노동의 압박을 아주 조금만 누적시킨다.
         if(window.STATE.productStage >= 1) {
-            window.STATE.anger += 0.3;
+            window.STATE.anger += 0.08;
             checkLimits();
         }
     };
@@ -600,6 +1083,12 @@
             window.STATE.anger = Math.max(0, window.STATE.anger + pol.val);
             if(pol.incomeNerf) window.STATE.income = Math.floor(window.STATE.income * pol.incomeNerf);
         }
+        if(pol.anger) window.STATE.anger += pol.anger;
+        if(pol.pollution) window.STATE.pollution += pol.pollution;
+        if(pol.bubble) window.STATE.bubble += pol.bubble;
+        if(pol.incomeAdd) window.STATE.income += pol.incomeAdd;
+        if(pol.clickAdd) window.STATE.clickPower += pol.clickAdd;
+        if(pol.moneyAdd) window.STATE.money += pol.moneyAdd;
 
         checkLimits();
 
@@ -623,6 +1112,7 @@
             }
         };
         window.STATE.pendingEvent = reportEvt;
+        window.STATE.isPaused = true;
         document.getElementById('alert-badge').style.display = 'block';
     }
 
@@ -688,6 +1178,7 @@
                 div.onclick = () => buyTech(idx);
                 let desc = tech.desc;
                 if(!window.STATE.statsRevealed) desc = desc.replace('오염', '???').replace('불만', '???');
+                if(tech.minYear && window.STATE.year < tech.minYear) desc += ` · 역사적 등장: ${tech.minYear}년`;
                 div.innerHTML = `<div class="card-info"><h4>${tech.name}</h4><p>${desc}</p></div><div class="tech-cost tech-cost-badge">£${tech.cost.toLocaleString()}</div>`;
                 activeTechs.push(div);
             }
@@ -718,12 +1209,18 @@
             let isLocked = pol.req && !window.STATE.purchasedTechs.includes(pol.req);
             let isAffordable = !isBought && !isLocked && (window.STATE.money >= pol.cost);
 
-            if(isBought) { div.classList.add('active'); div.innerHTML = `<div>${pol.name} (시행중)</div><div>🏛️</div>`; }
+            if(isBought) {
+                div.classList.add('active');
+                div.innerHTML = `<div>${pol.name} (시행중)</div><div>🏛️</div>`;
+                policyList.appendChild(div);
+            }
             else if(isLocked) { div.style.display = 'none'; } 
             else {
                 if(!isAffordable) div.classList.add('disabled'); else div.classList.add('affordable');
                 div.onclick = () => buyPolicy(idx);
-                div.innerHTML = `<div class="card-info"><h4>${pol.name}</h4><p>${pol.desc}</p></div><div class="tech-cost policy-cost-badge">£${pol.cost.toLocaleString()}</div>`;
+                let desc = pol.desc;
+                if(pol.minYear && window.STATE.year < pol.minYear) desc += ` · 역사적 등장: ${pol.minYear}년`;
+                div.innerHTML = `<div class="card-info"><h4>${pol.name}</h4><p>${desc}</p></div><div class="tech-cost policy-cost-badge">£${pol.cost.toLocaleString()}</div>`;
                 policyList.appendChild(div);
             }
         });
@@ -739,7 +1236,7 @@
 
     function checkEvents() {
         if(window.STATE.pendingEvent) return;
-        if(eventCooldown > 0) { eventCooldown--; return; }
+        if(window.STATE.eventCooldown > 0) { window.STATE.eventCooldown--; return; }
 
         let candidates = EVENT_POOL.filter(evt => {
             if(evt.oneTime && window.STATE.history.includes(evt.id)) return false;
@@ -762,7 +1259,8 @@
         window.STATE.pendingEvent = evt;
         window.STATE.lastEventId = evt.id;
         if(evt.oneTime) window.STATE.history.push(evt.id);
-        eventCooldown = 15; 
+        window.STATE.isPaused = true;
+        window.STATE.eventCooldown = 15; 
         document.getElementById('alert-badge').style.display = 'block';
     }
 
@@ -791,7 +1289,7 @@
 
     window.resolveDilemma = function(choiceIdx) {
         const evt = window.STATE.pendingEvent;
-        if(evt && evt.choices) {
+        if(evt && evt.choices && evt.choices[choiceIdx]) {
             evt.choices[choiceIdx].action();
         }
         window.closeModal();
@@ -802,8 +1300,6 @@
         if(evt && !evt.isDilemma) {
             if(evt.action) evt.action(); 
             addNews(`<strong>[속보] ${evt.title}</strong>`); 
-        } else if(evt && !evt.isDilemma) {
-            addNews(`<strong>[속보] ${evt.title}</strong>`);
         }
         
         window.STATE.pendingEvent = null;
@@ -875,12 +1371,12 @@
                 인간성을 상실한 성장은 지속될 수 없었습니다.
             `;
         } else if(type === 'BUBBLE') {
-            title.innerText = "대공황 (The Great Depression)";
+            title.innerText = "과잉 생산의 붕괴";
             body.innerHTML = `
                 "물건은 산더미처럼 쌓여있는데, 살 사람이 없다네."
                 <br><br>
-                과잉 생산으로 인한 시장의 붕괴. 주식은 휴지조각이 되었고,
-                수만 명의 실업자가 거리를 배회합니다.
+                팔리지 않는 상품이 창고를 가득 메웠고, 가격은 무너졌습니다.
+                공장은 멈추고 임금은 끊겼으며, 수많은 노동자가 거리로 밀려났습니다.
                 영원할 것 같던 번영은 거품처럼 사라졌습니다.
             `;
         } else if(type === 'DEPRESSION_ERA') {
@@ -893,7 +1389,8 @@
                 당신이 필사적으로 지켜온 공장의 기계들은 멈추어 섰고,
                 쌓아둔 자본은 하룻밤 사이에 휴지조각이 되었습니다.
                 <br><br>
-                성장의 끝은 번영이 아닌, 거대한 몰락이었습니다.
+                더 많이 만들고, 더 많이 팔고, 더 크게 투자하면 끝없이 성장할 수 있다는 믿음은
+                세계 시장의 붕괴 앞에서 산산이 부서졌습니다.
                 <div class="final-score">
                     의미 없는 자산: £${Math.floor(window.STATE.money).toLocaleString()}
                 </div>
@@ -914,10 +1411,26 @@
         addMoney(currentIncome);
         
         if(!window.STATE.isSabotaged && currentIncome > 50) {
-            window.STATE.bubble += (currentIncome * 0.0002);
+            window.STATE.bubble += (currentIncome * 0.00014);
         }
 
         if(window.STATE.income > 100) window.STATE.anger += window.STATE.angerRate;
+        if(window.STATE.purchasedPolicies.includes('ventilation')) {
+            window.STATE.pollution -= 0.025;
+            window.STATE.anger -= 0.01;
+        }
+        if(window.STATE.purchasedPolicies.includes('welfare')) {
+            window.STATE.anger -= 0.025;
+        }
+        if(window.STATE.purchasedPolicies.includes('workday_limit')) {
+            window.STATE.anger -= 0.035;
+        }
+        if(window.STATE.purchasedPolicies.includes('sewer_board')) {
+            window.STATE.pollution -= 0.04;
+        }
+        if(window.STATE.purchasedPolicies.includes('union')) {
+            window.STATE.anger -= 0.08;
+        }
 
         if(window.STATE.pollution >= 100) { triggerEnding('POLLUTION'); return; }
         if(window.STATE.anger >= 100) { triggerEnding('ANGER'); return; } 
@@ -940,6 +1453,13 @@
         
         updateUI();
     }
+
+    window.startIndustrialGame = function() {
+        const intro = document.getElementById('intro-screen');
+        if(intro) intro.style.display = 'none';
+        window.STATE.isPaused = false;
+        updateUI();
+    };
 
     window.onload = function() {
         renderLists(); addNews("사업 시작: 작은 공방을 열었습니다.");

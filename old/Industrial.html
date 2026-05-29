@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Industrial Revolution</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Cinzel:wght@700&family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+
+        :root {
+            --bg-desk: #1a1a1a;
+            --paper-color: #f3e5ca;
+            --machine-bg: #3e2723;
+            --policy-bg: #263238;
+            --ink: #2b2b2b;
+            --danger-glow: rgba(183, 28, 28, 0);
+        }
+
+        body {
+            background-color: var(--bg-desk);
+            color: var(--ink);
+            font-family: 'Nanum Myeongjo', serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 배경 효과 */
+        #smog-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 20, 0); pointer-events: none; z-index: 40;
+            transition: background 2s ease; mix-blend-mode: multiply;
+        }
+        #anger-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 0 0 var(--danger-glow); pointer-events: none; z-index: 45;
+            transition: box-shadow 1s ease; mix-blend-mode: overlay;
+        }
+        .critical-warning { animation: pulseRed 1s infinite alternate; }
+
+        #desk-container {
+            width: 1150px;
+            height: 780px;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 50;
+        }
+
+        /* --- [왼쪽] 신문 패널 --- */
+        .paper-panel {
+            flex: 0.8;
+            background: var(--paper-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            transform: rotate(-0.5deg);
+        }
+        .paper-header { text-align: center; border-bottom: 3px double #3e2723; padding-bottom: 10px; margin-bottom: 15px; }
+        .paper-title { font-family: 'Cinzel', serif; font-size: 1.8em; font-weight: 900; color: #3e2723; }
+        
+        .year-badge {
+            background: #3e2723; color: #fff; padding: 4px 10px; border-radius: 4px;
+            font-weight: bold; font-family: 'Courier New', monospace; font-size: 1.2em;
+            display: inline-block; margin-top: 5px;
+        }
+
+        .status-note {
+            background: rgba(255,255,255,0.6); border: 2px solid #5d4037;
+            padding: 15px; margin-bottom: 15px; min-height: 140px;
+        }
+        .stat-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 6px; font-weight: bold; font-size: 0.95em; }
+        .big-val { font-size: 1.3em; font-family: 'Courier New', monospace; font-weight: 900; }
+        
+        .hidden-stat { display: none; }
+        .revealed-stat { display: flex; animation: fadeIn 1s ease-in; color: #b71c1c; border-top: 1px dashed #8d6e63; padding-top: 5px; margin-top: 5px; }
+
+        .news-archive {
+            flex: 1; border-top: 2px solid #5d4037; border-bottom: 2px solid #5d4037;
+            padding: 10px; overflow-y: auto; background: rgba(240, 230, 210, 0.5); font-size: 0.9em;
+        }
+        .news-archive::-webkit-scrollbar { width: 6px; }
+        .news-archive::-webkit-scrollbar-thumb { background: #8d6e63; border-radius: 3px; }
+
+        .news-item { margin-bottom: 8px; border-bottom: 1px dashed #aaa; padding-bottom: 4px; }
+
+        #alert-badge {
+            margin-top: 10px; background: #b71c1c; color: #fff; padding: 15px; border-radius: 4px;
+            font-weight: bold; text-align: center; cursor: pointer; border: 2px solid #fff;
+            animation: bounce 1s infinite; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* --- [오른쪽] 컨트롤 패널 --- */
+        .control-panel {
+            flex: 1.4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 1. 공장 & 기술 (갈색) */
+        .tech-section {
+            flex: 1.2;
+            background: var(--machine-bg);
+            border-radius: 12px;
+            padding: 15px;
+            border: 4px solid #281813;
+            box-shadow: inset 0 0 20px #000;
+            display: flex;
+            flex-direction: column;
+            color: #d7ccc8;
+        }
+
+        /* 2. 정책 & 관리 (남색) */
+        .policy-section {
+            flex: 1;
+            background: var(--policy-bg);
+            border-radius: 12px;
+            padding: 15px;
+            border: 4px solid #102027;
+            box-shadow: inset 0 0 20px #000;
+            display: flex;
+            flex-direction: column;
+            color: #cfd8dc;
+        }
+
+        .section-header {
+            font-family: 'Cinzel', serif; font-weight: bold; font-size: 1.1em;
+            border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .prod-row { display: flex; gap: 15px; margin-bottom: 15px; align-items: stretch; }
+        
+        .gauge-box {
+            flex: 1; background: #212121; border: 1px solid #5d4037; border-radius: 6px;
+            padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: center;
+        }
+        .gauge-val { color: #ffd700; font-size: 1.2em; font-weight: bold; }
+        .gauge-label { font-size: 0.7em; color: #aaa; }
+
+        #work-btn {
+            flex: 1.5; background: radial-gradient(#6d4c41, #3e2723);
+            border-radius: 8px; border: none; border-bottom: 5px solid #261612;
+            color: #fff; cursor: pointer; padding: 10px;
+            position: relative; transition: transform 0.1s;
+        }
+        #work-btn:active { transform: translateY(4px); border-bottom: 2px solid #261612; }
+        #work-btn:disabled { background: #444; border-bottom: 5px solid #222; cursor: not-allowed; }
+        .btn-text { font-family: 'Black Ops One'; font-size: 1.2em; display: block; }
+
+        .sabotage-tape {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            color: #ff3d00; font-weight: bold; font-size: 1.5em; 
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column;
+            z-index: 10; border-radius: 8px;
+            border: 2px dashed #ff3d00;
+        }
+
+        .scroll-list { flex: 1; overflow-y: auto; padding-right: 5px; }
+        .scroll-list::-webkit-scrollbar { width: 6px; }
+        .scroll-list::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+
+        /* 카드 스타일 */
+        .card-base {
+            border-radius: 4px; padding: 10px; margin-bottom: 8px;
+            cursor: pointer; border: 1px solid #a1887f;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s; position: relative;
+        }
+        
+        .tech-card { background: #d7ccc8; color: #3e2723; }
+        .policy-card { background: #cfd8dc; color: #263238; border: 1px solid #607d8b; border-left: 5px solid #455a64; }
+
+        .card-base:hover { transform: translateX(3px); background: #fff; }
+        .card-base.disabled { opacity: 0.5; filter: grayscale(1); }
+        .card-base.locked { background: #616161; color: #9e9e9e; pointer-events: none; justify-content: center; font-style: italic; }
+        
+        .card-base.purchased { 
+            background: #3e2723; color: #8d6e63; opacity: 0.4; pointer-events: none; border-color: #2e1c19;
+        }
+        .policy-card.active { 
+            background: #263238; color: #546e7a; border-left-color: #00bcd4; opacity: 0.5; pointer-events: none; 
+        }
+
+        .card-base.affordable {
+            background: #fff8e1; border-color: #ffd700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+            z-index: 5;
+        }
+
+        .card-info h4 { margin: 0 0 2px 0; font-size: 0.95em; }
+        .card-info p { margin: 0; font-size: 0.75em; opacity: 0.9; }
+        .card-cost { font-weight: bold; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+        
+        .tech-cost-badge { background: #3e2723; color: #ffd700; }
+        .policy-cost-badge { background: #1a237e; color: #fff; }
+
+        /* 모달 & 애니메이션 */
+        #news-modal {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.85); z-index: 200;
+            display: none; justify-content: center; align-items: center;
+        }
+        #extra-paper {
+            width: 550px; padding: 40px; background: #fffdf0;
+            transform: rotate(1deg); box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            text-align: center; border: 1px solid #aaa; color: #333;
+        }
+        .paper-headline { 
+            font-family: 'Cinzel', serif; font-size: 2.2em; font-weight: 900; 
+            border-bottom: 3px double #000; margin-bottom: 20px; padding-bottom: 10px;
+            color: #1a1a1a; letter-spacing: -1px;
+        }
+        .dilemma-btn-group { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+        .dilemma-btn {
+            padding: 15px 20px; border: 2px solid #333; cursor: pointer; font-weight: bold; width: 45%;
+            transition: all 0.2s;
+        }
+        .btn-opt1 { background: #d32f2f; color: white; border-color: #b71c1c; } 
+        .btn-opt1:hover { background: #b71c1c; }
+        .btn-opt2 { background: #1976d2; color: white; border-color: #0d47a1; } 
+        .btn-opt2:hover { background: #0d47a1; }
+
+        .float-money {
+            position: absolute; color: #ffd700; font-weight: 900; font-size: 1.5em;
+            pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 100; text-shadow: 2px 2px 0 #000;
+        }
+
+        /* 엔딩 화면 - 모든 엔딩은 멸망 */
+        #ending-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: #1a1a1a; z-index: 300;
+            display: none; justify-content: center; align-items: center;
+        }
+        #ending-letter {
+            width: 600px; padding: 50px; background: #fdf5e6;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+            font-family: 'Nanum Myeongjo', serif; color: #2b2b2b;
+            position: relative; line-height: 1.8;
+            transition: all 0.5s;
+            border: 8px double #3e2723; /* 기본적으로 어두운 테두리 */
+        }
+        .letter-title { font-size: 2em; font-weight: bold; margin-bottom: 30px; text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; color: #b71c1c; }
+        .letter-body { font-size: 1.1em; margin-bottom: 40px; text-align: justify; }
+        .letter-footer { text-align: right; font-style: italic; color: #555; }
+
+        /* 1930년 파국 엔딩용 스타일 */
+        .final-score {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #8d6e63;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #5d4037;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes blink { 0% { color: inherit; } 50% { color: red; } 100% { color: inherit; } }
+        @keyframes pulseRed { 0% { box-shadow: inset 0 0 50px rgba(255,0,0,0.2); } 100% { box-shadow: inset 0 0 100px rgba(255,0,0,0.6); } }
+
+    </style>
+</head>
+<body>
+
+<div id="smog-layer"></div>
+<div id="anger-layer"></div>
+
+<div id="desk-container">
+    
+    <div class="paper-panel">
+        <div class="paper-header">
+            <div class="paper-title">THE DAILY TIMES</div>
+            <div class="year-badge"><span id="year">1760</span>년 <span id="month">1</span>월</div>
+        </div>
+
+        <div class="status-note">
+            <div class="stat-row">
+                <span>자본금 (Capital)</span>
+                <span class="big-val" style="color:#2e7d32;">£<span id="money">0</span></span>
+            </div>
+            <div class="stat-row">
+                <span>수익 (Income)</span>
+                <span>+£<span id="income">0</span> / sec</span>
+            </div>
+            <div class="stat-row">
+                <span>재고 (Inventory)</span>
+                <span id="market-status" style="color:green;">적정 (Stable)</span>
+            </div>
+            
+            <div id="stat-pollution" class="stat-row hidden-stat">
+                <span>🏭 환경 오염</span>
+                <span><span id="pollution">0</span>%</span>
+            </div>
+            <div id="stat-anger" class="stat-row hidden-stat">
+                <span>😡 노동 불만</span>
+                <span><span id="anger">0</span>%</span>
+            </div>
+        </div>
+
+        <div class="news-archive" id="news-archive"></div>
+        <div id="alert-badge" onclick="openModal()">🚨 속보 (BREAKING NEWS)</div>
+        <div style="margin-top:auto; text-align:center; font-size:0.7em; color:#888; opacity:0.6;">Developed by Son Seoyul</div>
+    </div>
+
+    <div class="control-panel">
+        
+        <div class="tech-section">
+            <div class="section-header">
+                <span>🏭 기술 연구소 (Industrial Tech)</span>
+                <span style="font-size:0.7em; color:#ffd700;">PROFIT & GROWTH</span>
+            </div>
+
+            <div class="prod-row">
+                <div class="gauge-box">
+                    <div class="gauge-label">CURRENT PRODUCT</div>
+                    <div class="gauge-val" id="prod-name">모직물</div>
+                </div>
+                <button id="work-btn" onclick="manualWork(event)">
+                    <span class="btn-text">생산 (WORK)</span>
+                    <div style="font-size:0.7em; opacity:0.8;">Click: +£<span id="click-power">1</span></div>
+                    <div class="sabotage-tape" id="sabotage-tape">
+                        <div>🚧 STRIKE 🚧</div>
+                        <div id="sabotage-timer" style="font-size:0.8em; margin-top:5px;">8s...</div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="scroll-list" id="tech-list"></div>
+        </div>
+
+        <div class="policy-section">
+            <div class="section-header">
+                <span>⚖️ 경영 관리실 (Management)</span>
+                <span style="font-size:0.7em; color:#90a4ae;">ORDER & WELFARE</span>
+            </div>
+            <div class="scroll-list" id="policy-list"></div>
+        </div>
+
+    </div>
+</div>
+
+<div id="news-modal">
+    <div id="extra-paper">
+        <div class="extra-badge">BREAKING NEWS</div>
+        <div class="paper-headline" id="modal-title">TITLE</div>
+        <p style="font-size:1.1em; line-height:1.6;" id="modal-body">Text...</p>
+        
+        <div id="modal-confirm-area" style="display:block;">
+            <div style="background:#eee; padding:10px; font-weight:bold; color:#b71c1c; margin:20px 0;" id="modal-effect">Effect</div>
+            <button onclick="closeModal()" style="padding:10px 40px; background:#333; color:white; border:none; cursor:pointer; font-size:1.1em;">확인 (CONFIRM)</button>
+        </div>
+
+        <div id="modal-choice-area" class="dilemma-btn-group" style="display:none;">
+            <button class="dilemma-btn btn-opt1" onclick="resolveDilemma(0)">선택 1</button>
+            <button class="dilemma-btn btn-opt2" onclick="resolveDilemma(1)">선택 2</button>
+        </div>
+    </div>
+</div>
+
+<div id="ending-screen">
+    <div id="ending-letter">
+        <div class="letter-title" id="end-title">TITLE</div>
+        <div class="letter-body" id="end-body">
+            Body...
+        </div>
+        <div class="letter-footer" id="end-footer"></div>
+        
+        <button onclick="location.reload()" style="margin-top:30px; padding:10px 30px; background:#2b2b2b; color:white; border:none; cursor:pointer; width:100%; font-weight:bold;">다시 시작 (RESTART)</button>
+    </div>
+</div>
+
+<script>
+    // --- 게임 상태 ---
+    window.STATE = {
+        money: 0,
+        income: 0,
+        clickPower: 1,
+        
+        pollution: 0, 
+        anger: 0,
+        angerRate: 0.05,
+        bubble: 0,      
+        
+        statsRevealed: false,
+        isPaused: false, 
+        isSabotaged: false,
+
+        productStage: 0,
+        purchasedTechs: [],
+        purchasedPolicies: [],
+        
+        pendingEvent: null, 
+        eventCooldown: 0,
+        
+        year: 1760,
+        month: 1,
+        
+        lastEventId: null, 
+        history: [] // 발생한 1회성 이벤트 ID
+    };
+
+    const PRODUCTS = [ "모직물 (WOOLEN CLOTH)", "면직물 (COTTON)", "철기 (IRON TOOLS)", "강철 레일 (STEEL)", "군수품 (MUNITIONS)" ];
+
+    // [기술 데이터]
+    const TECHS = [
+        { id: 'shuttle', name: '나는 북 (Flying Shuttle)', cost: 50, oneTime: true, type: 'click', val: 3, desc: '직조 속도 향상', req: null },
+        { id: 'jenny', name: '제니 방적기', cost: 200, oneTime: true, type: 'stage', stage: 1, income: 10, desc: '[생산품 변경] 면직물 공장 전환', req: 'shuttle', anger: 5 },
+        { id: 'expand_looms', name: '직기 추가 설치', cost: 100, oneTime: false, type: 'auto', val: 5, desc: '생산 라인 확장 (+수익)', req: 'jenny' },
+        { id: 'steam', name: '와트 증기 기관', cost: 800, oneTime: true, type: 'stage', stage: 2, income: 40, desc: '[생산품 변경] 증기 동력 (오염 시작)', pollution: 10, revealStats: true, req: 'jenny', anger: 10 },
+        { id: 'child_labor', name: '아동 노동 확대', cost: 300, oneTime: false, type: 'auto', val: 15, desc: '값싼 노동력 고용 (수익++, 불만++)', riskAnger: 15, req: 'steam' },
+        { id: 'coke', name: '코크스 제철법', cost: 2500, oneTime: true, type: 'stage', stage: 3, clickVal: 50, desc: '[생산품 변경] 강철 생산 (오염++)', pollution: 15, req: 'steam' },
+        { id: 'railway', name: '철도망 부설', cost: 5000, oneTime: false, type: 'auto', val: 150, desc: '전국 물류 연결 (오염++, 재고++)', pollution: 10, bubble: 10, req: 'coke' },
+        { id: 'bessemer', name: '베세머 제강법', cost: 15000, oneTime: true, type: 'stage', stage: 4, income: 600, desc: '[생산품 변경] 대량 생산 체제', bubble: 30, pollution: 30, req: 'coke' }
+    ];
+
+    // [정책 데이터]
+    const POLICIES = [
+        { 
+            id: 'police', name: '사설 경비대 고용', cost: 500, oneTime: false, 
+            type: 'suppress', val: -30, 
+            desc: '[강경책] 시위 강제 진압. (비용 저렴 / 부작용: 불만 누적 속도 증가)', 
+            sideEffect: 0.05, 
+            req: 'steam' 
+        },
+        { 
+            id: 'church', name: '주일 학교 설립', cost: 1200, oneTime: false, 
+            type: 'soothe', val: -10, 
+            desc: '[유화책] 노동자 교육 및 복지. (비용 고가 / 효과: 불만 누적 속도 감소)', 
+            sideEffect: -0.02, 
+            req: 'steam' 
+        },
+        { id: 'welfare', name: '공장법 준수', cost: 2000, oneTime: true, type: 'reform', val: -10, desc: '[개혁] 노동 시간 단축 (불만--, 수익-)', incomeNerf: 0.9, req: 'coke' },
+        { id: 'union', name: '노동조합 인정', cost: 5000, oneTime: true, type: 'reform', val: -30, desc: '[개혁] 단체 교섭권 보장 (불만 지속 감소)', incomeNerf: 0.8, autoSoothe: true, req: 'railway' },
+        
+        {
+            id: 'dumping', name: '📉 재고 헐값 처분', cost: 0, oneTime: false,
+            type: 'emergency', val: 0,
+            desc: '손해를 보고 창고를 비웁니다. (자본금 -50%, 재고 -30%)',
+            req: 'steam', 
+            isEmergency: true
+        }
+    ];
+
+    // [이벤트 풀]
+    const EVENT_POOL = [
+        // 1. 단순 사건 (자주 뜸)
+        { id: 'accident', prob: 0.2, cond: (s) => s.productStage >= 1, title: '공장 안전 사고', desc: '기계 과열로 고장이 발생했습니다.', effectStr: '수리비 -£200', action: () => addMoney(-200) },
+        
+        // 2. 딜레마
+        { 
+            id: 'enclosure', oneTime: true, prob: 0.8, cond: (s) => s.year >= 1765, 
+            title: '인클로저 운동', 
+            desc: '농지에서 쫓겨난 농민들이 도시로 몰려들어 빈민이 되고 있습니다.',
+            isDilemma: true,
+            choices: [
+                { text: "헐값에 고용한다 (수익↑, 불만↑)", action: () => { window.STATE.income+=10; window.STATE.anger+=15; addNews("값싼 노동력을 확보했습니다."); } },
+                { text: "빈민 구제세 납부 (비용 발생)", action: () => { addMoney(-200); addNews("최소한의 구호를 제공했습니다."); } }
+            ]
+        },
+        {
+            id: 'phossy_jaw', oneTime: true, prob: 0.6, cond: (s) => s.productStage >= 2,
+            title: '백린 중독 (Phossy Jaw)',
+            desc: '성냥 공장 여공들의 턱 뼈가 썩어들어가고 있습니다. 백린 사용을 중단하면 비용이 듭니다.',
+            isDilemma: true,
+            choices: [
+                { text: "계속 사용 (수익 유지, 오염↑)", action: () => { window.STATE.pollution += 10; addNews("이윤을 위해 희생을 감수했습니다."); } },
+                { text: "백린 금지 (비용 -£1000, 오염↓)", action: () => { addMoney(-1000); window.STATE.pollution -= 5; addNews("안전한 성냥을 생산합니다."); } }
+            ]
+        },
+        {
+            id: 'stink', oneTime: true, prob: 0.6, cond: (s) => s.pollution > 50,
+            title: '대악취 (Great Stink)',
+            desc: '템스강의 악취로 인해 도시가 마비되었습니다. 하수도를 정비하시겠습니까?',
+            isDilemma: true,
+            choices: [
+                { text: "석회만 뿌린다 (비용 저렴, 효과 미미)", action: () => { addMoney(-200); window.STATE.pollution -= 2; addNews("임시방편으로 악취를 덮었습니다."); } },
+                { text: "하수도 건설 (비용 -£3000, 오염 대폭↓)", action: () => { addMoney(-3000); window.STATE.pollution -= 20; addNews("근대적 하수도 시스템을 구축했습니다."); } }
+            ]
+        },
+
+        // 역사적 사건
+        { id: 'napoleon', oneTime: true, prob: 0.3, cond: (s) => s.productStage >= 1 && s.year < 1815, title: '식민지 쟁탈 전쟁', desc: '군수품 수요 급증! 재고가 빠르게 소진됩니다.', effectStr: '재고 감소(거품↓), 자본금 증가', action: () => { addMoney(1500); window.STATE.bubble = Math.max(0, window.STATE.bubble - 20); } },
+        { id: 'railway_mania', oneTime: true, prob: 0.3, cond: (s) => s.purchasedTechs.includes('railway'), title: '철도 열풍 (Railway Mania)', desc: '전국이 철도 투자 광풍에 휩싸였습니다. 투자자가 몰립니다.', effectStr: '재고 급증(위험!), 자본금 대폭 증가', action: () => { window.STATE.bubble += 30; addMoney(5000); } },
+        { id: 'chartism', oneTime: true, prob: 0.3, cond: (s) => s.anger > 40, title: '인민 헌장 (Chartism)', desc: '노동자들이 정치적 권리를 요구합니다.', effectStr: '노동 불만 +20%', action: () => { window.STATE.anger += 20; } },
+        
+        // 반복 재난
+        { id: 'luddite', prob: 0.2, cond: (s) => s.anger > 60 && !s.isSabotaged, title: '러다이트 운동', desc: '분노한 노동자들이 기계를 파괴합니다!', effectStr: '8초간 생산 중단', action: () => sabotage(8000) },
+        { id: 'cholera', prob: 0.2, cond: (s) => s.pollution > 70, title: '콜레라 창궐', desc: '비위생적인 환경으로 전염병이 돕니다.', effectStr: '수익 10% 감소', action: () => { window.STATE.income = Math.floor(window.STATE.income * 0.9); } }
+    ];
+
+    let eventCooldown = 0; 
+
+    // --- 수치 체크 함수 (Clamp) ---
+    function checkLimits() {
+        window.STATE.pollution = Math.min(100, Math.max(0, window.STATE.pollution));
+        window.STATE.anger = Math.min(100, Math.max(0, window.STATE.anger));
+        window.STATE.bubble = Math.min(100, Math.max(0, window.STATE.bubble));
+    }
+
+    // --- 실행 로직 ---
+    window.manualWork = function(e) {
+        if(window.STATE.gameOver || window.STATE.isPaused || window.STATE.isSabotaged) return;
+        addMoney(window.STATE.clickPower);
+        
+        const btn = document.getElementById('work-btn');
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX || (rect.left + rect.width/2);
+        const y = e.clientY || (rect.top + rect.height/2);
+        const el = document.createElement('div');
+        el.className = 'float-money'; el.innerText = `+£${window.STATE.clickPower}`;
+        el.style.left = x+'px'; el.style.top = y+'px';
+        document.body.appendChild(el);
+        setTimeout(()=>el.remove(), 800);
+
+        // 클릭 시 미세한 불만 증가 (완화됨: 0.3)
+        if(window.STATE.productStage >= 1) {
+            window.STATE.anger += 0.3;
+            checkLimits();
+        }
+    };
+
+    function addMoney(val) {
+        window.STATE.money = Math.max(0, window.STATE.money + val);
+        updateUI();
+    }
+
+    // 기술 구매
+    window.buyTech = function(idx) {
+        const tech = TECHS[idx];
+        if(window.STATE.money < tech.cost) return;
+        
+        window.STATE.money -= tech.cost;
+        if(tech.oneTime) window.STATE.purchasedTechs.push(tech.id);
+
+        if(tech.type === 'click') window.STATE.clickPower += tech.val;
+        if(tech.type === 'auto') window.STATE.income += tech.val;
+        
+        if(tech.type === 'stage') {
+            window.STATE.productStage = tech.stage;
+            if(tech.income) window.STATE.income += tech.income;
+            if(tech.clickVal) window.STATE.clickPower += tech.clickVal;
+            document.getElementById('prod-name').innerText = PRODUCTS[tech.stage];
+        }
+
+        if(tech.pollution) window.STATE.pollution += tech.pollution;
+        if(tech.riskAnger) window.STATE.anger += tech.riskAnger;
+        if(tech.anger) window.STATE.anger += tech.anger;
+        if(tech.bubble) window.STATE.bubble += tech.bubble;
+
+        checkLimits(); 
+
+        if(tech.revealStats && !window.STATE.statsRevealed) triggerRevealStats();
+
+        if(!tech.oneTime) tech.cost = Math.floor(tech.cost * 1.5);
+
+        addNews(`[기술] '${tech.name}' 완료.`);
+        renderLists(); updateUI();
+    };
+
+    // 정책 도입
+    window.buyPolicy = function(idx) {
+        const pol = POLICIES[idx];
+        
+        if(pol.isEmergency) {
+            if(window.STATE.bubble < 70) return; 
+            if(confirm("재고를 헐값에 넘기시겠습니까? (자본금 50% 손실)")) {
+                window.STATE.money = Math.floor(window.STATE.money * 0.5);
+                window.STATE.bubble = Math.max(0, window.STATE.bubble - 30);
+                addNews("📉 재고 덤핑: 막대한 손해를 감수했습니다.");
+                updateUI();
+            }
+            return;
+        }
+
+        if(window.STATE.money < pol.cost) return;
+
+        window.STATE.money -= pol.cost;
+        if(pol.oneTime) window.STATE.purchasedPolicies.push(pol.id);
+
+        if(pol.type === 'suppress' || pol.type === 'soothe') {
+            window.STATE.anger = Math.max(0, window.STATE.anger + pol.val);
+            if(pol.sideEffect) window.STATE.angerRate += pol.sideEffect;
+        }
+        if(pol.type === 'reform') {
+            window.STATE.anger = Math.max(0, window.STATE.anger + pol.val);
+            if(pol.incomeNerf) window.STATE.income = Math.floor(window.STATE.income * pol.incomeNerf);
+        }
+
+        checkLimits();
+
+        if(!pol.oneTime) pol.cost = Math.floor(pol.cost * 1.3);
+
+        addNews(`[정책] '${pol.name}' 시행.`);
+        renderLists(); updateUI();
+    };
+
+    function triggerRevealStats() {
+        window.STATE.statsRevealed = true;
+        const reportEvt = { 
+            title: "충격 보고서 공개", 
+            desc: "환경 오염과 노동자들의 참혹한 삶이 공개되었습니다.", 
+            effectStr: "오염/불만 수치 해금",
+            action: () => {
+                document.getElementById('stat-pollution').classList.remove('hidden-stat');
+                document.getElementById('stat-pollution').classList.add('revealed-stat');
+                document.getElementById('stat-anger').classList.remove('hidden-stat');
+                document.getElementById('stat-anger').classList.add('revealed-stat');
+            }
+        };
+        window.STATE.pendingEvent = reportEvt;
+        document.getElementById('alert-badge').style.display = 'block';
+    }
+
+    function updateUI() {
+        document.getElementById('year').innerText = window.STATE.year;
+        document.getElementById('month').innerText = window.STATE.month;
+        
+        document.getElementById('money').innerText = Math.floor(window.STATE.money).toLocaleString();
+        document.getElementById('income').innerText = Math.floor(window.STATE.income).toLocaleString();
+        document.getElementById('click-power').innerText = Math.floor(window.STATE.clickPower).toLocaleString();
+        
+        const bubble = window.STATE.bubble;
+        const mStatus = document.getElementById('market-status');
+        if(bubble < 30) { mStatus.innerText = "적정 (Stable)"; mStatus.style.color = "green"; mStatus.style.animation = "none"; }
+        else if(bubble < 70) { mStatus.innerText = "과잉 (Surplus)"; mStatus.style.color = "orange"; mStatus.style.animation = "none"; }
+        else { mStatus.innerText = "위험 (Overproduction)"; mStatus.style.color = "red"; mStatus.style.animation = "blink 1s infinite"; }
+
+        if(window.STATE.statsRevealed) {
+            document.getElementById('pollution').innerText = Math.floor(window.STATE.pollution);
+            document.getElementById('anger').innerText = Math.floor(window.STATE.anger);
+        }
+
+        let smogOp = Math.min(0.9, window.STATE.pollution / 150);
+        document.getElementById('smog-layer').style.backgroundColor = `rgba(20, 20, 20, ${smogOp})`;
+
+        if(window.STATE.anger > 30) {
+            let angerOp = Math.min(0.8, (window.STATE.anger - 30) / 100);
+            document.getElementById('anger-layer').style.boxShadow = `inset 0 0 100px 50px rgba(183, 28, 28, ${angerOp})`;
+        } else {
+            document.getElementById('anger-layer').style.boxShadow = `none`;
+        }
+
+        if(window.STATE.anger >= 100) document.getElementById('anger-layer').classList.add('critical-warning');
+        else document.getElementById('anger-layer').classList.remove('critical-warning');
+
+        renderLists(); 
+    }
+
+    function renderLists() {
+        const techList = document.getElementById('tech-list');
+        techList.innerHTML = '';
+        
+        let activeTechs = [];
+        let doneTechs = [];
+
+        TECHS.forEach((tech, idx) => {
+            const div = document.createElement('div');
+            div.className = 'tech-card card-base';
+            let isBought = tech.oneTime && window.STATE.purchasedTechs.includes(tech.id);
+            let isLocked = tech.req && !window.STATE.purchasedTechs.includes(tech.req);
+            let isAffordable = !isBought && !isLocked && (window.STATE.money >= tech.cost);
+
+            if(isBought) {
+                div.classList.add('purchased');
+                div.innerHTML = `<div><s>${tech.name}</s> (완료)</div><div>✅</div>`;
+                doneTechs.push(div);
+            } else if(isLocked) {
+                div.classList.add('locked');
+                div.innerHTML = `<div>🔒 ??? (Locked)</div>`;
+                activeTechs.push(div);
+            } else {
+                if(!isAffordable) div.classList.add('disabled'); else div.classList.add('affordable');
+                div.onclick = () => buyTech(idx);
+                let desc = tech.desc;
+                if(!window.STATE.statsRevealed) desc = desc.replace('오염', '???').replace('불만', '???');
+                div.innerHTML = `<div class="card-info"><h4>${tech.name}</h4><p>${desc}</p></div><div class="tech-cost tech-cost-badge">£${tech.cost.toLocaleString()}</div>`;
+                activeTechs.push(div);
+            }
+        });
+        
+        activeTechs.forEach(el => techList.appendChild(el));
+        doneTechs.forEach(el => techList.appendChild(el));
+
+        const policyList = document.getElementById('policy-list');
+        policyList.innerHTML = '';
+        POLICIES.forEach((pol, idx) => {
+            if(pol.isEmergency) {
+                if(window.STATE.bubble >= 70) {
+                    const div = document.createElement('div');
+                    div.className = 'policy-card card-base affordable';
+                    div.style.borderColor = '#d50000';
+                    div.style.backgroundColor = '#ffebee';
+                    div.onclick = () => buyPolicy(idx);
+                    div.innerHTML = `<div class="card-info"><h4 style="color:#d50000;">${pol.name}</h4><p>${pol.desc}</p></div><div class="tech-cost" style="background:#d50000;">CLICK</div>`;
+                    policyList.prepend(div);
+                }
+                return;
+            }
+
+            const div = document.createElement('div');
+            div.className = 'policy-card card-base';
+            let isBought = pol.oneTime && window.STATE.purchasedPolicies.includes(pol.id);
+            let isLocked = pol.req && !window.STATE.purchasedTechs.includes(pol.req);
+            let isAffordable = !isBought && !isLocked && (window.STATE.money >= pol.cost);
+
+            if(isBought) { div.classList.add('active'); div.innerHTML = `<div>${pol.name} (시행중)</div><div>🏛️</div>`; }
+            else if(isLocked) { div.style.display = 'none'; } 
+            else {
+                if(!isAffordable) div.classList.add('disabled'); else div.classList.add('affordable');
+                div.onclick = () => buyPolicy(idx);
+                div.innerHTML = `<div class="card-info"><h4>${pol.name}</h4><p>${pol.desc}</p></div><div class="tech-cost policy-cost-badge">£${pol.cost.toLocaleString()}</div>`;
+                policyList.appendChild(div);
+            }
+        });
+    }
+
+    function addNews(text) {
+        const list = document.getElementById('news-archive');
+        const div = document.createElement('div');
+        div.className = 'news-item';
+        div.innerHTML = `[${window.STATE.year}.${window.STATE.month}] ${text}`;
+        list.prepend(div);
+    }
+
+    function checkEvents() {
+        if(window.STATE.pendingEvent) return;
+        if(eventCooldown > 0) { eventCooldown--; return; }
+
+        let candidates = EVENT_POOL.filter(evt => {
+            if(evt.oneTime && window.STATE.history.includes(evt.id)) return false;
+            if(evt.id === window.STATE.lastEventId) return false;
+            return evt.cond(window.STATE);
+        });
+
+        if(candidates.length === 0) return;
+
+        const shuffled = candidates.sort(() => 0.5 - Math.random());
+        for (let evt of shuffled) {
+            if(Math.random() < evt.prob) {
+                triggerEvent(evt);
+                break;
+            }
+        }
+    }
+
+    function triggerEvent(evt) {
+        window.STATE.pendingEvent = evt;
+        window.STATE.lastEventId = evt.id;
+        if(evt.oneTime) window.STATE.history.push(evt.id);
+        eventCooldown = 15; 
+        document.getElementById('alert-badge').style.display = 'block';
+    }
+
+    window.openModal = function() {
+        const evt = window.STATE.pendingEvent; if(!evt) return;
+        window.STATE.isPaused = true;
+        document.getElementById('modal-title').innerText = evt.title;
+        document.getElementById('modal-body').innerText = evt.desc;
+        
+        if(evt.isDilemma) {
+            document.getElementById('modal-confirm-area').style.display = 'none';
+            const choiceArea = document.getElementById('modal-choice-area');
+            choiceArea.style.display = 'flex';
+            const btn1 = choiceArea.querySelector('.btn-opt1');
+            const btn2 = choiceArea.querySelector('.btn-opt2');
+            btn1.innerText = evt.choices[0].text;
+            btn2.innerText = evt.choices[1].text;
+        } else {
+            document.getElementById('modal-confirm-area').style.display = 'block';
+            document.getElementById('modal-choice-area').style.display = 'none';
+            document.getElementById('modal-effect').innerText = evt.effectStr;
+        }
+        
+        document.getElementById('news-modal').style.display = 'flex';
+    };
+
+    window.resolveDilemma = function(choiceIdx) {
+        const evt = window.STATE.pendingEvent;
+        if(evt && evt.choices) {
+            evt.choices[choiceIdx].action();
+        }
+        window.closeModal();
+    }
+
+    window.closeModal = function() {
+        const evt = window.STATE.pendingEvent;
+        if(evt && !evt.isDilemma) {
+            if(evt.action) evt.action(); 
+            addNews(`<strong>[속보] ${evt.title}</strong>`); 
+        } else if(evt && !evt.isDilemma) {
+            addNews(`<strong>[속보] ${evt.title}</strong>`);
+        }
+        
+        window.STATE.pendingEvent = null;
+        window.STATE.isPaused = false;
+        document.getElementById('news-modal').style.display = 'none';
+        document.getElementById('alert-badge').style.display = 'none';
+        
+        checkLimits();
+        updateUI();
+    };
+
+    function sabotage(ms) {
+        window.STATE.isSabotaged = true;
+        const btn = document.getElementById('work-btn');
+        const tape = document.getElementById('sabotage-tape');
+        const timer = document.getElementById('sabotage-timer');
+        let timeLeft = ms / 1000;
+
+        btn.disabled = true;
+        tape.style.display = 'flex';
+        timer.innerText = timeLeft + "s...";
+
+        const interval = setInterval(() => {
+            if(window.STATE.isPaused) return; 
+            timeLeft--;
+            timer.innerText = timeLeft + "s...";
+            if(timeLeft <= 0) {
+                clearInterval(interval);
+                btn.disabled = false;
+                tape.style.display = 'none';
+                window.STATE.isSabotaged = false;
+            }
+        }, 1000);
+    }
+
+    function triggerEnding(type) {
+        window.STATE.gameOver = true;
+        const screen = document.getElementById('ending-screen');
+        const letter = document.getElementById('ending-letter');
+        const title = document.getElementById('end-title');
+        const body = document.getElementById('end-body');
+        const footer = document.getElementById('end-footer'); // [수정] 푸터 엘리먼트 가져오기
+
+        screen.style.display = 'flex';
+        
+        // [수정] 꼬리말에 현재 연도 반영
+        footer.innerText = `${window.STATE.year}년, 런던의 폐허에서.`;
+
+        // 기존 승리 클래스 제거 (초기화)
+        letter.classList.remove('ending-victory');
+
+        if(type === 'POLLUTION') {
+            title.innerText = "생태계의 종말";
+            body.innerHTML = `
+                "런던의 하늘은 낮에도 검은색이었네. 
+                강물은 악취로 썩어갔고, 사람들은 병들어 쓰러졌지.
+                우리는 황금을 위해 자연을 모두 태워버렸어.
+                이제 남은 것은 재와 후회뿐이라네."
+                <br><br>
+                - 19세기 어느 자본가의 유서 中
+            `;
+        } else if(type === 'ANGER') {
+            title.innerText = "혁명의 깃발";
+            body.innerHTML = `
+                "더 이상 참을 수 없다! 기계를 멈추어라!"
+                <br><br>
+                분노한 노동자들이 공장을 점거하고 거리는 불길에 휩싸였습니다.
+                당신이 쌓아올린 제국은 민중의 분노 앞에 무너져 내렸습니다.
+                인간성을 상실한 성장은 지속될 수 없었습니다.
+            `;
+        } else if(type === 'BUBBLE') {
+            title.innerText = "대공황 (The Great Depression)";
+            body.innerHTML = `
+                "물건은 산더미처럼 쌓여있는데, 살 사람이 없다네."
+                <br><br>
+                과잉 생산으로 인한 시장의 붕괴. 주식은 휴지조각이 되었고,
+                수만 명의 실업자가 거리를 배회합니다.
+                영원할 것 같던 번영은 거품처럼 사라졌습니다.
+            `;
+        } else if(type === 'DEPRESSION_ERA') {
+            // [수정된 부분] 1930년 파국 엔딩
+            title.innerText = "파국 (The Catastrophe)";
+            body.innerHTML = `
+                "결국 올 것이 오고야 말았네."
+                <br><br>
+                1930년, 세계적인 대공황이 시작되었습니다.
+                당신이 필사적으로 지켜온 공장의 기계들은 멈추어 섰고,
+                쌓아둔 자본은 하룻밤 사이에 휴지조각이 되었습니다.
+                <br><br>
+                성장의 끝은 번영이 아닌, 거대한 몰락이었습니다.
+                <div class="final-score">
+                    의미 없는 자산: £${Math.floor(window.STATE.money).toLocaleString()}
+                </div>
+            `;
+        }
+    }
+
+    function gameLoop() {
+        if(window.STATE.gameOver || window.STATE.isPaused) return;
+        
+        let currentIncome = window.STATE.income;
+        if (window.STATE.isSabotaged) {
+            currentIncome = 0; 
+        } else if (window.STATE.anger >= 100) {
+            currentIncome = Math.floor(currentIncome * 0.5); 
+            if(Math.random() < 0.1) sabotage(3000);
+        }
+        addMoney(currentIncome);
+        
+        if(!window.STATE.isSabotaged && currentIncome > 50) {
+            window.STATE.bubble += (currentIncome * 0.0002);
+        }
+
+        if(window.STATE.income > 100) window.STATE.anger += window.STATE.angerRate;
+
+        if(window.STATE.pollution >= 100) { triggerEnding('POLLUTION'); return; }
+        if(window.STATE.anger >= 100) { triggerEnding('ANGER'); return; } 
+        if(window.STATE.bubble >= 100) { triggerEnding('BUBBLE'); return; }
+
+        checkLimits();
+
+        window.STATE.month += 4;
+        if(window.STATE.month > 12) {
+            window.STATE.month = 1;
+            window.STATE.year++;
+        }
+
+        checkEvents();
+
+        if(window.STATE.year >= 1930) {
+            triggerEnding('DEPRESSION_ERA'); // alert 대신 엔딩 화면 호출
+            return;
+        }
+        
+        updateUI();
+    }
+
+    window.onload = function() {
+        renderLists(); addNews("사업 시작: 작은 공방을 열었습니다.");
+        setInterval(gameLoop, 1000); 
+    };
+
+</script>
+</body>
+</html>
