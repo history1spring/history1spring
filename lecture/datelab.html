@@ -3708,9 +3708,106 @@
     body.student-calm .eyebrow {
       display: none;
     }
+
+    body.student-calm .difficulty-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    body.student-calm .difficulty-chip-row span {
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    body.student-calm .difficulty-chip {
+      min-height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #fff;
+      color: #334155;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    body.student-calm .difficulty-chip.is-active {
+      border-color: #0f766e;
+      background: #e8f6f2;
+      color: #0f766e;
+    }
   </style>
 
   <script>
+    (function repairPortalLinksAndDifficultyFilter() {
+      if (typeof portals !== "undefined") {
+        Object.assign(portals.localdata || {}, {
+          name: "공공데이터포털 지방행정 인허가정보",
+          url: "https://www.data.go.kr/tcs/eds/selectCoreDataView.do?coreDataInsttCode=1741000&coreDataSn=6",
+          note: "로컬데이터 종료 후 공공데이터포털에서 제공"
+        });
+
+        Object.assign(portals.sbiz || {}, {
+          name: "공공데이터포털 상가(상권)정보",
+          url: "https://www.data.go.kr/dataset/15012005/fileData.do?lang=ko",
+          note: "상호명, 업종명, 주소, 좌표가 있는 상가업소 데이터"
+        });
+
+        if (Array.isArray(topics)) {
+          topics.forEach(topic => {
+            topic.portals = Array.from(new Set((topic.portals || []).map(key => key === "vworld" ? "standards" : key)));
+          });
+        }
+
+        if (typeof renderTopicDetail === "function") renderTopicDetail();
+      }
+
+      const topicGridEl = document.querySelector("#topicGrid");
+      const difficultySelect = document.querySelector("#difficultyFilter");
+      if (!topicGridEl || !difficultySelect || document.querySelector(".difficulty-chip-row")) return;
+
+      const chipRow = document.createElement("div");
+      chipRow.className = "difficulty-chip-row";
+      chipRow.setAttribute("aria-label", "난이도 필터");
+      chipRow.innerHTML = `
+        <span>난이도</span>
+        <button class="difficulty-chip" type="button" data-difficulty="all">전체</button>
+        <button class="difficulty-chip" type="button" data-difficulty="쉬움">쉬움</button>
+        <button class="difficulty-chip" type="button" data-difficulty="보통">보통</button>
+        <button class="difficulty-chip" type="button" data-difficulty="도전">도전</button>
+      `;
+      topicGridEl.insertAdjacentElement("beforebegin", chipRow);
+
+      const syncDifficultyChips = () => {
+        chipRow.querySelectorAll("[data-difficulty]").forEach(button => {
+          button.classList.toggle("is-active", button.dataset.difficulty === difficultySelect.value);
+        });
+      };
+
+      chipRow.addEventListener("click", event => {
+        const button = event.target.closest("[data-difficulty]");
+        if (!button) return;
+        difficultySelect.value = button.dataset.difficulty;
+        if (typeof renderTopicGrid === "function") renderTopicGrid();
+        syncDifficultyChips();
+      });
+
+      const originalRenderTopicGrid = typeof renderTopicGrid === "function" ? renderTopicGrid : null;
+      if (originalRenderTopicGrid) {
+        renderTopicGrid = function renderTopicGridWithDifficultyChips() {
+          const result = originalRenderTopicGrid.apply(this, arguments);
+          syncDifficultyChips();
+          return result;
+        };
+      }
+
+      syncDifficultyChips();
+    })();
+
     (function simplifyStudentUx() {
       const lead = document.querySelector(".lead");
       if (lead) {
