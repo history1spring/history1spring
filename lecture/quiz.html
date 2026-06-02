@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CODAP 분석 결과</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f5ef;
+      --surface: #fffdf8;
+      --ink: #25231f;
+      --muted: #6e6a61;
+      --line: #ded8ca;
+      --teal: #1f7a78;
+      --teal-soft: #d9eeeb;
+      --amber: #d08a21;
+      --amber-soft: #fae8c7;
+      --coral: #bf5148;
+      --coral-soft: #f7d8d3;
+      --green: #3d7a42;
+      --green-soft: #dcebd9;
+      --blue: #3e6690;
+      --shadow: 0 18px 45px rgba(56, 49, 38, 0.12);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(247, 245, 239, 0.96), rgba(247, 245, 239, 0.98)),
+        repeating-linear-gradient(90deg, rgba(31, 122, 120, 0.08) 0 1px, transparent 1px 80px),
+        repeating-linear-gradient(0deg, rgba(208, 138, 33, 0.08) 0 1px, transparent 1px 80px);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 30px 0 42px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .title-panel,
+    .map-panel {
+      background: rgba(255, 253, 248, 0.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .title-panel {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 250px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: max-content;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--teal-soft);
+      color: #165756;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 14px 0 8px;
+      font-size: 34px;
+      line-height: 1.22;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+      max-width: 720px;
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    select {
+      min-height: 46px;
+      width: 100%;
+      border: 1px solid #cfc7b7;
+      border-radius: var(--radius);
+      background: #fffaf0;
+      color: var(--ink);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(31, 122, 120, 0.18);
+    }
+
+    .map-panel {
+      position: relative;
+      min-height: 250px;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .map-title {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .compass {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid #c6bdac;
+      display: grid;
+      place-items: center;
+      color: var(--coral);
+      background: #fffaf0;
+      font-weight: 900;
+    }
+
+    .mini-map {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(30deg, transparent 0 47%, rgba(62, 102, 144, 0.18) 47% 51%, transparent 51%),
+        linear-gradient(135deg, transparent 0 58%, rgba(208, 138, 33, 0.16) 58% 62%, transparent 62%),
+        repeating-linear-gradient(90deg, rgba(37, 35, 31, 0.06) 0 1px, transparent 1px 58px),
+        repeating-linear-gradient(0deg, rgba(37, 35, 31, 0.06) 0 1px, transparent 1px 58px);
+    }
+
+    .school {
+      position: absolute;
+      left: 42%;
+      top: 59%;
+      transform: translate(-50%, -50%);
+      width: 92px;
+      height: 42px;
+      border-radius: var(--radius);
+      background: #25231f;
+      color: #fffdf8;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(37, 35, 31, 0.25);
+      z-index: 2;
+    }
+
+    .ring {
+      position: absolute;
+      left: 42%;
+      top: 59%;
+      transform: translate(-50%, -50%);
+      width: 218px;
+      height: 218px;
+      border: 2px dashed rgba(31, 122, 120, 0.65);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .pin {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #fffdf8;
+      box-shadow: 0 5px 14px rgba(37, 35, 31, 0.22);
+      z-index: 3;
+    }
+
+    .pin.teal {
+      background: var(--teal);
+    }
+
+    .pin.amber {
+      background: var(--amber);
+    }
+
+    .pin.coral {
+      background: var(--coral);
+    }
+
+    .legend {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      right: 18px;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .legend span {
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: var(--radius);
+      background: rgba(255, 250, 240, 0.9);
+      border: 1px solid rgba(207, 199, 183, 0.85);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .quiz-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .quiz-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(56, 49, 38, 0.08);
+    }
+
+    .quiz-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-tag {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--amber-soft);
+      color: #7d4d12;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .state-badge {
+      min-height: 28px;
+      min-width: 70px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 9px;
+      color: var(--muted);
+      background: #f3ede2;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .state-badge.correct {
+      color: #28562c;
+      background: var(--green-soft);
+    }
+
+    .state-badge.wrong {
+      color: #8a342d;
+      background: var(--coral-soft);
+    }
+
+    .prompt {
+      margin: 0 0 14px;
+      line-height: 1.72;
+      font-size: 17px;
+    }
+
+    .blank {
+      display: inline-flex;
+      align-items: center;
+      min-width: 98px;
+      min-height: 28px;
+      padding: 1px 8px 2px;
+      margin: 0 2px;
+      border-bottom: 2px solid var(--teal);
+      color: #135f5e;
+      background: var(--teal-soft);
+      border-radius: 5px 5px 0 0;
+      font-weight: 900;
+      vertical-align: baseline;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .choices.one-choice {
+      grid-template-columns: minmax(220px, 520px);
+    }
+
+    .feedback {
+      display: none;
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--muted);
+      background: #f6f1e8;
+      border: 1px solid #e5dccd;
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback strong {
+      color: var(--ink);
+    }
+
+    .result-panel {
+      position: sticky;
+      top: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .score-box {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .score-ring {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background:
+        conic-gradient(var(--teal) var(--score-angle, 0deg), #e7dece 0),
+        var(--surface);
+      position: relative;
+    }
+
+    .score-ring::after {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: var(--surface);
+    }
+
+    .score-text {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      font-weight: 900;
+      font-size: 25px;
+    }
+
+    .score-text small {
+      display: block;
+      margin-top: 1px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .result-title {
+      margin: 0 0 7px;
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .result-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .primary,
+    .secondary {
+      min-height: 46px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .primary {
+      background: var(--teal);
+      color: white;
+    }
+
+    .primary:hover {
+      background: #176866;
+    }
+
+    .secondary {
+      background: #fffaf0;
+      color: var(--ink);
+      border-color: #cfc7b7;
+    }
+
+    .secondary:hover {
+      background: #f5eddf;
+    }
+
+    .answer-log {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .answer-log.show {
+      display: block;
+    }
+
+    .answer-log ol {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .answer-log li {
+      margin: 5px 0;
+    }
+
+    .complete-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #ece3d6;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .complete-line:last-child {
+      border-bottom: 0;
+    }
+
+    .pill {
+      min-width: 46px;
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      color: #28562c;
+      background: var(--green-soft);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 900px) {
+      header,
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .result-panel {
+        position: static;
+      }
+
+      .title-panel {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        width: min(100% - 20px, 1180px);
+        padding: 18px 0 28px;
+      }
+
+      h1 {
+        font-size: 27px;
+      }
+
+      .lead,
+      .prompt {
+        font-size: 16px;
+      }
+
+      .meta-row,
+      .choices,
+      .legend {
+        grid-template-columns: 1fr;
+      }
+
+      .score-box {
+        grid-template-columns: 82px minmax(0, 1fr);
+      }
+
+      .score-ring {
+        width: 82px;
+        height: 82px;
+      }
+
+      .score-text {
+        font-size: 22px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .app {
+        width: 100%;
+        padding: 0;
+      }
+
+      .map-panel,
+      .actions {
+        display: none;
+      }
+
+      header,
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .title-panel,
+      .quiz-card,
+      .result-panel {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <section class="title-panel" aria-labelledby="page-title">
+        <div>
+          <span class="eyebrow">CODAP 분석 빈칸 채점</span>
+          <h1 id="page-title">CODAP 분석 결과</h1>
+          <p class="lead">CODAP에서 만든 그래프와 지도를 보고 500m 기준 분류, 지도 방향, 학생공간유형별 거리 비교를 선택형 답안으로 확인합니다.</p>
+        </div>
+      </section>
+
+      <section class="map-panel" aria-label="안남고 주변 500m 시각화">
+        <div class="mini-map" aria-hidden="true"></div>
+        <div class="map-title">
+          <span>500m 안 장소 분포 보조 지도</span>
+          <span class="compass" title="북쪽">N</span>
+        </div>
+        <div class="ring" aria-hidden="true"></div>
+        <div class="school" aria-hidden="true">안남고</div>
+        <span class="pin teal" style="left: 35%; top: 31%;" aria-hidden="true"></span>
+        <span class="pin teal" style="left: 52%; top: 26%;" aria-hidden="true"></span>
+        <span class="pin teal" style="left: 61%; top: 34%;" aria-hidden="true"></span>
+        <span class="pin amber" style="left: 46%; top: 38%;" aria-hidden="true"></span>
+        <span class="pin amber" style="left: 56%; top: 44%;" aria-hidden="true"></span>
+        <span class="pin coral" style="left: 76%; top: 70%;" aria-hidden="true"></span>
+        <span class="pin coral" style="left: 18%; top: 74%;" aria-hidden="true"></span>
+        <div class="legend" aria-hidden="true">
+          <span><i class="dot" style="background: var(--teal);"></i>간식·편의</span>
+          <span><i class="dot" style="background: var(--amber);"></i>공부·휴식</span>
+          <span><i class="dot" style="background: var(--coral);"></i>게임·여가</span>
+        </div>
+      </section>
+    </header>
+
+    <main>
+      <section class="quiz-list" aria-label="채점 문항">
+        <article class="quiz-card" data-group="discovery">
+          <div class="quiz-head">
+            <span class="section-tag">발견</span>
+            <span class="state-badge" id="badge-discovery">미채점</span>
+          </div>
+          <p class="prompt">그래프를 통해 안남고에서 500m 안에는 <span class="blank">유형 1</span>과 <span class="blank">유형 2</span>이 가장 많다는 것을 확인했다.</p>
+          <div class="choices">
+            <label>
+              유형 1
+              <select id="discoveryA" data-answer="set:insideTypes">
+                <option value="">선택</option>
+                <option>간식·편의 공간</option>
+                <option>공부·휴식 공간</option>
+                <option>게임·여가 공간</option>
+                <option>문화·체험 공간</option>
+              </select>
+            </label>
+            <label>
+              유형 2
+              <select id="discoveryB" data-answer="set:insideTypes">
+                <option value="">선택</option>
+                <option>간식·편의 공간</option>
+                <option>공부·휴식 공간</option>
+                <option>게임·여가 공간</option>
+                <option>문화·체험 공간</option>
+              </select>
+            </label>
+          </div>
+          <p class="feedback" id="feedback-discovery"></p>
+        </article>
+
+        <article class="quiz-card" data-group="map">
+          <div class="quiz-head">
+            <span class="section-tag">지도 해석</span>
+            <span class="state-badge" id="badge-map">미채점</span>
+          </div>
+          <p class="prompt">지도에서는 500m 안 장소들이 안남고를 기준으로 주로 <span class="blank">방향</span>에 모여 있었다.</p>
+          <div class="choices one-choice">
+            <label>
+              방향
+              <select id="mapDirection" data-answer="north">
+                <option value="">선택</option>
+                <option value="north">북쪽 방향</option>
+                <option value="south">남쪽 방향</option>
+                <option value="east">동쪽 방향</option>
+                <option value="west">서쪽 방향</option>
+              </select>
+            </label>
+          </div>
+          <p class="feedback" id="feedback-map"></p>
+        </article>
+
+        <article class="quiz-card" data-group="comparison">
+          <div class="quiz-head">
+            <span class="section-tag">비교</span>
+            <span class="state-badge" id="badge-comparison">미채점</span>
+          </div>
+          <p class="prompt">학생공간유형별 거리 비교 그래프를 보면, 안남고와 가까운 거리대에는 <span class="blank">가까운 유형</span>이/가 나타났고, 먼 거리대에는 <span class="blank">먼 유형</span>이/가 주로 분포했다.</p>
+          <div class="choices">
+            <label>
+              가까운 거리대 유형
+              <select id="closeType" data-answer="snackOrStudy">
+                <option value="">선택</option>
+                <option value="snack">간식·편의 공간</option>
+                <option value="study">공부·휴식 공간</option>
+                <option value="game">게임·여가 공간</option>
+                <option value="culture">문화·체험 공간</option>
+              </select>
+            </label>
+            <label>
+              먼 거리대 유형
+              <select id="farType" data-answer="game">
+                <option value="">선택</option>
+                <option value="snack">간식·편의 공간</option>
+                <option value="study">공부·휴식 공간</option>
+                <option value="game">게임·여가 공간</option>
+                <option value="culture">문화·체험 공간</option>
+              </select>
+            </label>
+          </div>
+          <p class="feedback" id="feedback-comparison"></p>
+        </article>
+
+        <article class="quiz-card" data-group="limit">
+          <div class="quiz-head">
+            <span class="section-tag">한계</span>
+            <span class="state-badge" id="badge-limit">미채점</span>
+          </div>
+          <p class="prompt">이 분석은 <span class="blank">거리 기준</span>이므로 실제 도보 거리와는 다를 수 있으며, 실제 학생 이용률, 가격, 영업시간, 만족도는 알 수 없다는 한계가 있다.</p>
+          <div class="choices">
+            <label>
+              거리 기준
+              <select id="limitType" data-answer="straight">
+                <option value="">선택</option>
+                <option value="straight">직선거리 기준</option>
+                <option value="walk">실제 도보 거리 기준</option>
+                <option value="price">가격 기준</option>
+                <option value="satisfaction">만족도 기준</option>
+              </select>
+            </label>
+          </div>
+          <p class="feedback" id="feedback-limit"></p>
+        </article>
+      </section>
+
+      <aside class="result-panel" aria-label="채점 결과">
+        <div class="score-box">
+          <div class="score-ring" id="scoreRing">
+            <div class="score-text"><span id="scoreValue">0</span><small>/ 6점</small></div>
+          </div>
+          <div>
+            <h2 class="result-title" id="resultTitle">채점 대기</h2>
+            <p class="result-copy" id="resultCopy">답안을 선택한 뒤 채점합니다.</p>
+          </div>
+        </div>
+        <div class="complete-line">
+          <span>발견</span>
+          <span class="pill" id="points-discovery">0/2</span>
+        </div>
+        <div class="complete-line">
+          <span>지도 해석</span>
+          <span class="pill" id="points-map">0/1</span>
+        </div>
+        <div class="complete-line">
+          <span>비교</span>
+          <span class="pill" id="points-comparison">0/2</span>
+        </div>
+        <div class="complete-line">
+          <span>한계</span>
+          <span class="pill" id="points-limit">0/1</span>
+        </div>
+        <div class="actions">
+          <button class="primary" type="button" id="gradeButton">채점하기</button>
+          <button class="secondary" type="button" id="resetButton">다시 풀기</button>
+          <button class="secondary" type="button" id="printButton">결과 인쇄</button>
+        </div>
+        <div class="answer-log" id="answerLog">
+          <strong>정답 문장</strong>
+          <ol>
+            <li>500m 안에는 간식·편의 공간과 공부·휴식 공간이 가장 많다.</li>
+            <li>500m 안 장소들은 안남고를 기준으로 주로 북쪽 방향에 모여 있다.</li>
+            <li>유형별 학교와의 거리 분포를 비교하면 가까운 거리대에는 간식·편의 공간 또는 공부·휴식 공간이 나타나고, 먼 거리대에는 게임·여가 공간이 주로 분포한다.</li>
+            <li>분석 한계는 직선거리 기준이다.</li>
+          </ol>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const TOTAL_POINTS = 6;
+    const answers = {
+      insideTypes: ["간식·편의 공간", "공부·휴식 공간"]
+    };
+
+    const groups = {
+      discovery: {
+        max: 2,
+        badge: document.getElementById("badge-discovery"),
+        points: document.getElementById("points-discovery"),
+        feedback: document.getElementById("feedback-discovery")
+      },
+      map: {
+        max: 1,
+        badge: document.getElementById("badge-map"),
+        points: document.getElementById("points-map"),
+        feedback: document.getElementById("feedback-map")
+      },
+      comparison: {
+        max: 2,
+        badge: document.getElementById("badge-comparison"),
+        points: document.getElementById("points-comparison"),
+        feedback: document.getElementById("feedback-comparison")
+      },
+      limit: {
+        max: 1,
+        badge: document.getElementById("badge-limit"),
+        points: document.getElementById("points-limit"),
+        feedback: document.getElementById("feedback-limit")
+      }
+    };
+
+    const scoreRing = document.getElementById("scoreRing");
+    const scoreValue = document.getElementById("scoreValue");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultCopy = document.getElementById("resultCopy");
+    const answerLog = document.getElementById("answerLog");
+
+    function optionText(select) {
+      return select.options[select.selectedIndex]?.text || "";
+    }
+
+    function gradeDiscovery() {
+      const first = document.getElementById("discoveryA").value;
+      const second = document.getElementById("discoveryB").value;
+      const selected = [first, second].filter(Boolean);
+      const unique = new Set(selected);
+      const correctCount = answers.insideTypes.filter(answer => unique.has(answer)).length;
+      const duplicatePenalty = selected.length === 2 && unique.size < 2;
+      return {
+        points: duplicatePenalty ? Math.min(correctCount, 1) : correctCount,
+        message: correctCount === 2 && !duplicatePenalty
+          ? "정답입니다. 두 유형은 순서가 바뀌어도 맞게 처리됩니다."
+          : "정답은 간식·편의 공간과 공부·휴식 공간입니다."
+      };
+    }
+
+    function gradeExact(selectId, expected) {
+      const select = document.getElementById(selectId);
+      return select.value === expected ? 1 : 0;
+    }
+
+    function gradeOneOf(selectId, expectedValues) {
+      const select = document.getElementById(selectId);
+      return expectedValues.includes(select.value) ? 1 : 0;
+    }
+
+    function setGroupState(name, result) {
+      const group = groups[name];
+      group.points.textContent = `${result.points}/${group.max}`;
+      group.feedback.classList.add("show");
+      group.feedback.innerHTML = result.message;
+
+      group.badge.classList.remove("correct", "wrong");
+      if (result.points === group.max) {
+        group.badge.textContent = "정답";
+        group.badge.classList.add("correct");
+      } else {
+        group.badge.textContent = "확인";
+        group.badge.classList.add("wrong");
+      }
+    }
+
+    function gradeAll() {
+      const discovery = gradeDiscovery();
+      const mapPoints = gradeExact("mapDirection", "north");
+      const comparisonPoints = gradeOneOf("closeType", ["snack", "study"]) + gradeExact("farType", "game");
+      const limitPoints = gradeExact("limitType", "straight");
+
+      const results = {
+        discovery,
+        map: {
+          points: mapPoints,
+          message: mapPoints === 1
+            ? "정답입니다. 500m 안 장소들이 안남고를 기준으로 주로 북쪽에 모여 있다는 지도 해석입니다."
+            : "정답은 북쪽 방향입니다. 지도에서 학교 위쪽에 500m 안 장소들이 많이 모여 있는지 확인해 보세요."
+        },
+        comparison: {
+          points: comparisonPoints,
+          message: comparisonPoints === 2
+            ? "정답입니다. 가까운 거리대 유형은 간식·편의 공간 또는 공부·휴식 공간으로 볼 수 있고, 먼 거리대 유형은 게임·여가 공간입니다."
+            : "가까운 거리대 유형은 간식·편의 공간 또는 공부·휴식 공간, 먼 거리대 유형은 게임·여가 공간입니다."
+        },
+        limit: {
+          points: limitPoints,
+          message: limitPoints === 1
+            ? "정답입니다. 직선거리 분석의 한계를 짚었습니다."
+            : "정답은 직선거리 기준입니다."
+        }
+      };
+
+      Object.entries(results).forEach(([name, result]) => setGroupState(name, result));
+
+      const total = Object.values(results).reduce((sum, result) => sum + result.points, 0);
+      const percent = Math.round((total / TOTAL_POINTS) * 100);
+      scoreValue.textContent = String(total);
+      scoreRing.style.setProperty("--score-angle", `${(total / TOTAL_POINTS) * 360}deg`);
+
+      if (total === TOTAL_POINTS) {
+        resultTitle.textContent = "만점";
+        resultCopy.textContent = "빈칸 해석이 정답 문장과 일치합니다.";
+      } else if (total >= 5) {
+        resultTitle.textContent = "대부분 정확";
+        resultCopy.textContent = `${percent}% 정답입니다. 표시된 항목만 다시 확인하면 됩니다.`;
+      } else {
+        resultTitle.textContent = "재확인 필요";
+        resultCopy.textContent = `${percent}% 정답입니다. 그래프, 지도, 거리 비교 해석을 다시 맞춰보세요.`;
+      }
+      answerLog.classList.add("show");
+    }
+
+    function resetAll() {
+      document.querySelectorAll("select").forEach(select => {
+        select.selectedIndex = 0;
+      });
+      Object.entries(groups).forEach(([name, group]) => {
+        group.points.textContent = `0/${group.max}`;
+        group.badge.textContent = "미채점";
+        group.badge.classList.remove("correct", "wrong");
+        group.feedback.classList.remove("show");
+        group.feedback.textContent = "";
+      });
+      scoreValue.textContent = "0";
+      scoreRing.style.setProperty("--score-angle", "0deg");
+      resultTitle.textContent = "채점 대기";
+      resultCopy.textContent = "답안을 선택한 뒤 채점합니다.";
+      answerLog.classList.remove("show");
+    }
+
+    document.getElementById("gradeButton").addEventListener("click", gradeAll);
+    document.getElementById("resetButton").addEventListener("click", resetAll);
+    document.getElementById("printButton").addEventListener("click", () => window.print());
+  </script>
+</body>
+</html>
