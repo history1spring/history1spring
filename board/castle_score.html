@@ -1,0 +1,4130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>캐슬콤보 점수 계산기</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #eee7d7;
+      --paper-2: #d9d3c4;
+      --ink: #2f241a;
+      --muted: #6f604b;
+      --surface: #fbf8ee;
+      --surface-2: #ded7c8;
+      --line: #b9965d;
+      --green: #607f43;
+      --green-soft: #e4ecd1;
+      --amber: #c58a2d;
+      --amber-soft: #f4d78e;
+      --red: #a9443e;
+      --red-soft: #f1d2ca;
+      --blue: #315f89;
+      --blue-soft: #d7e6f0;
+      --purple: #73527f;
+      --purple-soft: #eadcf0;
+      --wood: #5d3825;
+      --gold: #d9ad45;
+      --parchment-line: rgba(121, 83, 42, 0.15);
+      --shadow: 0 18px 38px rgba(77, 49, 24, 0.22);
+      --soft-shadow: 0 8px 18px rgba(77, 49, 24, 0.14);
+      --radius: 8px;
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(49, 95, 137, 0.16) 0 10px, transparent 10px calc(100% - 10px), rgba(169, 68, 62, 0.13) calc(100% - 10px)),
+        linear-gradient(180deg, rgba(238, 236, 226, 0.98), rgba(210, 208, 195, 0.96)),
+        repeating-linear-gradient(0deg, rgba(81, 83, 84, 0.045) 0 1px, transparent 1px 15px),
+        repeating-linear-gradient(90deg, rgba(81, 83, 84, 0.04) 0 1px, transparent 1px 96px);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    img,
+    canvas,
+    video {
+      max-width: 100%;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px clamp(16px, 3vw, 34px);
+      border-bottom: 3px solid var(--gold);
+      background:
+        linear-gradient(180deg, rgba(94, 57, 35, 0.98), rgba(63, 43, 35, 0.98)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 28px);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 10px 24px rgba(61, 40, 25, 0.24);
+      overflow: visible;
+    }
+
+    .topbar::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -9px;
+      height: 9px;
+      background:
+        repeating-linear-gradient(90deg, var(--gold) 0 22px, transparent 22px 34px);
+      opacity: 0.95;
+      pointer-events: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #3c260e;
+      background:
+        linear-gradient(145deg, #ffe08a 0%, var(--gold) 42%, #9b6724 100%);
+      border: 2px solid #f8e4a0;
+      box-shadow:
+        inset 0 0 0 3px rgba(100, 59, 15, 0.22),
+        inset 0 -5px 10px rgba(94, 51, 13, 0.24),
+        0 8px 16px rgba(28, 18, 12, 0.28);
+      font-weight: 900;
+      text-shadow: 0 1px 0 rgba(255, 244, 188, 0.75);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 0;
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: #fff8df;
+      text-shadow: 0 2px 0 rgba(34, 20, 11, 0.38);
+    }
+
+    .subtitle {
+      color: #f3dba2;
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .advanced-menu {
+      position: relative;
+    }
+
+    .advanced-menu summary {
+      list-style: none;
+    }
+
+    .advanced-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .advanced-popover {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      width: 190px;
+      display: grid;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #fff5dd, #ead5a7);
+      box-shadow: var(--shadow);
+      z-index: 30;
+    }
+
+    .advanced-popover .btn {
+      width: 100%;
+      justify-content: flex-start;
+      box-shadow: none;
+    }
+
+    .btn,
+    .icon-btn,
+    .seg-btn {
+      border-radius: var(--radius);
+      min-height: 38px;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, #fff8e7, #ead7ae);
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 12px;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .btn:hover,
+    .icon-btn:hover,
+    .seg-btn:hover {
+      border-color: #8f6a32;
+      transform: translateY(-1px);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .icon-btn {
+      width: 40px;
+      padding: 0;
+      font-weight: 800;
+    }
+
+    .btn.primary,
+    .seg-btn.active {
+      background:
+        linear-gradient(180deg, #426f55, #244f3a);
+      color: #fff;
+      border-color: #244f3a;
+    }
+
+    .btn.warn {
+      background:
+        linear-gradient(180deg, #ffe6a2, #d9a73e);
+      border-color: #9c6c21;
+      color: #422909;
+    }
+
+    .btn.danger {
+      background: var(--red-soft);
+      border-color: #e2abab;
+      color: #7d2626;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(235px, 285px) minmax(0, 1fr) minmax(270px, 340px);
+      gap: 18px;
+      padding: 26px clamp(16px, 3vw, 34px) 30px;
+      align-items: start;
+    }
+
+    .panel,
+    .main-panel {
+      background:
+        linear-gradient(180deg, rgba(251, 249, 241, 0.98), rgba(225, 221, 208, 0.97)),
+        repeating-linear-gradient(0deg, transparent 0 13px, rgba(74, 76, 78, 0.045) 13px 14px);
+      border: 1px solid #a98042;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before,
+    .main-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 7px;
+      background:
+        linear-gradient(90deg, var(--blue), var(--purple) 20%, var(--green) 42%, var(--red) 66%, var(--amber) 86%, #d1ae40);
+      pointer-events: none;
+    }
+
+    .panel {
+      padding: 15px;
+    }
+
+    .main-panel {
+      padding: clamp(14px, 2.5vw, 22px);
+      min-width: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+      color: #4b2f20;
+    }
+
+    h2 {
+      font-size: 18px;
+    }
+
+    h3 {
+      font-size: 15px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      padding: 4px;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #6f472d, #4d3327);
+      border: 1px solid #8c683c;
+      box-shadow: inset 0 1px 0 rgba(255, 229, 160, 0.18);
+    }
+
+    .segmented.five {
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    .seg-btn {
+      min-height: 34px;
+      padding: 7px 8px;
+      border-color: transparent;
+      box-shadow: none;
+      background: transparent;
+      color: #fff4d6;
+      white-space: nowrap;
+    }
+
+    .player-list,
+    .score-list,
+    .history-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .player-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid #b78d4d;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #fff8e8, #f0dcb4);
+    }
+
+    .player-row.active {
+      border-color: #315f89;
+      background:
+        linear-gradient(180deg, #e7f1f6, #d3e2ec);
+      box-shadow: inset 4px 0 0 var(--blue);
+    }
+
+    .player-row input,
+    .field,
+    .textarea,
+    .select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #fffaf0, #f5e7c9);
+      color: var(--ink);
+      padding: 9px 10px;
+      outline-color: var(--green);
+      box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.02);
+    }
+
+    .method-body {
+      margin-top: 16px;
+    }
+
+    .photo-tools {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px dashed #9d7946;
+      background:
+        linear-gradient(180deg, rgba(255, 244, 214, 0.82), rgba(232, 209, 166, 0.72));
+      border-radius: var(--radius);
+    }
+
+    .photo-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .photo-canvas-wrap {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, #1f2730, #442e26);
+      border: 2px solid #7c562f;
+      box-shadow: inset 0 0 0 1px rgba(255, 233, 178, 0.16);
+    }
+
+    .camera-video {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #photoCanvas {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 10;
+    }
+
+    .crop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .range-field {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--amber);
+    }
+
+    .board-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 16px 0 12px;
+      min-width: 0;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(9px, 1.4vw, 14px);
+      width: min(100%, 760px);
+      max-width: 760px;
+      margin: 0 auto;
+      padding: clamp(8px, 1.5vw, 14px);
+      border: 2px solid #8b6537;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(49, 95, 137, 0.12), rgba(95, 127, 67, 0.1)),
+        repeating-linear-gradient(90deg, rgba(49, 95, 137, 0.09) 0 1px, transparent 1px 22px),
+        #cbc4b4;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 247, 219, 0.65),
+        0 12px 24px rgba(75, 45, 22, 0.18);
+    }
+
+    .slot {
+      min-width: 0;
+      width: 100%;
+      aspect-ratio: 5 / 7;
+      padding: 9px;
+      border-radius: var(--radius);
+      border: 1px solid #8d7045;
+      background:
+        linear-gradient(180deg, rgba(255, 248, 229, 0.98), rgba(230, 205, 158, 0.98)),
+        repeating-linear-gradient(90deg, rgba(89, 55, 28, 0.08) 0 1px, transparent 1px 18px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 6px;
+      text-align: left;
+      transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+      overflow: hidden;
+      position: relative;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -5px 0 rgba(94, 61, 34, 0.08);
+    }
+
+    .slot.has-card {
+      border-color: #6d4a2b;
+      background: #f1d9aa;
+      box-shadow:
+        0 10px 20px rgba(86, 54, 26, 0.22),
+        inset 0 0 0 2px rgba(255, 248, 226, 0.42);
+    }
+
+    .slot.has-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255, 248, 226, 0.18), rgba(255, 248, 226, 0.58) 62%, rgba(255, 248, 226, 0.78)),
+        linear-gradient(90deg, rgba(255, 248, 226, 0.42), rgba(255, 248, 226, 0.06) 36%, rgba(255, 248, 226, 0.42));
+      z-index: 1;
+    }
+
+    .slot:hover,
+    .slot:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--blue);
+      box-shadow: 0 12px 22px rgba(49, 95, 137, 0.24);
+      outline: none;
+    }
+
+    .slot.needs-review {
+      border-color: var(--red);
+      box-shadow: inset 0 0 0 1px rgba(183, 71, 71, 0.2);
+    }
+
+    .slot.empty {
+      border-style: dashed;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      background:
+        linear-gradient(180deg, rgba(255, 247, 226, 0.96), rgba(232, 210, 171, 0.96)),
+        repeating-linear-gradient(45deg, rgba(49, 95, 137, 0.08) 0 6px, transparent 6px 13px);
+    }
+
+    .slot-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      min-width: 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slot-index {
+      font-weight: 800;
+      color: #5e390f;
+      font-size: 12px;
+      background:
+        linear-gradient(180deg, #ffdf7b, #d39933);
+      border: 1px solid rgba(99, 59, 18, 0.52);
+      border-radius: 999px;
+      padding: 3px 7px;
+      box-shadow: inset 0 1px 0 rgba(255, 246, 198, 0.7);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .badge.castle {
+      background: linear-gradient(180deg, #d9ebf7, #a7c8dc);
+      color: #173d5a;
+      border-color: #6d9cb9;
+    }
+
+    .badge.village {
+      background: linear-gradient(180deg, #ffe7a4, #d6a23c);
+      color: #55350c;
+      border-color: #a87922;
+    }
+
+    .badge.review {
+      background: linear-gradient(180deg, #f4d7d2, #d98f87);
+      color: #6f211f;
+      border-color: #bf6f68;
+    }
+
+    .badge.lock {
+      background: linear-gradient(180deg, var(--purple-soft), #cdb5d9);
+      color: #4a315f;
+      border-color: #a888b7;
+    }
+
+    .badge.expansion {
+      background: linear-gradient(180deg, #fff0b7, #e5ba4c);
+      color: #654307;
+      border-color: #b98a25;
+    }
+
+    .slot-name {
+      align-self: center;
+      font-weight: 800;
+      font-size: 17px;
+      line-height: 1.25;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      background:
+        linear-gradient(180deg, rgba(255, 249, 233, 0.91), rgba(239, 220, 178, 0.91));
+      border: 1px solid rgba(151, 105, 53, 0.52);
+      border-radius: var(--radius);
+      padding: 7px 6px;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+    }
+
+    .slot-rule {
+      color: #4f4638;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      position: relative;
+      z-index: 2;
+      background:
+        linear-gradient(180deg, rgba(255, 250, 238, 0.92), rgba(244, 225, 188, 0.9));
+      border: 1px solid rgba(151, 105, 53, 0.44);
+      border-radius: var(--radius);
+      padding: 6px;
+    }
+
+    .slot-thumb {
+      position: absolute;
+      inset: 0;
+      opacity: 0.62;
+      pointer-events: none;
+    }
+
+    .slot-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.12) contrast(1.02);
+    }
+
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .slot-score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .slot-score-grid .empty-state {
+      grid-column: 1 / -1;
+    }
+
+    .slot-score {
+      padding: 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #fff;
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .slot-score-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .slot-score label {
+      color: var(--muted);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .resource {
+      padding: 10px;
+      border-radius: var(--radius);
+      border: 1px solid #a98042;
+      background:
+        linear-gradient(180deg, #fff4d8, #e8c98d);
+      display: grid;
+      gap: 8px;
+      box-shadow: var(--soft-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .resource::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(180deg, var(--blue), var(--purple), var(--red), var(--amber));
+    }
+
+    .resource-top {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .resource-icon,
+    .guide-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid rgba(207, 197, 181, 0.88);
+      background: #fff8e7;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+    }
+
+    .crest-icon {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .stepper {
+      display: grid;
+      grid-template-columns: 34px 1fr 34px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .stepper input {
+      width: 100%;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 7px 4px;
+    }
+
+    .score-card {
+      padding: 10px;
+      border: 1px solid #a98042;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #fff7e2, #e9d0a0);
+      display: grid;
+      gap: 4px;
+      box-shadow: var(--soft-shadow);
+    }
+
+    .score-card.winner {
+      border-color: #315f89;
+      background:
+        linear-gradient(180deg, #e3f1f8, #bfd9e8);
+      box-shadow:
+        0 0 0 2px rgba(217, 173, 69, 0.35),
+        var(--soft-shadow);
+    }
+
+    .score-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .score-total {
+      font-size: 28px;
+      font-weight: 900;
+      color: #9b5d14;
+      text-shadow: 0 1px 0 rgba(255, 234, 170, 0.8);
+    }
+
+    .breakdown {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .breakdown-row:last-child {
+      border-bottom: 0;
+    }
+
+    .modal {
+      width: min(920px, calc(100vw - 28px));
+      max-height: min(820px, calc(100vh - 28px));
+      border: 2px solid #8b6537;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0;
+      background:
+        linear-gradient(180deg, #fff8e8, #ead0a0);
+      color: var(--ink);
+    }
+
+    .modal::backdrop {
+      background: rgba(32, 37, 31, 0.48);
+    }
+
+    .modal-head,
+    .modal-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid #ad8246;
+      background:
+        linear-gradient(180deg, rgba(255, 244, 213, 0.86), rgba(231, 199, 137, 0.76));
+    }
+
+    .modal-foot {
+      border-bottom: 0;
+      border-top: 1px solid #ad8246;
+      justify-content: flex-end;
+    }
+
+    .modal-body {
+      padding: 14px;
+      overflow: auto;
+      max-height: calc(100vh - 170px);
+    }
+
+    .picker-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    .card-row {
+      padding: 9px;
+      border: 1px solid #b58b4c;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #fff9e9, #efd9ad);
+      text-align: left;
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 10px;
+      min-height: 116px;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+    }
+
+    .card-row.no-thumb {
+      grid-template-columns: 1fr;
+    }
+
+    .card-row-thumb {
+      width: 68px;
+      height: 96px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+      align-self: start;
+    }
+
+    .card-row-body {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .card-row:hover,
+    .card-row:focus-visible {
+      border-color: var(--blue);
+      box-shadow: var(--soft-shadow);
+      outline: none;
+    }
+
+    .card-row-title {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(230px, 0.45fr);
+      gap: 12px;
+    }
+
+    .textarea {
+      min-height: 380px;
+      resize: vertical;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(250px, 0.55fr);
+      gap: 12px;
+    }
+
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .rules-block {
+      border: 1px solid #a98042;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, #fff7e0, #ead0a0);
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      min-width: 0;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82) inset;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rules-block::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background:
+        linear-gradient(90deg, var(--blue), var(--purple), var(--green), var(--red), var(--amber));
+      opacity: 0.75;
+    }
+
+    .rules-block ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .rules-block.important {
+      border-color: #315f89;
+      background:
+        linear-gradient(180deg, #e7f2f8, #d5e6ef);
+    }
+
+    .rules-block.rule-card {
+      grid-column: span 4;
+    }
+
+    .rules-block.wide {
+      grid-column: 1 / -1;
+    }
+
+    .icon-guide {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .icon-pill {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 6px;
+      border: 1px solid #b58b4c;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255, 248, 228, 0.92), rgba(237, 214, 170, 0.92));
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .icon-note-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .icon-note {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      padding: 8px;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255, 248, 228, 0.9), rgba(238, 216, 176, 0.86));
+      border: 1px solid rgba(169, 128, 66, 0.62);
+    }
+
+    .source-link {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 8px;
+    }
+
+    .thumb {
+      border: 1px solid #a98042;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff5dd;
+      display: grid;
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .thumb img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      border-radius: 6px;
+      background: var(--surface-2);
+    }
+
+    .empty-state {
+      border: 1px dashed #9d7946;
+      border-radius: var(--radius);
+      padding: 16px;
+      color: var(--muted);
+      background:
+        linear-gradient(180deg, rgba(255, 244, 214, 0.72), rgba(232, 209, 166, 0.56));
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: #4d3327;
+      color: #fff4d6;
+      padding: 11px 13px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 50;
+      max-width: min(460px, calc(100vw - 32px));
+      line-height: 1.45;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Clean sky Castle Combo theme */
+    :root {
+      --sky: #c6d5e3;
+      --sky-soft: #edf4f9;
+      --sky-mid: #9fb9cf;
+      --sky-deep: #4e6f89;
+      --paper: #f7f8fa;
+      --paper-2: #edf0f3;
+      --ink: #2f3740;
+      --muted: #68727d;
+      --surface: #ffffff;
+      --surface-2: #f2f4f6;
+      --line: #d8dde2;
+      --green: var(--sky-deep);
+      --green-soft: var(--sky-soft);
+      --amber: var(--sky-mid);
+      --amber-soft: var(--sky-soft);
+      --red: #b97878;
+      --red-soft: #f5e8e8;
+      --blue: var(--sky-deep);
+      --blue-soft: var(--sky-soft);
+      --purple: var(--sky-mid);
+      --purple-soft: var(--sky-soft);
+      --wood: #e4e8ec;
+      --gold: var(--sky);
+      --parchment-line: rgba(78, 111, 137, 0.08);
+      --shadow: 0 18px 38px rgba(43, 57, 69, 0.11);
+      --soft-shadow: 0 8px 18px rgba(43, 57, 69, 0.08);
+    }
+
+    body {
+      background:
+        linear-gradient(180deg, #f8fafc 0%, #eef2f5 100%);
+    }
+
+    .topbar {
+      border-bottom: 1px solid #dbe1e6;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 10px 26px rgba(43, 57, 69, 0.08);
+    }
+
+    .topbar::after {
+      height: 5px;
+      bottom: -5px;
+      background: var(--sky);
+      opacity: 1;
+    }
+
+    .topbar h1 {
+      color: #283746;
+      text-shadow: none;
+    }
+
+    .subtitle {
+      color: var(--muted);
+    }
+
+    .brand-mark {
+      color: #2f475b;
+      background: transparent;
+      border-color: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      text-shadow: none;
+      filter: drop-shadow(0 7px 10px rgba(43, 57, 69, 0.14));
+    }
+
+    .castle-mark-icon {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .castle-mark-icon .castle-body {
+      fill: var(--sky);
+      stroke: #ffffff;
+      stroke-width: 3.4;
+      stroke-linejoin: round;
+    }
+
+    .castle-mark-icon .castle-highlight {
+      fill: rgba(255, 255, 255, 0.42);
+    }
+
+    .castle-mark-icon .castle-detail {
+      fill: var(--sky-deep);
+      opacity: 0.82;
+    }
+
+    .castle-mark-icon .castle-door {
+      fill: #f8fafc;
+      stroke: var(--sky-deep);
+      stroke-width: 2;
+      stroke-linejoin: round;
+    }
+
+    .btn,
+    .icon-btn,
+    .seg-btn,
+    .advanced-popover {
+      border-color: var(--line);
+      background: #ffffff;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    }
+
+    .btn:hover,
+    .icon-btn:hover,
+    .seg-btn:hover {
+      border-color: var(--sky-mid);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .btn.primary,
+    .seg-btn.active {
+      color: #203545;
+      background: var(--sky);
+      border-color: var(--sky-mid);
+    }
+
+    .btn.warn {
+      color: #203545;
+      background: var(--sky-soft);
+      border-color: var(--sky);
+    }
+
+    .btn.danger {
+      color: #7a3d45;
+      background: var(--red-soft);
+      border-color: #e7c9c9;
+    }
+
+    .panel,
+    .main-panel,
+    .modal {
+      border-color: var(--line);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .panel::before,
+    .main-panel::before,
+    .rules-block::before {
+      background: var(--sky);
+      opacity: 1;
+    }
+
+    h2,
+    h3 {
+      color: #283746;
+    }
+
+    .segmented {
+      background: var(--surface-2);
+      border-color: var(--line);
+      box-shadow: none;
+    }
+
+    .seg-btn {
+      color: #3f4d58;
+    }
+
+    .player-row,
+    .resource,
+    .score-card,
+    .slot-score,
+    .card-row,
+    .rules-block,
+    .icon-pill,
+    .icon-note,
+    .thumb,
+    .empty-state,
+    .player-row input,
+    .field,
+    .textarea,
+    .select {
+      border-color: var(--line);
+      background: #ffffff;
+    }
+
+    .player-row.active,
+    .score-card.winner {
+      border-color: var(--sky-mid);
+      background: var(--sky-soft);
+      box-shadow: inset 4px 0 0 var(--sky-mid), var(--soft-shadow);
+    }
+
+    .photo-tools {
+      border-color: var(--line);
+      background: #f8fafc;
+    }
+
+    .photo-canvas-wrap {
+      border-color: var(--line);
+      background: #eef2f5;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    }
+
+    input[type="range"] {
+      accent-color: var(--sky-mid);
+    }
+
+    .board-grid {
+      border-color: var(--line);
+      background: #eef2f5;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.86),
+        0 12px 24px rgba(43, 57, 69, 0.08);
+    }
+
+    .slot,
+    .slot.empty {
+      border-color: #d4dbe1;
+      background:
+        linear-gradient(180deg, #ffffff, #f7f8fa);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -5px 0 rgba(198, 213, 227, 0.15);
+    }
+
+    .slot.has-card {
+      border-color: var(--sky-mid);
+      background: #ffffff;
+      box-shadow:
+        0 10px 20px rgba(43, 57, 69, 0.12),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.46);
+    }
+
+    .slot.has-card::before {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.42) 62%, rgba(255, 255, 255, 0.66));
+    }
+
+    .slot:hover,
+    .slot:focus-visible {
+      border-color: var(--sky-mid);
+      box-shadow: 0 12px 22px rgba(78, 111, 137, 0.16);
+    }
+
+    .slot-index {
+      color: #2f475b;
+      background: var(--sky-soft);
+      border-color: var(--sky);
+    }
+
+    .slot-name,
+    .slot-rule {
+      border-color: #d8dde2;
+      background: rgba(255, 255, 255, 0.88);
+      color: #3f4d58;
+    }
+
+    .badge.castle {
+      background: var(--sky-soft);
+      color: var(--sky-deep);
+      border-color: var(--sky);
+    }
+
+    .badge.village,
+    .badge.expansion {
+      background: #f8fafc;
+      color: #53616c;
+      border-color: #d8dde2;
+    }
+
+    .badge.review {
+      background: var(--red-soft);
+      color: #8d4b52;
+      border-color: #e7c9c9;
+    }
+
+    .badge.lock {
+      background: var(--sky-soft);
+      color: var(--sky-deep);
+      border-color: var(--sky);
+    }
+
+    .resource::before {
+      background: var(--sky);
+    }
+
+    .resource-icon,
+    .guide-icon,
+    .card-row-thumb {
+      background: #ffffff;
+      border-color: var(--line);
+    }
+
+    .score-total {
+      color: var(--sky-deep);
+      text-shadow: none;
+    }
+
+    .modal-head,
+    .modal-foot {
+      border-color: var(--line);
+      background: #f8fafc;
+    }
+
+    .rules-block.important {
+      border-color: var(--sky);
+      background: var(--sky-soft);
+    }
+
+    .toast {
+      color: #ffffff;
+      background: #3f4d58;
+    }
+
+    .slot,
+    .card-row,
+    .btn,
+    .icon-btn,
+    .seg-btn,
+    .score-card,
+    .resource {
+      will-change: transform;
+    }
+
+    .slot {
+      transform:
+        perspective(900px)
+        rotateX(var(--tilt-y, 0deg))
+        rotateY(var(--tilt-x, 0deg))
+        translateY(0);
+    }
+
+    .slot::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at var(--shine-x, 50%) var(--shine-y, 30%), rgba(255, 255, 255, 0.72), transparent 28%);
+      transition: opacity 0.16s ease;
+    }
+
+    .slot:hover::after,
+    .slot:focus-visible::after {
+      opacity: 1;
+    }
+
+    .slot:hover,
+    .slot:focus-visible {
+      transform:
+        perspective(900px)
+        rotateX(var(--tilt-y, 0deg))
+        rotateY(var(--tilt-x, 0deg))
+        translateY(-2px);
+    }
+
+    .tap-ripple {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(78, 111, 137, 0.22);
+      transform: translate(-50%, -50%) scale(0);
+      pointer-events: none;
+      z-index: 80;
+      animation: ripple-pop 0.48s ease-out forwards;
+    }
+
+    .interact-pop {
+      animation: interact-pop 0.34s ease-out;
+    }
+
+    .score-pop {
+      animation: score-pop 0.42s ease-out;
+    }
+
+    .celebration-layer {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 70;
+    }
+
+    .celebration-dot {
+      position: absolute;
+      left: var(--x);
+      top: -16px;
+      width: 7px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--c);
+      opacity: 0;
+      transform: translateY(0) rotate(0deg);
+      animation: celebration-fall 900ms cubic-bezier(.2, .6, .25, 1) forwards;
+      animation-delay: var(--d);
+    }
+
+    @keyframes ripple-pop {
+      to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(18);
+      }
+    }
+
+    @keyframes interact-pop {
+      0% { transform: scale(0.985); }
+      65% { transform: scale(1.018); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes score-pop {
+      0% { transform: translateY(0) scale(1); color: var(--sky-deep); }
+      48% { transform: translateY(-2px) scale(1.16); color: #2f5f82; }
+      100% { transform: translateY(0) scale(1); color: var(--sky-deep); }
+    }
+
+    @keyframes celebration-fall {
+      0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+      12% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(130px) rotate(240deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+
+      .slot,
+      .slot:hover,
+      .slot:focus-visible {
+        transform: none;
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .workspace {
+        grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+      }
+
+      .score-panel {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 920px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .score-panel {
+        grid-column: auto;
+      }
+
+      .main-panel {
+        order: 2;
+      }
+
+      .panel:first-of-type {
+        order: 1;
+      }
+
+      .score-panel {
+        order: 3;
+      }
+
+      .board-grid {
+        max-width: 680px;
+      }
+
+      .resource-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 780px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .top-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .top-actions .btn {
+        flex: 1 1 auto;
+      }
+
+      .advanced-menu {
+        flex: 1 1 100%;
+      }
+
+      .advanced-menu summary {
+        width: 100%;
+      }
+
+      .advanced-popover {
+        left: 0;
+        right: 0;
+        width: auto;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .slot-score-grid,
+      .crop-grid,
+      .data-grid,
+      .reference-grid,
+      .picker-tools {
+        grid-template-columns: 1fr;
+      }
+
+      .rules-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .rules-block.rule-card,
+      .rules-block.wide {
+        grid-column: 1 / -1;
+      }
+
+      .icon-guide {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .icon-note-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .board-grid {
+        gap: 7px;
+      }
+
+      .slot {
+        padding: 7px;
+      }
+
+      .board-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .section-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .board-header .inline-actions,
+      .section-title .inline-actions {
+        width: 100%;
+      }
+
+      .section-title .segmented {
+        width: 100%;
+        min-width: 0 !important;
+      }
+
+      .board-header .btn,
+      .section-title .btn {
+        flex: 1 1 auto;
+      }
+
+      .photo-actions .btn,
+      .photo-actions label.btn {
+        flex: 1 1 calc(50% - 8px);
+      }
+
+      .modal {
+        width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px);
+      }
+
+      .modal-head,
+      .modal-foot {
+        padding: 12px;
+      }
+
+      .modal-body {
+        padding: 12px;
+        max-height: calc(100dvh - 142px);
+      }
+
+      .card-list {
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar {
+        gap: 12px;
+        padding: 10px;
+      }
+
+      .brand {
+        gap: 9px;
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      h2 {
+        font-size: 16px;
+      }
+
+      h3 {
+        font-size: 14px;
+      }
+
+      .subtitle,
+      .small {
+        font-size: 11px;
+      }
+
+      .top-actions .btn,
+      .top-actions summary.btn {
+        min-height: 36px;
+        padding: 8px 9px;
+        font-size: 13px;
+      }
+
+      .panel,
+      .main-panel {
+        padding: 11px;
+      }
+
+      .segmented.five {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .seg-btn {
+        min-height: 32px;
+        padding: 6px 4px;
+        font-size: 12px;
+      }
+
+      .board-grid {
+        gap: 5px;
+      }
+
+      .slot {
+        padding: 5px;
+        gap: 4px;
+      }
+
+      .slot-index,
+      .badge {
+        font-size: 10px;
+        padding: 2px 5px;
+      }
+
+      .slot-name {
+        font-size: 13px;
+        padding: 5px;
+      }
+
+      .slot-rule {
+        font-size: 11px;
+        line-height: 1.25;
+        padding: 5px;
+        -webkit-line-clamp: 2;
+      }
+
+      .resource-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card-row {
+        grid-template-columns: 56px 1fr;
+        gap: 8px;
+        min-height: 96px;
+        padding: 8px;
+      }
+
+      .card-row-thumb {
+        width: 54px;
+        height: 76px;
+      }
+
+      .card-row-title {
+        display: grid;
+        gap: 4px;
+      }
+
+      .icon-guide,
+      .icon-note-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toast {
+        right: 10px;
+        bottom: 10px;
+        max-width: calc(100vw - 20px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg class="castle-mark-icon" viewBox="0 0 64 64" focusable="false">
+            <path class="castle-body" d="M10 56V28h7V16h9v8h5v-8h9v8h5v-8h9v12h7v28H10Z"></path>
+            <path class="castle-highlight" d="M16 30h42v5H16z"></path>
+            <path class="castle-detail" d="M20 36h6v7h-6zM38 36h6v7h-6z"></path>
+            <path class="castle-door" d="M28 56V45c0-3.4 2.6-6 6-6s6 2.6 6 6v11H28Z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>캐슬콤보 점수 계산기</h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" data-action="open-rules">룰/아이콘</button>
+        <button class="btn" data-action="open-history">기록</button>
+        <details class="advanced-menu">
+          <summary class="btn">관리</summary>
+          <div class="advanced-popover">
+            <button class="btn" data-action="open-data">카드 데이터</button>
+            <button class="btn" data-action="open-reference">기준 이미지</button>
+          </div>
+        </details>
+        <button class="btn primary" data-action="save-history">결과 저장</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel">
+        <div class="section-title">
+          <h2>플레이어</h2>
+          <button class="icon-btn" title="새 게임" aria-label="새 게임" data-action="new-game">↻</button>
+        </div>
+        <div class="stack">
+          <div>
+            <div class="small" style="margin-bottom: 6px;">인원</div>
+            <div class="segmented five" id="playerCountControls"></div>
+          </div>
+          <div id="playerList" class="player-list"></div>
+        </div>
+      </aside>
+
+      <section class="main-panel">
+        <div class="section-title">
+          <div>
+            <h2 id="activePlayerTitle">카드 배치</h2>
+            <div class="small" id="dataStatus"></div>
+          </div>
+          <div class="segmented" style="min-width: 230px;">
+            <button class="seg-btn active" data-action="set-method" data-method="manual">직접 선택</button>
+            <button class="seg-btn" data-action="set-method" data-method="photo">카메라 촬영</button>
+          </div>
+        </div>
+
+        <div id="photoTools" class="photo-tools hidden">
+          <div class="section-title" style="margin: 0;">
+            <div>
+              <h3>카메라 3×3 인식</h3>
+              <div class="small" id="cameraStatus">카메라 권한 허용 후 카드판을 화면에 맞춰 촬영</div>
+            </div>
+          </div>
+          <div class="photo-actions">
+            <button class="btn primary" data-action="start-camera">카메라 열기</button>
+            <button class="btn warn" id="captureCameraBtn" data-action="capture-camera" disabled>촬영 후 분석</button>
+            <button class="btn" id="stopCameraBtn" data-action="stop-camera" disabled>카메라 닫기</button>
+            <label class="btn" for="photoInput">사진 파일 선택</label>
+            <input id="photoInput" class="hidden" type="file" accept="image/*" capture="environment">
+            <button class="btn" data-action="crop-center">중앙 정렬</button>
+            <button class="btn" data-action="run-recognition">현재 사진 다시 분석</button>
+          </div>
+          <div class="photo-canvas-wrap">
+            <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
+            <canvas id="photoCanvas" width="960" height="600" aria-label="사진 크롭 미리보기"></canvas>
+          </div>
+          <div class="crop-grid">
+            <label class="range-field">왼쪽 <input id="cropX" type="range" min="0" max="80" value="8"></label>
+            <label class="range-field">위쪽 <input id="cropY" type="range" min="0" max="80" value="8"></label>
+            <label class="range-field">너비 <input id="cropW" type="range" min="20" max="100" value="84"></label>
+            <label class="range-field">높이 <input id="cropH" type="range" min="20" max="100" value="84"></label>
+          </div>
+        </div>
+
+        <div class="board-header">
+          <div>
+            <h3>3×3 카드판</h3>
+            <div class="small">칸을 누르면 카드 검색창이 열립니다.</div>
+          </div>
+          <div class="inline-actions">
+            <button class="btn" data-action="clear-board">카드판 비우기</button>
+            <button class="btn" data-action="copy-prev">이전 플레이어 복사</button>
+          </div>
+        </div>
+        <div id="boardGrid" class="board-grid"></div>
+
+        <div id="resourceGrid" class="resource-grid"></div>
+        <div class="board-header">
+          <div>
+            <h3>카드 점수</h3>
+            <div class="small">점수 수정이 필요할 때 직접 점수를 입력하세요.</div>
+          </div>
+        </div>
+        <div id="slotScoreGrid" class="slot-score-grid"></div>
+      </section>
+
+      <aside class="panel score-panel">
+        <div class="section-title">
+          <h2>점수표</h2>
+          <span class="badge castle" id="referenceStatus">기준 0장</span>
+        </div>
+        <div id="scoreList" class="score-list"></div>
+        <div style="height: 14px;"></div>
+        <div class="section-title">
+          <h3>선택 플레이어 상세</h3>
+        </div>
+        <div id="breakdown" class="breakdown"></div>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="cardDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>카드 선택</h2>
+        <div class="small" id="pickerSlotLabel">선택할 칸</div>
+      </div>
+      <button class="icon-btn" aria-label="닫기" data-action="close-card-dialog">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="picker-tools">
+        <input class="field" id="cardSearch" type="search" placeholder="한글명, 원문명, 태그 검색">
+        <select class="select" id="deckFilter">
+          <option value="all">전체</option>
+          <option value="base">기본판</option>
+          <option value="expansion">확장팩</option>
+          <option value="lock">자물쇠</option>
+          <option value="castle">성</option>
+          <option value="village">마을</option>
+        </select>
+      </div>
+      <div id="cardList" class="card-list"></div>
+    </div>
+  </dialog>
+
+  <dialog id="dataDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>카드 데이터</h2>
+        <div class="small">예시 78장을 실제 개인용 JSON으로 바꿔 넣을 수 있습니다.</div>
+      </div>
+      <button class="icon-btn" aria-label="닫기" data-action="close-data-dialog">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="data-grid">
+        <textarea id="cardJson" class="textarea" spellcheck="false"></textarea>
+        <div class="stack">
+          <div class="empty-state" style="text-align: left;">
+            <strong>지원 규칙</strong><br>
+            fixed, perKey, perBack, perDeck, perBanner, perBannerSet, perCrest, perNeighborCrest, perSameDeckNeighbor, perCorner, perCenter, perEdge, perUniqueCrest, perFilledSlot, rowCostSum, perUniqueCost, perLockCard, custom
+          </div>
+          <button class="btn primary" data-action="import-cards">JSON 적용</button>
+          <button class="btn" data-action="export-cards">JSON 파일 저장</button>
+          <button class="btn danger" data-action="reset-cards">기본 데이터로 초기화</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="referenceDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>기준 이미지</h2>
+        <div class="small">각 카드마다 직접 찍은 기준 사진을 넣으면 사진 인식 후보가 작동합니다.</div>
+      </div>
+      <button class="icon-btn" aria-label="닫기" data-action="close-reference-dialog">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="reference-grid">
+        <div class="stack">
+          <label class="small" for="referenceCardSelect">카드</label>
+          <select class="select" id="referenceCardSelect"></select>
+          <label class="btn primary" for="referenceFiles">기준 사진 추가</label>
+          <input id="referenceFiles" class="hidden" type="file" accept="image/*" multiple>
+          <button class="btn" data-action="load-bundled-references">내장 컷 전체 등록</button>
+          <div class="empty-state" style="text-align: left;">
+            기준 이미지는 카드 외곽만 보이도록 잘라서, 같은 방향과 비슷한 조명으로 준비할수록 잘 맞습니다.
+          </div>
+        </div>
+        <div>
+          <div class="section-title">
+            <h3>등록된 사진</h3>
+            <span class="badge village" id="selectedReferenceCount">0장</span>
+          </div>
+          <div id="referenceThumbs" class="thumb-grid"></div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="rulesDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>룰/아이콘 요약</h2>
+        <div class="small">게임 중 헷갈리는 것만 빠르게 확인</div>
+      </div>
+      <button class="icon-btn" aria-label="닫기" data-action="close-rules-dialog">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="rules-grid">
+        <div class="rules-block important rule-card">
+          <h3>점수 계산</h3>
+          <ul>
+            <li>최종 점수 = 카드 점수 합 + 남은 열쇠</li>
+            <li>열쇠는 1개당 1점</li>
+            <li>금화는 점수 아님, 동점일 때만 비교</li>
+            <li>뒷면 카드는 점수와 아이콘 없음</li>
+          </ul>
+        </div>
+        <div class="rules-block important rule-card">
+          <h3>자물쇠 능력</h3>
+          <ul>
+            <li>자물쇠 카드 위에 열쇠 1개</li>
+            <li>능력 사용 시 그 열쇠 제거</li>
+            <li>일회용, 원하는 타이밍에 사용</li>
+            <li>한 차례에 자물쇠 능력 1개까지만 사용</li>
+          </ul>
+        </div>
+        <div class="rules-block rule-card">
+          <h3>확장 준비</h3>
+          <ul>
+            <li>기본 78장 + 확장 12장</li>
+            <li>확장 구성: 성 6장, 마을 6장</li>
+            <li>앱 시작 데이터: 총 90장</li>
+            <li>확장 카드는 자물쇠/확장 배지 표시</li>
+          </ul>
+        </div>
+        <div class="rules-block wide">
+          <h3>문장 아이콘</h3>
+          <div class="icon-guide" aria-label="문장 아이콘 목록">
+            <span class="icon-pill"><img class="crest-icon" alt="" src="ui-icons/crest-noble.png">귀족</span>
+            <span class="icon-pill"><img class="crest-icon" alt="" src="ui-icons/crest-faith.png">신앙</span>
+            <span class="icon-pill"><img class="crest-icon" alt="" src="ui-icons/crest-knowledge.png">학문</span>
+            <span class="icon-pill"><img class="crest-icon" alt="" src="ui-icons/crest-military.png">군사</span>
+            <span class="icon-pill"><img class="crest-icon" alt="" src="ui-icons/crest-craft.png">공예</span>
+            <span class="icon-pill"><img class="crest-icon" alt="" src="ui-icons/crest-peasant.png">농민</span>
+          </div>
+        </div>
+        <div class="rules-block wide">
+          <h3>자주 보는 기호</h3>
+          <div class="icon-note-grid">
+            <div class="icon-note"><img class="guide-icon" alt="" src="ui-icons/icon-gold.png"><span>금화: 동점 비교용, 점수 아님</span></div>
+            <div class="icon-note"><img class="guide-icon" alt="" src="ui-icons/icon-key.png"><span>열쇠: 남은 열쇠 1개당 1점</span></div>
+            <div class="icon-note"><img class="guide-icon" alt="" src="ui-icons/icon-lock.png"><span>자물쇠: 카드 위 열쇠 제거 후 일회성 능력 사용</span></div>
+            <div class="icon-note"><img class="guide-icon" alt="" src="ui-icons/icon-back.png"><span>뒷면 카드: 점수, 방패, 배너, 능력 없음</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="historyDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>저장된 결과</h2>
+        <div class="small">이 브라우저의 로컬 저장소에만 남습니다.</div>
+      </div>
+      <button class="icon-btn" aria-label="닫기" data-action="close-history-dialog">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="inline-actions" style="margin-bottom: 12px;">
+        <button class="btn danger" data-action="clear-history">기록 삭제</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "castle-score-kr-state-v1";
+    const DECK_LABELS = { castle: "성", village: "마을" };
+    const CREST_LABELS = {
+      noble: "귀족",
+      military: "군사",
+      knowledge: "학문",
+      faith: "신앙",
+      commerce: "공예",
+      peasant: "농민"
+    };
+    const NEIGHBORS = [
+      [1, 3], [0, 2, 4], [1, 5],
+      [0, 4, 6], [1, 3, 5, 7], [2, 4, 8],
+      [3, 7], [4, 6, 8], [5, 7]
+    ];
+    const CORNERS = new Set([0, 2, 6, 8]);
+    const EDGES = new Set([1, 3, 5, 7]);
+    const PDF_CARD_NAMES = [
+      "주교대리", "종자", "사형집행인", "여관주인", "향신료상인", "목수", "머슴", "여행자", "제빵사",
+      "나무꾼", "거지", "기적체험자", "철학자", "발명가", "포도주양조업자", "야만인", "민병", "포병",
+      "검술사범", "도공", "양봉업자", "어부", "조각가", "석공", "무기상인", "시계공", "마굿간지기",
+      "수도승", "첩자", "열쇠공", "혁명가", "마녀", "의사", "대장장이", "찬탈자", "양치기",
+      "농부", "용병", "약탈자", "집사", "성주", "공주", "어릿광대", "남작", "왕대비",
+      "수녀", "약제사", "왕실근위대", "도굴꾼", "추기경", "서기", "경건한신도", "교수", "판사",
+      "건축가", "금세공사", "전당포주인", "공작부인", "담당사제", "수녀원장", "성기사", "천문학자", "장교",
+      "기사", "대장", "유리세공사", "조합장", "왕자", "왕", "재상", "순례자", "연금술사",
+      "파수꾼", "왕비", "교황", "후원자", "장군", "은행가"
+    ];
+    const EXPANSION_CARD_NAMES = {
+      castle: ["밀린외교", "축제의 하인", "공작가", "기묘한 고문", "광대", "잔인무도한 의원"],
+      village: ["소매치기", "기계왕", "점쟁이", "세금 징수꾼", "공상쟁이", "도둑왕자"]
+    };
+    const K = {
+      blue: "noble",
+      purple: "faith",
+      green: "knowledge",
+      red: "military",
+      orange: "commerce",
+      yellow: "peasant"
+    };
+    const BASE_CARD_DATA = {
+      village_001: { enName: "Vicar", cost: 0, crests: [K.purple], rule: { type: "purseGold", points: 2, cap: 5 } },
+      village_002: { enName: "Squire", cost: 0, crests: [K.red], tags: ["discount"], rule: { type: "perCrestInScope", points: 2, crest: K.orange, scope: "rowColumn" } },
+      village_003: { enName: "Executioner", cost: 0, crests: [K.red], rule: { type: "perDeck", points: 1, deck: "castle" } },
+      village_004: { enName: "Innkeeper", cost: 0, crests: [K.orange], rule: { type: "purseGold", points: 2, cap: 6 } },
+      village_005: { enName: "Spice Merchant", cost: 0, crests: [K.orange], rule: { type: "ifPosition", points: 5, area: "middleRow" } },
+      village_006: { enName: "Carpenter", cost: 0, crests: [K.orange], rule: { type: "ifBackAtLeast", points: 8, count: 1 } },
+      village_007: { enName: "Farmhand", cost: 0, crests: [K.yellow], tags: ["discount"], rule: { type: "purseGold", points: 2, cap: 5 } },
+      village_008: { enName: "Traveler", cost: 0, crests: [K.yellow], rule: { type: "perCost", points: 2, cost: 0 } },
+      village_009: { enName: "Baker", cost: 0, crests: [K.yellow], rule: { type: "ifPosition", points: 3, area: "edge" } },
+      village_010: { enName: "Woodcutter", cost: 0, crests: [K.yellow], rule: { type: "ifPosition", points: 5, area: "rightColumn" } },
+      village_011: { enName: "Beggar", cost: 0, crests: [K.yellow], rule: { type: "perCrestInScope", points: 2, crest: K.purple, scope: "rowColumn" } },
+      village_012: { enName: "Miraculously cured!", cost: 2, crests: [K.purple, K.purple], rule: { type: "purseGold", points: 2, cap: 4 } },
+      village_013: { enName: "Philosopher", cost: 2, crests: [K.green], tags: ["discount"], rule: { type: "ifMissingCrest", points: 10, crest: K.red } },
+      village_014: { enName: "Inventor", cost: 2, crests: [K.green, K.green], rule: { type: "perDeck", points: 1, deck: "village" } },
+      village_015: { enName: "Winemaker", cost: 2, crests: [K.green, K.yellow], rule: { type: "perUniqueCrestInScope", points: 2, scope: "column" } },
+      village_016: { enName: "Barbarian", cost: 2, crests: [K.red], rule: { type: "ifMissingCrest", points: 10, crest: K.green } },
+      village_017: { enName: "Militiaman", cost: 2, crests: [K.red], rule: { type: "perCrestInScope", points: 3, crest: K.red, scope: "row" } },
+      village_018: { enName: "Bombardier", cost: 2, crests: [K.red], rule: { type: "perCrestInScope", points: 3, crest: K.red, scope: "column" } },
+      village_019: { enName: "Master-at-arms", cost: 2, crests: [K.red, K.red], rule: { type: "purseGold", points: 2, cap: 4 } },
+      village_020: { enName: "Potter", cost: 2, crests: [K.orange, K.orange], rule: { type: "purseGold", points: 2, cap: 4 } },
+      village_021: { enName: "Beekeeper", cost: 2, crests: [K.yellow], rule: { type: "purseGold", points: 2, cap: 9 } },
+      village_022: { enName: "Fisherman", cost: 2, crests: [K.yellow, K.yellow], tags: ["discount"], rule: { type: "ifPosition", points: 4, area: "corner" } },
+      village_023: { enName: "Sculptor", cost: 3, crests: [K.purple, K.orange], rule: { type: "purseGold", points: 2, cap: 7 } },
+      village_024: { enName: "Stonemason", cost: 3, crests: [K.orange], tags: ["discount"], rule: { type: "perCrestInScope", points: 3, crest: K.orange, scope: "column" } },
+      village_025: { enName: "Armorer", cost: 3, crests: [K.orange], tags: ["discount"], rule: { type: "perCrestInScope", points: 3, crest: K.red, scope: "rowColumn" } },
+      village_026: { enName: "Clockmaker", cost: 3, crests: [K.orange], rule: { type: "perCrestInScope", points: 3, crest: K.orange, scope: "row" } },
+      village_027: { enName: "Stable Boy", cost: 4, crests: [K.blue, K.yellow], rule: { type: "perCrestInScope", points: 3, crest: K.yellow, scope: "column" } },
+      village_028: { enName: "Monk", cost: 4, crests: [K.purple, K.yellow], rule: { type: "perCrestInScope", points: 2, crest: K.yellow, scope: "row" } },
+      village_029: { enName: "Spy", cost: 4, crests: [K.green, K.red], rule: { type: "ifPosition", points: 6, area: "middleColumn" } },
+      village_030: { enName: "Locksmith", cost: 4, crests: [K.orange, K.yellow], rule: { type: "perKey", points: 1 } },
+      village_031: { enName: "Revolutionary", cost: 4, crests: [K.yellow], rule: { type: "ifMissingCrest", points: 9, crest: K.blue } },
+      village_032: { enName: "Witch", cost: 4, crests: [K.yellow], rule: { type: "ifMissingCrest", points: 9, crest: K.purple } },
+      village_033: { enName: "Doctor", cost: 5, crests: [K.green], rule: { type: "perCrestSet", points: 4, crests: [K.green, K.yellow] } },
+      village_034: { enName: "Blacksmith", cost: 5, crests: [K.red, K.orange], rule: { type: "perCardsWithCrestCount", points: 2, crestCount: 2 } },
+      village_035: { enName: "Usurper", cost: 5, crests: [K.yellow], rule: { type: "perDeck", points: 2, deck: "castle" } },
+      village_036: { enName: "Shepherd", cost: 5, crests: [K.yellow], rule: { type: "perCrestInScope", points: 3, crest: K.yellow, scope: "row" } },
+      village_037: { enName: "Farmer", cost: 5, crests: [K.yellow, K.yellow], rule: { type: "ifPosition", points: 7, area: "bottomRow" } },
+      village_038: { enName: "Mercenary", cost: 6, crests: [K.red, K.yellow], rule: { type: "perCrestSet", points: 7, crests: [K.purple, K.red, K.yellow] } },
+      village_039: { enName: "Brigand", cost: 7, crests: [K.yellow], rule: { type: "perBannerSet", points: 7, banner: "village", size: 3 } },
+      castle_001: { enName: "Steward", cost: 0, crests: [K.blue], rule: { type: "purseGold", points: 2, cap: 3 } },
+      castle_002: { enName: "Chatelaine", cost: 2, crests: [K.blue, K.orange], tags: ["discount"], rule: { type: "perUniqueCrestInScope", points: 2, scope: "row" } },
+      castle_003: { enName: "Princess", cost: 3, crests: [K.blue], tags: ["discount"], rule: { type: "perCrestInScope", points: 3, crest: K.blue, scope: "row" } },
+      castle_004: { enName: "Jester", cost: 3, crests: [K.blue], rule: { type: "perCrestInScope", points: 2, crest: K.blue, scope: "rowColumn" } },
+      castle_005: { enName: "Baron", cost: 3, crests: [K.blue], tags: ["discount"], rule: { type: "ifMissingCrest", points: 10, crest: K.yellow } },
+      castle_006: { enName: "Queen Mother", cost: 3, crests: [K.blue, K.blue], rule: { type: "purseGold", points: 2, cap: 5 } },
+      castle_007: { enName: "Nun", cost: 3, crests: [K.purple], rule: { type: "perCrestInScope", points: 3, crest: K.purple, scope: "column" } },
+      castle_008: { enName: "Apothecary", cost: 3, crests: [K.green], tags: ["discount"], rule: { type: "perCrestInScope", points: 3, crest: K.green, scope: "column" } },
+      castle_009: { enName: "Royal Guard", cost: 4, crests: [K.blue, K.red], rule: { type: "perCrestInScope", points: 3, crest: K.blue, scope: "column" } },
+      castle_010: { enName: "Gravedigger", cost: 4, crests: [K.purple, K.green], rule: { type: "purseGold", points: 2, cap: 8 } },
+      castle_011: { enName: "Cardinal", cost: 4, crests: [K.purple], rule: { type: "perCrestInScope", points: 3, crest: K.purple, scope: "row" } },
+      castle_012: { enName: "Scribe", cost: 4, crests: [K.purple], rule: { type: "perCrestInScope", points: 3, crest: K.green, scope: "rowColumn" } },
+      castle_013: { enName: "Devout", cost: 4, crests: [K.purple], rule: { type: "ifMissingCrest", points: 10, crest: K.orange } },
+      castle_014: { enName: "Professor", cost: 4, crests: [K.green], rule: { type: "perCrestInScope", points: 3, crest: K.green, scope: "row" } },
+      castle_015: { enName: "Judge", cost: 4, crests: [K.green], rule: { type: "perPairDecks", points: 3 } },
+      castle_016: { enName: "Architect", cost: 4, crests: [K.green], tags: ["discount"], rule: { type: "perUniqueCrest", points: 2 } },
+      castle_017: { enName: "Goldsmith", cost: 4, crests: [K.green, K.orange], rule: { type: "ifPosition", points: 6, area: "leftColumn" } },
+      castle_018: { enName: "Pawnbroker", cost: 4, crests: [K.orange], rule: { type: "perCost", points: 3, cost: 4 } },
+      castle_019: { enName: "Duchess", cost: 5, crests: [K.blue, K.blue], rule: { type: "ifPosition", points: 8, area: "topRow" } },
+      castle_020: { enName: "Chaplain", cost: 5, crests: [K.purple], rule: { type: "perDeck", points: 2, deck: "village" } },
+      castle_021: { enName: "Mother Superior", cost: 5, crests: [K.purple, K.purple], rule: { type: "ifPosition", points: 5, area: "topRow" } },
+      castle_022: { enName: "Templar", cost: 5, crests: [K.purple, K.red], rule: { type: "perKey", points: 1 } },
+      castle_023: { enName: "Astronomer", cost: 5, crests: [K.green, K.green], tags: ["discount"], rule: { type: "ifPosition", points: 8, area: "leftColumn" } },
+      castle_024: { enName: "Officer", cost: 5, crests: [K.red], rule: { type: "perCrestSet", points: 4, crests: [K.blue, K.red] } },
+      castle_025: { enName: "Knight", cost: 5, crests: [K.red], rule: { type: "perCrestInScope", points: 3, crest: K.blue, scope: "rowColumn" } },
+      castle_026: { enName: "Chaplain", cost: 5, crests: [K.red, K.red], tags: ["discount"], rule: { type: "ifPosition", points: 8, area: "rightColumn" } },
+      castle_027: { enName: "Glassblower", cost: 5, crests: [K.orange], rule: { type: "perCrestSet", points: 4, crests: [K.purple, K.orange] } },
+      castle_028: { enName: "Guildmaster", cost: 5, crests: [K.orange, K.orange], rule: { type: "ifPosition", points: 5, area: "bottomRow" } },
+      castle_029: { enName: "Prince", cost: 6, crests: [K.blue], rule: { type: "perCrestInScope", points: 4, crest: K.blue, scope: "row" } },
+      castle_030: { enName: "His Majesty", cost: 6, crests: [K.blue, K.purple], rule: { type: "perCrestInScope", points: 4, crest: K.blue, scope: "column" } },
+      castle_031: { enName: "Chancellor", cost: 6, crests: [K.blue, K.green], rule: { type: "perBanner", points: 2, banner: "castle" } },
+      castle_032: { enName: "Pilgrim", cost: 6, crests: [K.purple], tags: ["discount"], rule: { type: "perUniqueCrestInScope", points: 4, scope: "row" } },
+      castle_033: { enName: "Alchemist", cost: 6, crests: [K.green], tags: ["discount"], rule: { type: "perDiscountCard", points: 4 } },
+      castle_034: { enName: "Lookout", cost: 6, crests: [K.red], rule: { type: "perUniqueCrestInScope", points: 4, scope: "column" } },
+      castle_035: { enName: "Her Majesty the Queen", cost: 7, crests: [K.blue], rule: { type: "perCrestSet", points: 10, crests: [K.blue, K.green, K.orange] } },
+      castle_036: { enName: "His Holiness", cost: 7, crests: [K.purple], rule: { type: "perMissingCrestType", points: 6 } },
+      castle_037: { enName: "Patron", cost: 7, crests: [K.green], rule: { type: "perPurseCardCostAtLeast", points: 5, minCost: 5 } },
+      castle_038: { enName: "General", cost: 7, crests: [K.red], rule: { type: "perMatchingCrestSet", points: 6, size: 3 } },
+      castle_039: { enName: "Banker", cost: 7, crests: [K.orange], rule: { type: "purseGoldTotal", points: 1 } },
+      village_exp_001: { enName: "Pickpocket", cost: 3, crests: [K.red], rule: { type: "ifNoPurseScoringCard", points: 10 } },
+      village_exp_002: { enName: "Mechanical King", cost: 5, crests: [K.red, K.orange, K.yellow], rule: { type: "ifNoDiscountCard", points: 12 } },
+      village_exp_003: { enName: "Fortune Teller", cost: 1, crests: [K.yellow, K.yellow], rule: { type: "ifCrestInScope", points: 3, crest: K.blue, scope: "column" } },
+      village_exp_004: { enName: "Tax Collector", cost: 4, crests: [K.green], rule: { type: "ifCrestInScope", points: 7, crest: K.red, scope: "row" } },
+      village_exp_005: { enName: "Dreamer", cost: 7, crests: [K.orange], rule: { type: "rowCostSum" } },
+      village_exp_006: { enName: "Robber Prince", cost: 4, crests: [K.yellow, K.yellow], rule: { type: "perLockCard", points: 4 } },
+      castle_exp_001: { enName: "Printer", cost: 0, crests: [K.orange], rule: { type: "ifCrestInScope", points: 5, crest: K.green, scope: "column" } },
+      castle_exp_002: { enName: "Art Forger", cost: 0, crests: [K.red], rule: { type: "ifCrestInScope", points: 5, crest: K.purple, scope: "row" } },
+      castle_exp_003: { enName: "Duke", cost: 3, crests: [K.green], rule: { type: "perPurseScoringCard", points: 2 } },
+      castle_exp_004: { enName: "Curious Advisor", cost: 1, crests: [K.purple], rule: { type: "ifNoBack", points: 8 } },
+      castle_exp_005: { enName: "Jester", cost: 7, crests: [K.blue], rule: { type: "rowCostSum" } },
+      castle_exp_006: { enName: "Ruthless Councilor", cost: 8, crests: [K.blue, K.purple, K.green], rule: { type: "perUniqueCost", points: 3 } }
+    };
+
+    let state = loadState();
+    let editingSlot = 0;
+    let selectedReferenceCard = null;
+    let runtimePhoto = { dataUrl: null, image: null, width: 0, height: 0 };
+    let cameraStream = null;
+    let cameraFrameRequest = null;
+    let lastScoreTotals = [];
+
+    const els = {
+      playerCountControls: document.getElementById("playerCountControls"),
+      playerList: document.getElementById("playerList"),
+      activePlayerTitle: document.getElementById("activePlayerTitle"),
+      dataStatus: document.getElementById("dataStatus"),
+      photoTools: document.getElementById("photoTools"),
+      photoInput: document.getElementById("photoInput"),
+      cameraVideo: document.getElementById("cameraVideo"),
+      cameraStatus: document.getElementById("cameraStatus"),
+      captureCameraBtn: document.getElementById("captureCameraBtn"),
+      stopCameraBtn: document.getElementById("stopCameraBtn"),
+      photoCanvas: document.getElementById("photoCanvas"),
+      cropX: document.getElementById("cropX"),
+      cropY: document.getElementById("cropY"),
+      cropW: document.getElementById("cropW"),
+      cropH: document.getElementById("cropH"),
+      boardGrid: document.getElementById("boardGrid"),
+      resourceGrid: document.getElementById("resourceGrid"),
+      slotScoreGrid: document.getElementById("slotScoreGrid"),
+      scoreList: document.getElementById("scoreList"),
+      breakdown: document.getElementById("breakdown"),
+      referenceStatus: document.getElementById("referenceStatus"),
+      cardDialog: document.getElementById("cardDialog"),
+      pickerSlotLabel: document.getElementById("pickerSlotLabel"),
+      cardSearch: document.getElementById("cardSearch"),
+      deckFilter: document.getElementById("deckFilter"),
+      cardList: document.getElementById("cardList"),
+      dataDialog: document.getElementById("dataDialog"),
+      cardJson: document.getElementById("cardJson"),
+      referenceDialog: document.getElementById("referenceDialog"),
+      referenceCardSelect: document.getElementById("referenceCardSelect"),
+      referenceFiles: document.getElementById("referenceFiles"),
+      selectedReferenceCount: document.getElementById("selectedReferenceCount"),
+      referenceThumbs: document.getElementById("referenceThumbs"),
+      rulesDialog: document.getElementById("rulesDialog"),
+      historyDialog: document.getElementById("historyDialog"),
+      historyList: document.getElementById("historyList"),
+      toast: document.getElementById("toast")
+    };
+
+    renderAll();
+    updateCameraControls();
+    drawPhotoPreview();
+
+    document.addEventListener("click", handleClick);
+    document.addEventListener("change", handleChange);
+    document.addEventListener("input", handleInput);
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerout", handlePointerOut);
+    window.addEventListener("beforeunload", () => stopCamera(false));
+
+    function uid() {
+      return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function buildDefaultCards() {
+      const baseCards = PDF_CARD_NAMES.map((name, index) => {
+        const deck = index < 39 ? "village" : "castle";
+        const number = index < 39 ? index + 1 : index - 38;
+        const id = `${deck}_${String(number).padStart(3, "0")}`;
+        const data = BASE_CARD_DATA[id] || {};
+        return {
+          id,
+          koName: name,
+          originalName: data.enName || name,
+          deck,
+          cost: Number.isFinite(Number(data.cost)) ? Number(data.cost) : null,
+          crests: Array.isArray(data.crests) ? data.crests : [],
+          tags: ["pdf-reference", ...(data.tags || [])],
+          referenceImages: [`pdf-card-refs/${id}_01.jpg`],
+          rule: data.rule || { type: "custom", points: 0, id: "pdf_unencoded" },
+          description: data.rule?.type === "custom"
+            ? "배너 아이콘 개수 확인이 필요해 수동 점수 입력으로 처리합니다."
+            : "기본판 카드 리스트 기준 자동 점수식입니다.",
+          sample: false
+        };
+      });
+      const expansionCards = ["village", "castle"].flatMap((deck) =>
+        EXPANSION_CARD_NAMES[deck].map((name, index) => {
+          const id = `${deck}_exp_${String(index + 1).padStart(3, "0")}`;
+          const data = BASE_CARD_DATA[id] || {};
+          return {
+            id,
+            koName: name,
+            originalName: data.enName || name,
+            deck,
+            cost: Number.isFinite(Number(data.cost)) ? Number(data.cost) : null,
+            crests: Array.isArray(data.crests) ? data.crests : [],
+            tags: ["expansion", "lock", ...(data.tags || [])],
+            referenceImages: [`expansion-card-refs/${id}_01.jpg`],
+            rule: data.rule || { type: "custom", points: 0, id: "expansion_unencoded" },
+            description: data.rule
+              ? "Out of the Oubliette 카드 점수식을 자동 계산합니다."
+              : "확장팩 Out of the Oubliette 카드입니다. 자물쇠 능력이 있으며, 점수는 카드별 수동 점수 입력으로 먼저 사용하세요.",
+            sample: false,
+            expansion: true,
+            hasLock: true
+          };
+        })
+      );
+      return baseCards.concat(expansionCards);
+    }
+
+    function blankSlot(index) {
+      return {
+        index,
+        cardId: null,
+        candidates: [],
+        needsReview: false,
+        cropThumb: null,
+        manualPoints: null,
+        lockUsed: false
+      };
+    }
+
+    function createPlayer(number) {
+      return {
+        id: uid(),
+        name: `플레이어 ${number}`,
+        gold: 0,
+        keys: 0,
+        backs: 0,
+        slots: Array.from({ length: 9 }, (_, index) => blankSlot(index))
+      };
+    }
+
+    function defaultState() {
+      return {
+        cards: buildDefaultCards(),
+        refs: {},
+        players: [createPlayer(1)],
+        activePlayer: 0,
+        method: "manual",
+        crop: { x: 8, y: 8, w: 84, h: 84 },
+        history: []
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaultState();
+        return normalizeState(JSON.parse(raw));
+      } catch (error) {
+        console.warn(error);
+        return defaultState();
+      }
+    }
+
+    function normalizeState(next) {
+      const base = defaultState();
+      let cards = Array.isArray(next.cards) && next.cards.length
+        ? next.cards.map(normalizeCard).filter(Boolean)
+        : base.cards;
+      const looksLikeOldSample =
+        cards.length === 78 &&
+        cards.every((card) => card.sample) &&
+        /카드\s+\d+/.test(cards[0]?.koName || "");
+      if (looksLikeOldSample) {
+        cards = base.cards;
+      }
+      cards = mergeDefaultCards(cards, base.cards);
+      const players = Array.isArray(next.players) && next.players.length
+        ? next.players.map((player, index) => ({
+            ...createPlayer(index + 1),
+            ...player,
+            slots: Array.from({ length: 9 }, (_, slotIndex) => ({
+              ...blankSlot(slotIndex),
+              ...(player.slots?.[slotIndex] || {}),
+              index: slotIndex
+            }))
+          }))
+        : base.players;
+
+      return {
+        ...base,
+        ...next,
+        cards,
+        players,
+        refs: next.refs || {},
+        activePlayer: Math.min(Math.max(Number(next.activePlayer) || 0, 0), players.length - 1),
+        method: next.method === "photo" ? "photo" : "manual",
+        crop: { ...base.crop, ...(next.crop || {}) },
+        history: Array.isArray(next.history) ? next.history : []
+      };
+    }
+
+    function normalizeCard(card) {
+      if (!card || !card.id || !card.koName) return null;
+      const defaults = BASE_CARD_DATA[card.id] || {};
+      const deck = card.deck === "village" ? "village" : "castle";
+      const existingRule = card.rule || {
+        type: card.ruleType || "fixed",
+        points: card.points,
+        crest: card.ruleTarget,
+        deck: card.ruleTarget
+      };
+      const ruleId = String(existingRule.id || existingRule.customId || "");
+      const shouldUseDefaultRule = defaults.rule && (
+        !card.rule ||
+        ruleId === "pdf_unencoded" ||
+        normalizeRule(existingRule).type === "custom"
+      );
+      const crests = Array.isArray(card.crests) && card.crests.length
+        ? card.crests.filter(Boolean)
+        : (Array.isArray(defaults.crests) ? defaults.crests : []);
+      const defaultTags = Array.isArray(defaults.tags) ? defaults.tags : [];
+      const cardTags = Array.isArray(card.tags) ? card.tags : [];
+      const rule = normalizeRule(shouldUseDefaultRule ? defaults.rule : existingRule);
+      return {
+        id: String(card.id),
+        koName: String(card.koName),
+        originalName: String(defaults.enName || card.originalName || card.enName || card.id),
+        deck,
+        cost: Number.isFinite(Number(card.cost)) ? Number(card.cost) : (Number.isFinite(Number(defaults.cost)) ? Number(defaults.cost) : null),
+        crests,
+        tags: Array.from(new Set([...cardTags, ...defaultTags])),
+        referenceImages: Array.isArray(card.referenceImages) ? card.referenceImages : [],
+        rule,
+        description: String(defaults.rule && shouldUseDefaultRule
+          ? (defaults.rule.type === "custom" ? "배너 아이콘 개수 확인이 필요해 수동 점수 입력으로 처리합니다." : "기본판 카드 리스트 기준 자동 점수식입니다.")
+          : (card.description || card.text || "")),
+        sample: Boolean(card.sample),
+        expansion: Boolean(card.expansion),
+        hasLock: Boolean(card.hasLock)
+      };
+    }
+
+    function mergeDefaultCards(cards, defaults) {
+      const byId = new Map(cards.map((card) => [card.id, card]));
+      defaults.forEach((card) => {
+        if (!byId.has(card.id)) {
+          byId.set(card.id, card);
+          return;
+        }
+        const current = byId.get(card.id);
+        if (card.expansion) {
+          byId.set(card.id, {
+            ...current,
+            koName: card.koName,
+            originalName: card.originalName,
+            tags: card.tags,
+            referenceImages: card.referenceImages,
+            description: card.description,
+            expansion: true,
+            hasLock: true
+          });
+        }
+      });
+      return Array.from(byId.values());
+    }
+
+    function normalizeRule(rule) {
+      const type = String(rule.type || rule.ruleType || "fixed");
+      const points = Number.isFinite(Number(rule.points)) ? Number(rule.points) : 0;
+      return {
+        ...rule,
+        type,
+        points,
+        crest: rule.crest || rule.ruleTarget || "noble",
+        deck: rule.deck === "village" ? "village" : "castle",
+        banner: rule.banner === "village" ? "village" : "castle",
+        crests: Array.isArray(rule.crests) ? rule.crests : [],
+        scope: rule.scope || "all",
+        area: rule.area || "",
+        cost: Number.isFinite(Number(rule.cost)) ? Number(rule.cost) : 0,
+        minCost: Number.isFinite(Number(rule.minCost)) ? Number(rule.minCost) : 0,
+        cap: Number.isFinite(Number(rule.cap)) ? Number(rule.cap) : 0,
+        size: Number.isFinite(Number(rule.size)) ? Number(rule.size) : 0,
+        count: Number.isFinite(Number(rule.count)) ? Number(rule.count) : 0,
+        crestCount: Number.isFinite(Number(rule.crestCount)) ? Number(rule.crestCount) : 0,
+        id: rule.id || rule.customId || ""
+      };
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.warn(error);
+        showToast("저장 공간이 부족합니다. 기준 이미지를 줄이거나 기록을 삭제해 주세요.");
+      }
+    }
+
+    function renderAll() {
+      state.players.forEach(markDuplicateSlots);
+      syncCropInputs();
+      renderPlayerCountControls();
+      renderPlayers();
+      renderMethod();
+      renderBoard();
+      renderResources();
+      renderSlotScores();
+      renderScores();
+      renderReferenceStatus();
+      saveState();
+    }
+
+    function renderPlayerCountControls() {
+      els.playerCountControls.innerHTML = [1, 2, 3, 4, 5].map((count) => `
+        <button class="seg-btn ${state.players.length === count ? "active" : ""}" data-action="set-player-count" data-count="${count}">${count}</button>
+      `).join("");
+    }
+
+    function renderPlayers() {
+      const active = getActivePlayer();
+      els.activePlayerTitle.textContent = `${active.name} 카드 배치`;
+      const expansionCount = state.cards.filter((card) => card.expansion).length;
+      const dataLabel = expansionCount
+        ? `${state.cards.length}장 데이터(기본 ${state.cards.length - expansionCount}+확장 ${expansionCount})`
+        : `${state.cards.length}장 데이터`;
+      els.dataStatus.textContent = `${dataLabel} · ${countReferences()}장 기준 이미지 · ${filledCount(active)}칸 입력`;
+      els.playerList.innerHTML = state.players.map((player, index) => {
+        const total = calculatePlayer(player).total;
+        return `
+          <div class="player-row ${index === state.activePlayer ? "active" : ""}">
+            <button class="icon-btn" aria-label="${escapeHtml(player.name)} 선택" data-action="set-active-player" data-index="${index}">${index + 1}</button>
+            <input data-role="player-name" data-index="${index}" value="${escapeAttr(player.name)}" aria-label="플레이어 이름">
+            <strong>${total}점</strong>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderMethod() {
+      document.querySelectorAll("[data-action='set-method']").forEach((button) => {
+        button.classList.toggle("active", button.dataset.method === state.method);
+      });
+      els.photoTools.classList.toggle("hidden", state.method !== "photo");
+      if (state.method !== "photo") {
+        stopCamera(false);
+      }
+    }
+
+    function renderBoard() {
+      const player = getActivePlayer();
+      els.boardGrid.innerHTML = player.slots.map((slot, index) => {
+        const card = findCard(slot.cardId);
+        if (!card) {
+          return `
+            <button class="slot empty ${slot.needsReview ? "needs-review" : ""}" data-action="open-card-picker" data-slot="${index}">
+              ${slot.cropThumb ? `<span class="slot-thumb"><img alt="" src="${slot.cropThumb}"></span>` : ""}
+              <span>
+                <strong>${index + 1}</strong><br>
+                + 카드 선택
+              </span>
+              ${slot.needsReview ? `<span class="badge review">확인 필요</span>` : ""}
+            </button>
+          `;
+        }
+
+        const firstCandidate = slot.candidates?.[0];
+        const thumb = slot.cropThumb || firstCardImage(card);
+        const manualPoints = manualPointsValue(slot);
+        return `
+          <button class="slot has-card ${slot.needsReview ? "needs-review" : ""}" data-action="open-card-picker" data-slot="${index}">
+            ${thumb ? `<span class="slot-thumb"><img alt="" src="${escapeAttr(thumb)}"></span>` : ""}
+            <span class="slot-top">
+              <span class="slot-index">${index + 1}</span>
+              <span class="inline-actions" style="gap: 4px;">
+                ${card.expansion ? `<span class="badge expansion">확장</span>` : ""}
+                ${card.hasLock ? `<span class="badge lock">자물쇠</span>` : ""}
+                <span class="badge ${card.deck}">${DECK_LABELS[card.deck]}</span>
+              </span>
+            </span>
+            <span class="slot-name">${escapeHtml(card.koName)}</span>
+            <span class="slot-rule">
+              ${slot.needsReview ? `<span class="badge review">확인 필요</span> ` : ""}
+              ${card.hasLock ? `<span class="badge lock">${slot.lockUsed ? "사용함" : "미사용"}</span><br>` : ""}
+              ${manualPoints !== null ? `수동 ${manualPoints}점<br>` : ""}
+              ${escapeHtml(ruleLabel(card))}
+              ${firstCandidate ? `<br>거리 ${Number(firstCandidate.distance).toFixed(3)}` : ""}
+            </span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderResources() {
+      const player = getActivePlayer();
+      const resources = [
+        ["gold", "금화", "ui-icons/icon-gold.png"],
+        ["keys", "열쇠", "ui-icons/icon-key.png"],
+        ["backs", "뒷면 카드", "ui-icons/icon-back.png"]
+      ];
+      els.resourceGrid.innerHTML = resources.map(([key, label, icon]) => `
+        <div class="resource">
+          <div class="resource-top">
+            <img class="resource-icon" alt="" src="${icon}">
+            <strong>${label}</strong>
+            <span>${Number(player[key]) || 0}</span>
+          </div>
+          <div class="stepper">
+            <button class="icon-btn" data-action="step-resource" data-key="${key}" data-delta="-1" aria-label="${label} 줄이기">−</button>
+            <input type="number" min="0" max="99" data-role="resource-input" data-key="${key}" value="${Number(player[key]) || 0}" aria-label="${label}">
+            <button class="icon-btn" data-action="step-resource" data-key="${key}" data-delta="1" aria-label="${label} 늘리기">+</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderSlotScores() {
+      const player = getActivePlayer();
+      const filledSlots = player.slots
+        .map((slot, index) => ({ slot, index, card: findCard(slot.cardId) }))
+        .filter((entry) => entry.card);
+
+      if (!filledSlots.length) {
+        els.slotScoreGrid.innerHTML = `<div class="empty-state">카드를 선택하면 점수 입력/자동식 상태가 여기에 표시됩니다.</div>`;
+        return;
+      }
+
+      els.slotScoreGrid.innerHTML = filledSlots.map(({ slot, index, card }) => {
+        const value = manualPointsValue(slot);
+        const autoPoints = scoreCard(card, index, player, { ...slot, manualPoints: null });
+        const needsManual = normalizeRule(card.rule).type === "custom";
+        const manualRuleLabel = ruleLabel(card);
+        const manualText = manualRuleLabel === "수동 점수 입력" ? "카드 점수 입력" : `${manualRuleLabel} · 카드 점수 입력`;
+        return `
+          <div class="slot-score">
+            <div class="slot-score-head">
+              <label for="slotScore${index}">${index + 1}. ${escapeHtml(card.koName)}</label>
+              <span class="badge ${needsManual ? "review" : "castle"}">${needsManual ? "수동" : "자동"}</span>
+            </div>
+            <div class="small">
+              ${needsManual ? escapeHtml(manualText) : `자동 ${autoPoints}점 · 필요하면 수정`}
+            </div>
+            <input
+              id="slotScore${index}"
+              class="field"
+              type="number"
+              inputmode="numeric"
+              data-role="slot-manual-score"
+              data-slot="${index}"
+              value="${value === null ? "" : value}"
+              placeholder="${needsManual ? "카드 점수" : "수정 점수"}"
+            >
+            ${card?.hasLock ? `
+              <label style="display: flex; align-items: center; gap: 6px; white-space: normal;">
+                <input type="checkbox" data-role="lock-used" data-slot="${index}" ${slot.lockUsed ? "checked" : ""}>
+                자물쇠 사용함
+              </label>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderScores() {
+      const totals = state.players.map(calculatePlayer);
+      const winners = determineWinners(totals);
+      els.scoreList.innerHTML = state.players.map((player, index) => {
+        const score = totals[index];
+        const isWinner = winners.includes(index) && score.total > 0;
+        const changed = lastScoreTotals[index] !== undefined && lastScoreTotals[index] !== score.total;
+        return `
+          <div class="score-card ${isWinner ? "winner" : ""} ${changed ? "score-pop" : ""}">
+            <div class="score-line">
+              <strong>${escapeHtml(player.name)}</strong>
+              ${isWinner ? `<span class="badge castle">승자</span>` : ""}
+            </div>
+            <div class="score-line">
+              <span class="small">${filledCount(player)}칸 · 금화 ${player.gold} · 열쇠 ${player.keys}</span>
+              <span class="score-total ${changed ? "score-pop" : ""}">${score.total}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+      lastScoreTotals = totals.map((score) => score.total);
+
+      const activeScore = totals[state.activePlayer];
+      if (!activeScore.rows.length) {
+        els.breakdown.innerHTML = `<div class="empty-state">카드를 선택하면 카드별 점수가 표시됩니다.</div>`;
+        return;
+      }
+      els.breakdown.innerHTML = activeScore.rows.map((row) => `
+        <div class="breakdown-row">
+          <div>
+            <strong>${escapeHtml(row.name)}</strong>
+            <div class="small">${escapeHtml(row.reason)}</div>
+          </div>
+          <strong>${row.points}</strong>
+        </div>
+      `).join("") + `
+        <div class="breakdown-row">
+          <div>
+            <strong>열쇠 기본 점수</strong>
+            <div class="small">열쇠 1개당 1점</div>
+          </div>
+          <strong>${getActivePlayer().keys}</strong>
+        </div>
+      `;
+    }
+
+    function renderReferenceStatus() {
+      const count = countReferences();
+      els.referenceStatus.textContent = `기준 ${count}장`;
+      els.referenceStatus.className = `badge ${count ? "castle" : "review"}`;
+    }
+
+    function renderCardList() {
+      const query = els.cardSearch.value.trim().toLowerCase();
+      const deck = els.deckFilter.value;
+      const unavailable = selectedCardIdsExcept(editingSlot);
+      const filtered = state.cards
+        .filter((card) => !unavailable.has(card.id))
+        .filter((card) => cardMatchesPickerFilter(card, deck))
+        .filter((card) => {
+          const text = [
+            card.koName,
+            card.originalName,
+            card.id,
+            card.description,
+            ...(card.tags || []),
+            ...(card.crests || []).map((crest) => CREST_LABELS[crest] || crest)
+          ].join(" ").toLowerCase();
+          return !query || text.includes(query);
+        })
+        .sort((a, b) => a.koName.localeCompare(b.koName, "ko"));
+
+      if (!filtered.length) {
+        els.cardList.innerHTML = `<div class="empty-state">선택 가능한 카드가 없습니다. 이미 배치한 카드는 목록에서 숨깁니다.</div>`;
+        return;
+      }
+
+      els.cardList.innerHTML = filtered.map((card) => {
+        const thumb = firstCardImage(card);
+        return `
+        <button class="card-row ${thumb ? "" : "no-thumb"}" data-action="select-card" data-card-id="${escapeAttr(card.id)}">
+          ${thumb ? `<img class="card-row-thumb" alt="" src="${escapeAttr(thumb)}">` : ""}
+          <span class="card-row-body">
+            <span class="card-row-title">
+              <strong>${escapeHtml(card.koName)}</strong>
+              <span class="inline-actions" style="gap: 4px;">
+                ${card.expansion ? `<span class="badge expansion">확장</span>` : ""}
+                ${card.hasLock ? `<span class="badge lock">자물쇠</span>` : ""}
+                <span class="badge ${card.deck}">${DECK_LABELS[card.deck]}</span>
+              </span>
+            </span>
+            <span class="small">${escapeHtml(card.originalName)}</span>
+            <span class="small">${escapeHtml(ruleLabel(card))}</span>
+          </span>
+        </button>
+      `;
+      }).join("");
+    }
+
+    function cardMatchesPickerFilter(card, filter) {
+      if (filter === "all") return true;
+      if (filter === "base") return !card.expansion;
+      if (filter === "expansion") return Boolean(card.expansion);
+      if (filter === "lock") return Boolean(card.hasLock || (card.tags || []).includes("lock"));
+      return card.deck === filter;
+    }
+
+    function renderReferenceDialog() {
+      selectedReferenceCard = selectedReferenceCard || state.cards[0]?.id || null;
+      els.referenceCardSelect.innerHTML = state.cards
+        .slice()
+        .sort((a, b) => a.koName.localeCompare(b.koName, "ko"))
+        .map((card) => `
+          <option value="${escapeAttr(card.id)}" ${card.id === selectedReferenceCard ? "selected" : ""}>
+            ${escapeHtml(card.koName)} (${DECK_LABELS[card.deck]})
+          </option>
+        `).join("");
+      renderReferenceThumbs();
+    }
+
+    function renderReferenceThumbs() {
+      const refs = state.refs[selectedReferenceCard] || [];
+      els.selectedReferenceCount.textContent = `${refs.length}장`;
+      if (!refs.length) {
+        els.referenceThumbs.innerHTML = `<div class="empty-state">아직 등록된 기준 사진이 없습니다.</div>`;
+        return;
+      }
+      els.referenceThumbs.innerHTML = refs.map((ref) => `
+        <div class="thumb">
+          <img alt="${escapeAttr(ref.name)}" src="${escapeAttr(ref.image)}">
+          <button class="btn danger" data-action="delete-reference" data-ref-id="${escapeAttr(ref.id)}">삭제</button>
+        </div>
+      `).join("");
+    }
+
+    function renderHistory() {
+      if (!state.history.length) {
+        els.historyList.innerHTML = `<div class="empty-state">저장된 결과가 없습니다.</div>`;
+        return;
+      }
+
+      els.historyList.innerHTML = state.history.map((entry) => `
+        <div class="score-card">
+          <div class="score-line">
+            <strong>${escapeHtml(new Date(entry.createdAt).toLocaleString("ko-KR"))}</strong>
+            <span class="badge castle">${escapeHtml(entry.winner || "결과")}</span>
+          </div>
+          ${(entry.players || []).map((player) => `
+            <div class="score-line small">
+              <span>${escapeHtml(player.name)}</span>
+              <strong>${player.total}점</strong>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+    }
+
+    function handleClick(event) {
+      const target = event.target.closest("[data-action]");
+      if (!target) return;
+      const action = target.dataset.action;
+      createTapRipple(event);
+      pulseElement(target);
+      if (target.closest(".advanced-menu")) {
+        closeAdvancedMenus();
+      }
+
+      if (action === "set-player-count") {
+        setPlayerCount(Number(target.dataset.count));
+      }
+      if (action === "set-active-player") {
+        state.activePlayer = Number(target.dataset.index);
+        renderAll();
+      }
+      if (action === "set-method") {
+        state.method = target.dataset.method;
+        renderAll();
+      }
+      if (action === "open-card-picker") {
+        openCardPicker(Number(target.dataset.slot));
+      }
+      if (action === "select-card") {
+        selectCard(target.dataset.cardId);
+      }
+      if (action === "close-card-dialog") {
+        els.cardDialog.close();
+      }
+      if (action === "step-resource") {
+        stepResource(target.dataset.key, Number(target.dataset.delta));
+      }
+      if (action === "clear-board") {
+        clearBoard();
+      }
+      if (action === "copy-prev") {
+        copyPreviousPlayer();
+      }
+      if (action === "new-game") {
+        newGame();
+      }
+      if (action === "open-data") {
+        openDataDialog();
+      }
+      if (action === "close-data-dialog") {
+        els.dataDialog.close();
+      }
+      if (action === "import-cards") {
+        importCards();
+      }
+      if (action === "export-cards") {
+        exportCards();
+      }
+      if (action === "reset-cards") {
+        state.cards = buildDefaultCards();
+        state.refs = {};
+        renderAll();
+        openDataDialog();
+        showToast("예시 카드 데이터로 초기화했습니다.");
+      }
+      if (action === "open-reference") {
+        selectedReferenceCard = selectedReferenceCard || state.cards[0]?.id || null;
+        renderReferenceDialog();
+        els.referenceDialog.showModal();
+      }
+      if (action === "close-reference-dialog") {
+        els.referenceDialog.close();
+      }
+      if (action === "open-rules") {
+        els.rulesDialog.showModal();
+      }
+      if (action === "close-rules-dialog") {
+        els.rulesDialog.close();
+      }
+      if (action === "delete-reference") {
+        deleteReference(target.dataset.refId);
+      }
+      if (action === "load-bundled-references") {
+        loadBundledReferences(false);
+      }
+      if (action === "start-camera") {
+        startCamera();
+      }
+      if (action === "capture-camera") {
+        captureCameraAndRecognize();
+      }
+      if (action === "stop-camera") {
+        stopCamera(true);
+      }
+      if (action === "crop-center") {
+        state.crop = { x: 8, y: 8, w: 84, h: 84 };
+        renderAll();
+        drawPhotoPreview();
+      }
+      if (action === "run-recognition") {
+        runRecognition();
+      }
+      if (action === "save-history") {
+        saveHistory();
+      }
+      if (action === "open-history") {
+        renderHistory();
+        els.historyDialog.showModal();
+      }
+      if (action === "close-history-dialog") {
+        els.historyDialog.close();
+      }
+      if (action === "clear-history") {
+        state.history = [];
+        renderHistory();
+        renderAll();
+        showToast("기록을 삭제했습니다.");
+      }
+    }
+
+    function closeAdvancedMenus() {
+      document.querySelectorAll(".advanced-menu[open]").forEach((menu) => {
+        menu.open = false;
+      });
+    }
+
+    function handleChange(event) {
+      const target = event.target;
+      if (target.dataset.role === "player-name") {
+        const player = state.players[Number(target.dataset.index)];
+        if (player) {
+          player.name = target.value.trim() || `플레이어 ${Number(target.dataset.index) + 1}`;
+          renderAll();
+        }
+      }
+      if (target.dataset.role === "resource-input") {
+        const player = getActivePlayer();
+        player[target.dataset.key] = clampInt(target.value, 0, 99);
+        renderAll();
+      }
+      if (target.dataset.role === "slot-manual-score") {
+        const player = getActivePlayer();
+        const slot = player.slots[Number(target.dataset.slot)];
+        if (slot) {
+          slot.manualPoints = target.value === "" ? null : clampInt(target.value, -99, 999);
+          renderAll();
+        }
+      }
+      if (target.dataset.role === "lock-used") {
+        const player = getActivePlayer();
+        const slot = player.slots[Number(target.dataset.slot)];
+        if (slot) {
+          slot.lockUsed = target.checked;
+          renderAll();
+        }
+      }
+      if (target === els.referenceCardSelect) {
+        selectedReferenceCard = target.value;
+        renderReferenceThumbs();
+      }
+      if (target === els.referenceFiles) {
+        addReferenceFiles(target.files);
+      }
+      if (target === els.photoInput) {
+        loadBoardPhoto(target.files?.[0]);
+      }
+    }
+
+    function handleInput(event) {
+      const target = event.target;
+      if (target === els.cardSearch || target === els.deckFilter) {
+        renderCardList();
+      }
+      if ([els.cropX, els.cropY, els.cropW, els.cropH].includes(target)) {
+        state.crop = clampCrop({
+          x: Number(els.cropX.value),
+          y: Number(els.cropY.value),
+          w: Number(els.cropW.value),
+          h: Number(els.cropH.value)
+        });
+        syncCropInputs();
+        drawPhotoPreview();
+        saveState();
+      }
+    }
+
+    function handlePointerMove(event) {
+      if (!window.matchMedia("(hover: hover)").matches || prefersReducedMotion()) return;
+      const slot = event.target.closest(".slot");
+      if (!slot) return;
+      const rect = slot.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      slot.style.setProperty("--tilt-x", `${(x - 0.5) * 5}deg`);
+      slot.style.setProperty("--tilt-y", `${(0.5 - y) * 5}deg`);
+      slot.style.setProperty("--shine-x", `${Math.round(x * 100)}%`);
+      slot.style.setProperty("--shine-y", `${Math.round(y * 100)}%`);
+    }
+
+    function handlePointerOut(event) {
+      const slot = event.target.closest(".slot");
+      if (!slot || slot.contains(event.relatedTarget)) return;
+      resetSlotTilt(slot);
+    }
+
+    function resetSlotTilt(slot) {
+      slot.style.removeProperty("--tilt-x");
+      slot.style.removeProperty("--tilt-y");
+      slot.style.removeProperty("--shine-x");
+      slot.style.removeProperty("--shine-y");
+    }
+
+    function createTapRipple(event) {
+      if (prefersReducedMotion() || event.clientX === undefined) return;
+      const ripple = document.createElement("span");
+      ripple.className = "tap-ripple";
+      ripple.style.left = `${event.clientX}px`;
+      ripple.style.top = `${event.clientY}px`;
+      document.body.appendChild(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+    }
+
+    function pulseElement(element) {
+      if (!element || prefersReducedMotion()) return;
+      element.classList.remove("interact-pop");
+      void element.offsetWidth;
+      element.classList.add("interact-pop");
+    }
+
+    function pulseSlot(slotIndex) {
+      requestAnimationFrame(() => {
+        pulseElement(els.boardGrid.querySelector(`[data-slot="${slotIndex}"]`));
+      });
+    }
+
+    function celebrateSave() {
+      if (prefersReducedMotion()) return;
+      const colors = ["#c6d5e3", "#edf4f9", "#9fb9cf", "#ffffff"];
+      const layer = document.createElement("div");
+      layer.className = "celebration-layer";
+      for (let index = 0; index < 22; index += 1) {
+        const dot = document.createElement("span");
+        dot.className = "celebration-dot";
+        dot.style.setProperty("--x", `${8 + Math.random() * 84}%`);
+        dot.style.setProperty("--d", `${Math.random() * 180}ms`);
+        dot.style.setProperty("--c", colors[index % colors.length]);
+        layer.appendChild(dot);
+      }
+      document.body.appendChild(layer);
+      setTimeout(() => layer.remove(), 1200);
+    }
+
+    function prefersReducedMotion() {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    function setPlayerCount(count) {
+      count = clampInt(count, 1, 5);
+      while (state.players.length < count) {
+        state.players.push(createPlayer(state.players.length + 1));
+      }
+      while (state.players.length > count) {
+        state.players.pop();
+      }
+      state.activePlayer = Math.min(state.activePlayer, state.players.length - 1);
+      renderAll();
+    }
+
+    function getActivePlayer() {
+      return state.players[state.activePlayer];
+    }
+
+    function findCard(id) {
+      return state.cards.find((card) => card.id === id) || null;
+    }
+
+    function firstCardImage(card) {
+      return Array.isArray(card?.referenceImages) && card.referenceImages.length
+        ? card.referenceImages[0]
+        : "";
+    }
+
+    function selectedCardIdsExcept(slotIndex) {
+      return new Set(
+        getActivePlayer().slots
+          .filter((slot, index) => index !== slotIndex && slot.cardId)
+          .map((slot) => slot.cardId)
+      );
+    }
+
+    function manualPointsValue(slot) {
+      return Number.isFinite(Number(slot?.manualPoints)) && slot.manualPoints !== null && slot.manualPoints !== ""
+        ? Number(slot.manualPoints)
+        : null;
+    }
+
+    function filledCount(player) {
+      return player.slots.filter((slot) => slot.cardId).length;
+    }
+
+    function countReferences() {
+      return Object.values(state.refs || {}).reduce((sum, refs) => sum + (Array.isArray(refs) ? refs.length : 0), 0);
+    }
+
+    function openCardPicker(slotIndex) {
+      editingSlot = slotIndex;
+      els.pickerSlotLabel.textContent = `${getActivePlayer().name} · ${slotIndex + 1}번 칸`;
+      els.cardSearch.value = "";
+      els.deckFilter.value = "all";
+      renderCardList();
+      els.cardDialog.showModal();
+      setTimeout(() => els.cardSearch.focus(), 50);
+    }
+
+    function selectCard(cardId) {
+      const player = getActivePlayer();
+      if (selectedCardIdsExcept(editingSlot).has(cardId)) {
+        showToast("이미 이 플레이어의 카드판에 놓인 카드입니다.");
+        return;
+      }
+      const card = findCard(cardId);
+      player.slots[editingSlot] = {
+        ...player.slots[editingSlot],
+        cardId,
+        needsReview: false,
+        lockUsed: card?.hasLock ? false : false
+      };
+      els.cardDialog.close();
+      renderAll();
+      pulseSlot(editingSlot);
+    }
+
+    function stepResource(key, delta) {
+      const player = getActivePlayer();
+      player[key] = clampInt((Number(player[key]) || 0) + delta, 0, 99);
+      renderAll();
+      pulseElement(document.querySelector(`.resource [data-key="${key}"]`)?.closest(".resource"));
+    }
+
+    function clearBoard() {
+      const player = getActivePlayer();
+      player.slots = Array.from({ length: 9 }, (_, index) => blankSlot(index));
+      renderAll();
+      showToast("현재 플레이어의 카드판을 비웠습니다.");
+    }
+
+    function copyPreviousPlayer() {
+      if (state.activePlayer <= 0) {
+        showToast("복사할 이전 플레이어가 없습니다.");
+        return;
+      }
+      const prev = state.players[state.activePlayer - 1];
+      const player = getActivePlayer();
+      player.slots = prev.slots.map((slot, index) => ({ ...blankSlot(index), ...slot, index }));
+      player.gold = prev.gold;
+      player.keys = prev.keys;
+      player.backs = prev.backs;
+      renderAll();
+      showToast("이전 플레이어의 배치를 복사했습니다.");
+    }
+
+    function newGame() {
+      const count = state.players.length;
+      state.players = Array.from({ length: count }, (_, index) => createPlayer(index + 1));
+      state.activePlayer = 0;
+      renderAll();
+      showToast("새 게임을 시작했습니다.");
+    }
+
+    function openDataDialog() {
+      els.cardJson.value = JSON.stringify(state.cards, null, 2);
+      els.dataDialog.showModal();
+    }
+
+    function importCards() {
+      try {
+        const parsed = JSON.parse(els.cardJson.value);
+        if (!Array.isArray(parsed)) throw new Error("카드 데이터는 배열이어야 합니다.");
+        const cards = parsed.map(normalizeCard).filter(Boolean);
+        if (!cards.length) throw new Error("유효한 카드가 없습니다.");
+        state.cards = cards;
+        const validIds = new Set(cards.map((card) => card.id));
+        state.players.forEach((player) => {
+          player.slots.forEach((slot) => {
+            if (slot.cardId && !validIds.has(slot.cardId)) {
+              slot.cardId = null;
+              slot.needsReview = true;
+            }
+          });
+        });
+        Object.keys(state.refs).forEach((cardId) => {
+          if (!validIds.has(cardId)) delete state.refs[cardId];
+        });
+        renderAll();
+        els.dataDialog.close();
+        showToast("카드 데이터를 적용했습니다.");
+      } catch (error) {
+        showToast(`JSON을 적용하지 못했습니다: ${error.message}`);
+      }
+    }
+
+    function exportCards() {
+      const blob = new Blob([JSON.stringify(state.cards, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "cards_ko.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function addReferenceFiles(files) {
+      if (!selectedReferenceCard || !files?.length) return;
+      const list = state.refs[selectedReferenceCard] || [];
+      for (const file of files) {
+        try {
+          const image = await resizedImageDataUrl(file, 360, 460);
+          const signature = await signatureFromDataUrl(image);
+          list.push({
+            id: uid(),
+            name: file.name,
+            image,
+            signature,
+            createdAt: new Date().toISOString()
+          });
+        } catch (error) {
+          console.warn(error);
+          showToast(`${file.name} 기준 이미지를 읽지 못했습니다.`);
+        }
+      }
+      state.refs[selectedReferenceCard] = list;
+      els.referenceFiles.value = "";
+      renderReferenceDialog();
+      renderAll();
+      showToast("기준 이미지를 등록했습니다.");
+    }
+
+    function deleteReference(refId) {
+      const refs = state.refs[selectedReferenceCard] || [];
+      state.refs[selectedReferenceCard] = refs.filter((ref) => ref.id !== refId);
+      renderReferenceDialog();
+      renderAll();
+    }
+
+    function hasBundledReferences() {
+      return state.cards.some((card) => Array.isArray(card.referenceImages) && card.referenceImages.length);
+    }
+
+    async function loadBundledReferences(silent) {
+      let added = 0;
+      try {
+        for (const card of state.cards) {
+          const paths = Array.isArray(card.referenceImages) ? card.referenceImages : [];
+          if (!paths.length) continue;
+          const refs = state.refs[card.id] || [];
+          for (const path of paths) {
+            if (refs.some((ref) => ref.name === path)) continue;
+            const image = await imageFromDataUrl(path);
+            const canvas = cropImageToCanvas(image, 0, 0, image.naturalWidth, image.naturalHeight, 180, 220);
+            refs.push({
+              id: uid(),
+              name: path,
+              image: path,
+              signature: signatureFromCanvas(canvas),
+              builtIn: true,
+              createdAt: new Date().toISOString()
+            });
+            added += 1;
+          }
+          if (refs.length) {
+            state.refs[card.id] = refs;
+          }
+        }
+        renderReferenceDialog();
+        renderAll();
+        if (!silent) {
+          showToast(added ? `내장 컷 기준 이미지 ${added}장을 등록했습니다.` : "이미 등록된 내장 컷 기준 이미지입니다.");
+        }
+      } catch (error) {
+        console.warn(error);
+        showToast("내장 컷 이미지를 읽지 못했습니다. HTML 파일과 이미지 폴더가 같은 위치에 있는지 확인하세요.");
+      }
+    }
+
+    async function startCamera() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        showToast("이 브라우저는 카메라 직접 촬영을 지원하지 않습니다. 사진 파일 선택을 사용하세요.");
+        return;
+      }
+
+      try {
+        stopCamera(false);
+        runtimePhoto = { dataUrl: null, image: null, width: 0, height: 0 };
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        });
+        els.cameraVideo.srcObject = cameraStream;
+        await els.cameraVideo.play();
+        updateCameraControls();
+        drawPhotoPreview();
+        showToast("카메라가 켜졌습니다. 카드판을 맞춘 뒤 촬영 후 분석을 누르세요.");
+      } catch (error) {
+        console.warn(error);
+        cameraStream = null;
+        updateCameraControls();
+        drawPhotoPreview();
+        showToast("카메라를 열 수 없습니다. 권한을 허용했는지 확인하거나 사진 파일 선택을 사용하세요.");
+      }
+    }
+
+    function stopCamera(notify) {
+      if (cameraFrameRequest) {
+        cancelAnimationFrame(cameraFrameRequest);
+        cameraFrameRequest = null;
+      }
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+      }
+      if (els.cameraVideo) {
+        els.cameraVideo.pause();
+        els.cameraVideo.srcObject = null;
+      }
+      updateCameraControls();
+      drawPhotoPreview();
+      if (notify) {
+        showToast("카메라를 닫았습니다.");
+      }
+    }
+
+    function updateCameraControls() {
+      const active = Boolean(cameraStream);
+      if (els.captureCameraBtn) {
+        els.captureCameraBtn.disabled = !active;
+      }
+      if (els.stopCameraBtn) {
+        els.stopCameraBtn.disabled = !active;
+      }
+      if (els.cameraStatus) {
+        els.cameraStatus.textContent = active
+          ? "카메라 켜짐 · 카드판을 격자 안에 맞춘 뒤 촬영"
+          : "카메라 권한 허용 후 카드판을 화면에 맞춰 촬영";
+      }
+    }
+
+    async function captureCameraAndRecognize() {
+      if (!cameraStream || !els.cameraVideo.videoWidth || !els.cameraVideo.videoHeight) {
+        showToast("카메라 화면이 아직 준비되지 않았습니다.");
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = els.cameraVideo.videoWidth;
+      canvas.height = els.cameraVideo.videoHeight;
+      canvas.getContext("2d").drawImage(els.cameraVideo, 0, 0, canvas.width, canvas.height);
+      await setRuntimePhotoFromDataUrl(canvas.toDataURL("image/jpeg", 0.9));
+      stopCamera(false);
+      drawPhotoPreview();
+      await runRecognition();
+    }
+
+    async function setRuntimePhotoFromDataUrl(dataUrl) {
+      runtimePhoto.dataUrl = dataUrl;
+      runtimePhoto.image = await imageFromDataUrl(dataUrl);
+      runtimePhoto.width = runtimePhoto.image.naturalWidth;
+      runtimePhoto.height = runtimePhoto.image.naturalHeight;
+    }
+
+    async function loadBoardPhoto(file) {
+      if (!file) return;
+      try {
+        stopCamera(false);
+        await setRuntimePhotoFromDataUrl(await fileToDataUrl(file));
+        drawPhotoPreview();
+        showToast("사진을 불러왔습니다. 격자를 카드판에 맞춘 뒤 다시 분석을 누르세요.");
+      } catch (error) {
+        console.warn(error);
+        showToast("사진을 불러오지 못했습니다.");
+      }
+    }
+
+    function syncCropInputs() {
+      state.crop = clampCrop(state.crop);
+      els.cropX.value = state.crop.x;
+      els.cropY.value = state.crop.y;
+      els.cropW.value = state.crop.w;
+      els.cropH.value = state.crop.h;
+    }
+
+    function clampCrop(crop) {
+      const x = clampNumber(crop.x, 0, 90);
+      const y = clampNumber(crop.y, 0, 90);
+      const w = clampNumber(crop.w, 10, 100 - x);
+      const h = clampNumber(crop.h, 10, 100 - y);
+      return { x, y, w, h };
+    }
+
+    function drawPhotoPreview() {
+      const canvas = els.photoCanvas;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#20251f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (cameraStream) {
+        if (els.cameraVideo.readyState >= 2 && els.cameraVideo.videoWidth && els.cameraVideo.videoHeight) {
+          drawImageWithCropGrid(ctx, els.cameraVideo, els.cameraVideo.videoWidth, els.cameraVideo.videoHeight);
+        } else {
+          drawCenteredCanvasText(ctx, "카메라 준비 중...");
+        }
+        scheduleCameraPreview();
+        return;
+      }
+
+      if (!runtimePhoto.image) {
+        drawCenteredCanvasText(ctx, "카메라를 열면 여기에 3×3 격자가 표시됩니다.");
+        return;
+      }
+
+      drawImageWithCropGrid(ctx, runtimePhoto.image, runtimePhoto.width, runtimePhoto.height);
+    }
+
+    function scheduleCameraPreview() {
+      if (cameraFrameRequest) return;
+      cameraFrameRequest = requestAnimationFrame(() => {
+        cameraFrameRequest = null;
+        drawPhotoPreview();
+      });
+    }
+
+    function drawCenteredCanvasText(ctx, text) {
+      ctx.fillStyle = "#f7f2e8";
+      ctx.font = "24px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(text, els.photoCanvas.width / 2, els.photoCanvas.height / 2);
+    }
+
+    function drawImageWithCropGrid(ctx, source, sourceWidth, sourceHeight) {
+      const canvas = els.photoCanvas;
+      const fit = fitRect(sourceWidth, sourceHeight, canvas.width, canvas.height);
+      ctx.drawImage(source, fit.x, fit.y, fit.w, fit.h);
+
+      const crop = state.crop;
+      const rx = fit.x + fit.w * crop.x / 100;
+      const ry = fit.y + fit.h * crop.y / 100;
+      const rw = fit.w * crop.w / 100;
+      const rh = fit.h * crop.h / 100;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+      ctx.fillRect(fit.x, fit.y, fit.w, fit.h);
+      ctx.clearRect(rx, ry, rw, rh);
+      ctx.drawImage(source, 0, 0, sourceWidth, sourceHeight, fit.x, fit.y, fit.w, fit.h);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.34)";
+      ctx.fillRect(fit.x, fit.y, fit.w, ry - fit.y);
+      ctx.fillRect(fit.x, ry + rh, fit.w, fit.y + fit.h - (ry + rh));
+      ctx.fillRect(fit.x, ry, rx - fit.x, rh);
+      ctx.fillRect(rx + rw, ry, fit.x + fit.w - (rx + rw), rh);
+
+      ctx.strokeStyle = "#f7f2e8";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(rx, ry, rw, rh);
+      ctx.strokeStyle = "rgba(247, 242, 232, 0.92)";
+      ctx.lineWidth = 1.5;
+      for (let i = 1; i < 3; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(rx + rw * i / 3, ry);
+        ctx.lineTo(rx + rw * i / 3, ry + rh);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(rx, ry + rh * i / 3);
+        ctx.lineTo(rx + rw, ry + rh * i / 3);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    async function runRecognition() {
+      if (!runtimePhoto.image) {
+        showToast("먼저 카메라로 촬영하거나 사진 파일을 선택해 주세요.");
+        return;
+      }
+
+      if (!countReferences() && hasBundledReferences()) {
+        await loadBundledReferences(true);
+      }
+      const referenceCount = countReferences();
+      const player = getActivePlayer();
+      const crop = state.crop;
+      const sx = runtimePhoto.width * crop.x / 100;
+      const sy = runtimePhoto.height * crop.y / 100;
+      const sw = runtimePhoto.width * crop.w / 100;
+      const sh = runtimePhoto.height * crop.h / 100;
+      const cellW = sw / 3;
+      const cellH = sh / 3;
+
+      for (let row = 0; row < 3; row += 1) {
+        for (let col = 0; col < 3; col += 1) {
+          const index = row * 3 + col;
+          const cell = cropImageToCanvas(runtimePhoto.image, sx + col * cellW, sy + row * cellH, cellW, cellH, 180, 220);
+          const thumb = cell.toDataURL("image/jpeg", 0.62);
+          const signature = signatureFromCanvas(cell);
+          const candidates = referenceCount ? matchSignature(signature, 3) : [];
+          player.slots[index] = {
+            ...player.slots[index],
+            cardId: candidates[0]?.cardId || null,
+            candidates,
+            needsReview: shouldReview(candidates),
+            cropThumb: thumb
+          };
+        }
+      }
+
+      markDuplicateSlots(player);
+      renderAll();
+      showToast(referenceCount ? "사진 인식을 마쳤습니다. 확인 필요 칸을 점검하세요." : "기준 이미지가 없어 9칸만 잘랐습니다. 기준 이미지를 먼저 등록하세요.");
+    }
+
+    function matchSignature(query, limit) {
+      const bestByCard = new Map();
+      Object.entries(state.refs || {}).forEach(([cardId, refs]) => {
+        refs.forEach((ref) => {
+          if (!Array.isArray(ref.signature)) return;
+          const distance = signatureDistance(query, ref.signature);
+          const current = bestByCard.get(cardId);
+          if (!current || distance < current.distance) {
+            bestByCard.set(cardId, {
+              cardId,
+              distance,
+              referenceName: ref.name
+            });
+          }
+        });
+      });
+
+      return Array.from(bestByCard.values())
+        .filter((candidate) => findCard(candidate.cardId))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, limit)
+        .map((candidate, index) => ({ ...candidate, rank: index + 1 }));
+    }
+
+    function markDuplicateSlots(player) {
+      const counts = new Map();
+      player.slots.forEach((slot) => {
+        if (!slot.cardId) return;
+        counts.set(slot.cardId, (counts.get(slot.cardId) || 0) + 1);
+      });
+      player.slots.forEach((slot) => {
+        if (slot.cardId && counts.get(slot.cardId) > 1) {
+          slot.needsReview = true;
+        }
+      });
+    }
+
+    function shouldReview(candidates) {
+      if (!candidates.length) return true;
+      if (candidates.length === 1) return candidates[0].distance > 0.42;
+      const best = candidates[0].distance;
+      const gap = candidates[1].distance - best;
+      return best > 0.42 || gap < 0.035;
+    }
+
+    function calculatePlayer(player) {
+      const rows = [];
+      player.slots.forEach((slot, index) => {
+        const card = findCard(slot.cardId);
+        if (!card) return;
+        const manualPoints = manualPointsValue(slot);
+        const points = manualPoints === null ? scoreCard(card, index, player, slot) : manualPoints;
+        rows.push({
+          cardId: card.id,
+          name: card.koName,
+          points,
+          reason: manualPoints === null ? ruleLabel(card) : "카드별 점수 수동 입력"
+        });
+      });
+      const cardTotal = rows.reduce((sum, row) => sum + row.points, 0);
+      const total = cardTotal + (Number(player.keys) || 0);
+      return { rows, total, cardTotal };
+    }
+
+    function determineWinners(totals) {
+      if (!totals.length) return [];
+      const bestScore = Math.max(...totals.map((entry) => entry.total));
+      const scoreTied = totals
+        .map((entry, index) => ({ index, total: entry.total, gold: Number(state.players[index]?.gold) || 0 }))
+        .filter((entry) => entry.total === bestScore);
+      if (scoreTied.length <= 1) {
+        return scoreTied.map((entry) => entry.index);
+      }
+      const bestGold = Math.max(...scoreTied.map((entry) => entry.gold));
+      return scoreTied.filter((entry) => entry.gold === bestGold).map((entry) => entry.index);
+    }
+
+    function scoreCard(card, index, player, slot) {
+      const manualPoints = manualPointsValue(slot);
+      if (manualPoints !== null) {
+        return manualPoints;
+      }
+      const rule = normalizeRule(card.rule);
+      const cards = player.slots.map((slot) => findCard(slot.cardId)).filter(Boolean);
+      const points = Number(rule.points) || 0;
+      switch (rule.type) {
+        case "fixed":
+          return points;
+        case "perGold":
+          return (Number(player.gold) || 0) * points;
+        case "purseGold":
+          return (purseAllocations(player).byIndex.get(index) || 0) * points;
+        case "purseGoldTotal":
+          return purseAllocations(player).total * points;
+        case "perKey":
+          return (Number(player.keys) || 0) * points;
+        case "perBack":
+          return (Number(player.backs) || 0) * points;
+        case "perDeck":
+          return cards.filter((item) => item.deck === rule.deck).length * points;
+        case "perBanner":
+          return bannerCount(cards, rule.banner) * points;
+        case "perBannerSet":
+          return Math.floor(bannerCount(cards, rule.banner) / Math.max(1, rule.size || 1)) * points;
+        case "perCrest":
+          return cards.flatMap((item) => item.crests || []).filter((crest) => crest === rule.crest).length * points;
+        case "perCrestInScope":
+          return crestsInScope(player, index, rule.scope).filter((crest) => crest === rule.crest).length * points;
+        case "perUniqueCrestInScope":
+          return new Set(crestsInScope(player, index, rule.scope)).size * points;
+        case "perNeighborCrest":
+          return NEIGHBORS[index]
+            .map((slotIndex) => findCard(player.slots[slotIndex].cardId))
+            .filter(Boolean)
+            .flatMap((item) => item.crests || [])
+            .filter((crest) => crest === rule.crest).length * points;
+        case "perSameDeckNeighbor":
+          return NEIGHBORS[index]
+            .map((slotIndex) => findCard(player.slots[slotIndex].cardId))
+            .filter((item) => item && item.deck === card.deck).length * points;
+        case "perCorner":
+          return CORNERS.has(index) ? points : 0;
+        case "perCenter":
+          return index === 4 ? points : 0;
+        case "perEdge":
+          return EDGES.has(index) ? points : 0;
+        case "perUniqueCrest":
+          return new Set(cards.flatMap((item) => item.crests || [])).size * points;
+        case "perFilledSlot":
+          return cards.length * points;
+        case "perCrestSet":
+          return completeCrestSets(cards.flatMap((item) => item.crests || []), rule.crests) * points;
+        case "perMatchingCrestSet":
+          return matchingCrestSets(cards.flatMap((item) => item.crests || []), rule.size || 3) * points;
+        case "ifCrestInScope":
+          return crestsInScope(player, index, rule.scope).filter((crest) => crest === rule.crest).length >= Math.max(1, rule.count || 1) ? points : 0;
+        case "ifMissingCrest":
+          return cards.some((item) => (item.crests || []).includes(rule.crest)) ? 0 : points;
+        case "ifPosition":
+          return isInArea(index, rule.area) ? points : 0;
+        case "ifColumnFull":
+          return isColumnFull(player, rule.column || 0) ? points : 0;
+        case "ifBackAtLeast":
+          return (Number(player.backs) || 0) >= (rule.count || 1) ? points : 0;
+        case "ifNoBack":
+          return (Number(player.backs) || 0) === 0 ? points : 0;
+        case "perCost":
+          return cards.filter((item) => Number(item.cost) === rule.cost).length * points;
+        case "rowCostSum":
+          return cardsInRow(player, index).reduce((sum, item) => sum + cardCost(item), 0);
+        case "perUniqueCost":
+          return new Set(cards.map(cardCost).filter((cost) => cost !== null)).size * points;
+        case "perCardsWithCrestCount":
+          return cards.filter((item) => (item.crests || []).length === rule.crestCount).length * points;
+        case "perDiscountCard":
+          return cards.filter((item) => (item.tags || []).includes("discount")).length * points;
+        case "perPairDecks":
+          return Math.min(
+            cards.filter((item) => item.deck === "castle").length,
+            cards.filter((item) => item.deck === "village").length
+          ) * points;
+        case "perMissingCrestType":
+          return Math.max(0, Object.keys(CREST_LABELS).length - new Set(cards.flatMap((item) => item.crests || [])).size) * points;
+        case "perPurseCardCostAtLeast":
+          return selectedCardEntries(player)
+            .filter((entry) => normalizeRule(entry.card.rule).type === "purseGold" && Number(entry.card.cost) >= rule.minCost)
+            .length * points;
+        case "perPurseScoringCard":
+          return cards.filter(hasPurseScoring).length * points;
+        case "ifNoPurseScoringCard":
+          return cards.some(hasPurseScoring) ? 0 : points;
+        case "ifNoDiscountCard":
+          return cards.some((item) => (item.tags || []).includes("discount")) ? 0 : points;
+        case "perLockCard":
+          return cards.filter((item) => item.hasLock || (item.tags || []).includes("lock")).length * points;
+        case "custom":
+        default:
+          return 0;
+      }
+    }
+
+    function selectedCardEntries(player) {
+      return player.slots
+        .map((slot, index) => ({ slot, index, card: findCard(slot.cardId) }))
+        .filter((entry) => entry.card);
+    }
+
+    function bannerCount(cards, banner) {
+      return cards.filter((item) => item.deck === banner).length;
+    }
+
+    function cardsInRow(player, index) {
+      const row = Math.floor(index / 3);
+      return [row * 3, row * 3 + 1, row * 3 + 2]
+        .map((slotIndex) => findCard(player.slots[slotIndex]?.cardId))
+        .filter(Boolean);
+    }
+
+    function cardCost(card) {
+      return Number.isFinite(Number(card?.cost)) ? Number(card.cost) : null;
+    }
+
+    function hasPurseScoring(card) {
+      const type = normalizeRule(card?.rule || {}).type;
+      return type === "purseGold" || type === "purseGoldTotal";
+    }
+
+    function indicesForScope(index, scope) {
+      const row = Math.floor(index / 3);
+      const column = index % 3;
+      if (scope === "row") return [row * 3, row * 3 + 1, row * 3 + 2];
+      if (scope === "column") return [column, column + 3, column + 6];
+      if (scope === "rowColumn") {
+        return Array.from(new Set([row * 3, row * 3 + 1, row * 3 + 2, column, column + 3, column + 6]));
+      }
+      if (scope === "neighbors") return NEIGHBORS[index] || [];
+      return Array.from({ length: 9 }, (_, slotIndex) => slotIndex);
+    }
+
+    function crestsInScope(player, index, scope) {
+      return indicesForScope(index, scope)
+        .map((slotIndex) => findCard(player.slots[slotIndex]?.cardId))
+        .filter(Boolean)
+        .flatMap((item) => item.crests || []);
+    }
+
+    function completeCrestSets(crests, setCrests) {
+      if (!Array.isArray(setCrests) || !setCrests.length) return 0;
+      const counts = crestCounts(crests);
+      return Math.min(...setCrests.map((crest) => counts.get(crest) || 0));
+    }
+
+    function matchingCrestSets(crests, size) {
+      const counts = crestCounts(crests);
+      return Array.from(counts.values()).reduce((sum, count) => sum + Math.floor(count / size), 0);
+    }
+
+    function crestCounts(crests) {
+      const counts = new Map();
+      crests.forEach((crest) => counts.set(crest, (counts.get(crest) || 0) + 1));
+      return counts;
+    }
+
+    function isInArea(index, area) {
+      const areas = {
+        topRow: [0, 1, 2],
+        middleRow: [3, 4, 5],
+        bottomRow: [6, 7, 8],
+        leftColumn: [0, 3, 6],
+        middleColumn: [1, 4, 7],
+        rightColumn: [2, 5, 8],
+        corner: [0, 2, 6, 8],
+        edge: [1, 3, 5, 7],
+        center: [4]
+      };
+      return (areas[area] || []).includes(index);
+    }
+
+    function isColumnFull(player, column) {
+      return [column, column + 3, column + 6].every((slotIndex) => findCard(player.slots[slotIndex]?.cardId));
+    }
+
+    function purseAllocations(player) {
+      const byIndex = new Map();
+      let remaining = Math.max(0, Number(player.gold) || 0);
+      let total = 0;
+      selectedCardEntries(player)
+        .map((entry) => ({ ...entry, rule: normalizeRule(entry.card.rule) }))
+        .filter((entry) => entry.rule.type === "purseGold")
+        .sort((a, b) => (b.rule.points - a.rule.points) || (b.rule.cap - a.rule.cap))
+        .forEach((entry) => {
+          const amount = Math.min(remaining, Math.max(0, entry.rule.cap || 0));
+          byIndex.set(entry.index, amount);
+          remaining -= amount;
+          total += amount;
+        });
+      return { byIndex, total };
+    }
+
+    function ruleLabel(card) {
+      const rule = normalizeRule(card.rule);
+      const pointText = `${rule.points}점`;
+      switch (rule.type) {
+        case "fixed":
+          return `고정 ${pointText}`;
+        case "perGold":
+          return `금화마다 ${pointText}`;
+        case "purseGold":
+          return `지갑 금화마다 ${pointText}, 최대 ${rule.cap}금`;
+        case "purseGoldTotal":
+          return `지갑에 놓인 금화마다 ${pointText}`;
+        case "perKey":
+          return `열쇠마다 ${pointText}`;
+        case "perBack":
+          return `뒷면 카드마다 ${pointText}`;
+        case "perDeck":
+          return `${DECK_LABELS[rule.deck]} 카드마다 ${pointText}`;
+        case "perBanner":
+          return `${DECK_LABELS[rule.banner]} 배너마다 ${pointText}`;
+        case "perBannerSet":
+          return `${DECK_LABELS[rule.banner]} 배너 ${rule.size || 1}개 세트마다 ${pointText}`;
+        case "perCrest":
+          return `${CREST_LABELS[rule.crest] || rule.crest} 문장마다 ${pointText}`;
+        case "perCrestInScope":
+          return `${scopeLabel(rule.scope)} ${CREST_LABELS[rule.crest] || rule.crest} 문장마다 ${pointText}`;
+        case "perUniqueCrestInScope":
+          return `${scopeLabel(rule.scope)} 서로 다른 문장마다 ${pointText}`;
+        case "perNeighborCrest":
+          return `인접한 ${CREST_LABELS[rule.crest] || rule.crest} 문장마다 ${pointText}`;
+        case "perSameDeckNeighbor":
+          return `같은 종류 인접 카드마다 ${pointText}`;
+        case "perCorner":
+          return `모서리에 있으면 ${pointText}`;
+        case "perCenter":
+          return `가운데에 있으면 ${pointText}`;
+        case "perEdge":
+          return `가장자리에 있으면 ${pointText}`;
+        case "perUniqueCrest":
+          return `서로 다른 문장마다 ${pointText}`;
+        case "perFilledSlot":
+          return `배치된 카드마다 ${pointText}`;
+        case "perCrestSet":
+          return `${rule.crests.map((crest) => CREST_LABELS[crest] || crest).join("+")} 세트마다 ${pointText}`;
+        case "perMatchingCrestSet":
+          return `같은 문장 ${rule.size || 3}개 세트마다 ${pointText}`;
+        case "ifCrestInScope":
+          return `${scopeLabel(rule.scope)} ${CREST_LABELS[rule.crest] || rule.crest} 문장이 있으면 ${pointText}`;
+        case "ifMissingCrest":
+          return `${CREST_LABELS[rule.crest] || rule.crest} 문장이 없으면 ${pointText}`;
+        case "ifPosition":
+          return `${areaLabel(rule.area)}에 있으면 ${pointText}`;
+        case "ifColumnFull":
+          return `지정 열이 가득 차면 ${pointText}`;
+        case "ifBackAtLeast":
+          return `뒷면 카드가 있으면 ${pointText}`;
+        case "ifNoBack":
+          return `뒷면 카드가 없으면 ${pointText}`;
+        case "perCost":
+          return `비용 ${rule.cost} 카드마다 ${pointText}`;
+        case "rowCostSum":
+          return `같은 행 카드 비용 합`;
+        case "perUniqueCost":
+          return `서로 다른 비용마다 ${pointText}`;
+        case "perCardsWithCrestCount":
+          return `문장 ${rule.crestCount}개 카드마다 ${pointText}`;
+        case "perDiscountCard":
+          return `할인 카드마다 ${pointText}`;
+        case "perPairDecks":
+          return `성+마을 카드 쌍마다 ${pointText}`;
+        case "perMissingCrestType":
+          return `없는 문장 종류마다 ${pointText}`;
+        case "perPurseCardCostAtLeast":
+          return `비용 ${rule.minCost}+ 지갑 카드마다 ${pointText}`;
+        case "perPurseScoringCard":
+          return `지갑 점수 카드마다 ${pointText}`;
+        case "ifNoPurseScoringCard":
+          return `지갑 점수 카드가 없으면 ${pointText}`;
+        case "ifNoDiscountCard":
+          return `할인 카드가 없으면 ${pointText}`;
+        case "perLockCard":
+          return `자물쇠 카드마다 ${pointText}`;
+        case "custom":
+          return rule.id?.includes("banner") ? "배너 아이콘 수동 확인" : "수동 점수 입력";
+        default:
+          return `지원하지 않는 규칙: ${rule.type}`;
+      }
+    }
+
+    function scopeLabel(scope) {
+      return {
+        row: "같은 행의",
+        column: "같은 열의",
+        rowColumn: "같은 행/열의",
+        neighbors: "인접한",
+        all: "전체"
+      }[scope] || "전체";
+    }
+
+    function areaLabel(area) {
+      return {
+        topRow: "윗줄",
+        middleRow: "가운데 줄",
+        bottomRow: "아랫줄",
+        leftColumn: "왼쪽 열",
+        middleColumn: "가운데 열",
+        rightColumn: "오른쪽 열",
+        corner: "모서리",
+        edge: "가장자리 가운데",
+        center: "중앙"
+      }[area] || "지정 위치";
+    }
+
+    function saveHistory() {
+      const totals = state.players.map(calculatePlayer);
+      const results = state.players.map((player) => ({
+        name: player.name,
+        total: calculatePlayer(player).total,
+        gold: player.gold,
+        keys: player.keys,
+        backs: player.backs,
+        cards: player.slots.map((slot) => slot.cardId)
+      }));
+      const winners = determineWinners(totals).map((index) => results[index].name).join(", ");
+      state.history.unshift({
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        winner: winners,
+        players: results
+      });
+      state.history = state.history.slice(0, 30);
+      renderAll();
+      showToast("현재 결과를 저장했습니다.");
+      celebrateSave();
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function imageFromDataUrl(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = dataUrl;
+      });
+    }
+
+    async function resizedImageDataUrl(file, maxW, maxH) {
+      const dataUrl = await fileToDataUrl(file);
+      const image = await imageFromDataUrl(dataUrl);
+      const fit = fitRect(image.naturalWidth, image.naturalHeight, maxW, maxH);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(fit.w));
+      canvas.height = Math.max(1, Math.round(fit.h));
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.76);
+    }
+
+    async function signatureFromDataUrl(dataUrl) {
+      const image = await imageFromDataUrl(dataUrl);
+      const canvas = cropImageToCanvas(image, 0, 0, image.naturalWidth, image.naturalHeight, 32, 32);
+      return signatureFromCanvas(canvas);
+    }
+
+    function cropImageToCanvas(image, sx, sy, sw, sh, width, height) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, width, height);
+      return canvas;
+    }
+
+    function signatureFromCanvas(sourceCanvas) {
+      const size = 24;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(sourceCanvas, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      const grayscale = [];
+      const histogram = Array.from({ length: 12 }, () => 0);
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] / 255;
+        const g = data[i + 1] / 255;
+        const b = data[i + 2] / 255;
+        const gray = r * 0.299 + g * 0.587 + b * 0.114;
+        grayscale.push(gray);
+        histogram[Math.min(3, Math.floor(r * 4))] += 1;
+        histogram[4 + Math.min(3, Math.floor(g * 4))] += 1;
+        histogram[8 + Math.min(3, Math.floor(b * 4))] += 1;
+      }
+      const mean = grayscale.reduce((sum, value) => sum + value, 0) / grayscale.length;
+      const variance = grayscale.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / grayscale.length;
+      const std = Math.sqrt(variance) || 1;
+      const normalized = grayscale.map((value) => Number(((value - mean) / std).toFixed(4)));
+      const histTotal = size * size;
+      const normalizedHistogram = histogram.map((value) => Number((value / histTotal).toFixed(4)));
+      return normalized.concat(normalizedHistogram);
+    }
+
+    function signatureDistance(a, b) {
+      const length = Math.min(a.length, b.length);
+      if (!length) return Number.POSITIVE_INFINITY;
+      let sum = 0;
+      for (let i = 0; i < length; i += 1) {
+        const weight = i >= length - 12 ? 0.35 : 1;
+        const diff = (Number(a[i]) || 0) - (Number(b[i]) || 0);
+        sum += diff * diff * weight;
+      }
+      return Math.sqrt(sum / length);
+    }
+
+    function fitRect(srcW, srcH, maxW, maxH) {
+      const scale = Math.min(maxW / srcW, maxH / srcH);
+      const w = srcW * scale;
+      const h = srcH * scale;
+      return {
+        x: (maxW - w) / 2,
+        y: (maxH - h) / 2,
+        w,
+        h
+      };
+    }
+
+    function clampInt(value, min, max) {
+      return Math.min(max, Math.max(min, Math.round(Number(value) || 0)));
+    }
+
+    function clampNumber(value, min, max) {
+      return Math.min(max, Math.max(min, Number(value) || 0));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        els.toast.classList.remove("show");
+      }, 2600);
+    }
+  </script>
+</body>
+</html>
