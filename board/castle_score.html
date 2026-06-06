@@ -3556,6 +3556,17 @@
       return Object.values(state.refs || {}).reduce((sum, refs) => sum + (Array.isArray(refs) ? refs.length : 0), 0);
     }
 
+    function hasMissingBundledReferences() {
+      return state.cards.some((card) => {
+        const paths = Array.isArray(card.referenceImages) ? card.referenceImages : [];
+        if (!paths.length) return false;
+        const refs = state.refs[card.id] || [];
+        return paths.some((path) => !refs.some((ref) =>
+          ref?.name === path && (!ref.builtIn || ref.version === BUILT_IN_REF_VERSION)
+        ));
+      });
+    }
+
     function openCardPicker(slotIndex) {
       editingSlot = slotIndex;
       els.pickerSlotLabel.textContent = `${getActivePlayer().name} · ${slotIndex + 1}번 칸`;
@@ -3855,7 +3866,11 @@
         stopCamera(false);
         await setRuntimePhotoFromDataUrl(await fileToDataUrl(file));
         drawPhotoPreview();
-        showToast("사진을 불러왔습니다. 자동 격자 영역으로 분석할 수 있습니다.");
+        showToast("사진을 불러왔습니다. 3×3 카드판을 분석합니다.");
+        await runRecognition();
+        if (els.photoInput) {
+          els.photoInput.value = "";
+        }
       } catch (error) {
         console.warn(error);
         showToast("사진을 불러오지 못했습니다.");
@@ -3996,7 +4011,7 @@
         return;
       }
 
-      if (!countReferences() && hasBundledReferences()) {
+      if (hasBundledReferences() && hasMissingBundledReferences()) {
         await loadBundledReferences(true);
       }
       const referenceCount = countReferences();
@@ -4029,7 +4044,11 @@
 
       markDuplicateSlots(player);
       renderAll();
-      showToast(referenceCount ? "사진 인식을 마쳤습니다. 확인 필요 칸을 점검하세요." : "기준 이미지가 없어 9칸만 잘랐습니다. 기준 이미지를 먼저 등록하세요.");
+      const selectedCount = player.slots.filter((slot) => slot.cardId).length;
+      const reviewCount = player.slots.filter((slot) => slot.needsReview).length;
+      showToast(referenceCount
+        ? `사진 인식 완료 · ${selectedCount}칸 자동 선택${reviewCount ? ` · 확인 필요 ${reviewCount}칸` : ""}`
+        : "기준 이미지가 없어 9칸만 잘랐습니다. 기준 이미지를 먼저 등록하세요.");
     }
 
     function matchSignature(query, limit) {
