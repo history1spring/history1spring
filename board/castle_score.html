@@ -1983,10 +1983,10 @@
           <div class="photo-actions">
             <button class="btn primary" data-action="start-camera">카메라 열기</button>
             <button class="btn warn" id="captureCameraBtn" data-action="capture-camera" disabled>촬영 후 분석</button>
-            <button class="btn" id="stopCameraBtn" data-action="stop-camera" disabled>카메라 닫기</button>
+            <button class="btn hidden" id="stopCameraBtn" data-action="stop-camera" disabled>카메라 닫기</button>
             <label class="btn" for="photoInput">사진 파일 선택</label>
             <input id="photoInput" class="hidden" type="file" accept="image/*">
-            <button class="btn" data-action="run-recognition">현재 사진 다시 분석</button>
+            <button class="btn" data-action="run-recognition">사진 분석</button>
           </div>
           <div class="photo-canvas-wrap">
             <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
@@ -2337,6 +2337,7 @@
     let runtimePhoto = { dataUrl: null, image: null, width: 0, height: 0 };
     let cameraStream = null;
     let cameraFrameRequest = null;
+    let runtimeReferenceSignatureCache = new Map();
     let lastScoreTotals = [];
     const AUTO_GRID_RATIO = 5 / 7;
     const BUILT_IN_REF_VERSION = "2026-06-06-expansion-sharp";
@@ -3553,6 +3554,14 @@
     }
 
     function countReferences() {
+      return countBuiltInReferences() + countUserReferences();
+    }
+
+    function countBuiltInReferences() {
+      return state.cards.filter((card) => inlineCardThumb(card)).length;
+    }
+
+    function countUserReferences() {
       return Object.values(state.refs || {}).reduce((sum, refs) => sum + (Array.isArray(refs) ? refs.length : 0), 0);
     }
 
@@ -3565,6 +3574,53 @@
           ref?.name === path && (!ref.builtIn || ref.version === BUILT_IN_REF_VERSION)
         ));
       });
+    }
+
+    async function buildRecognitionReferences() {
+      const refs = [];
+      for (const card of state.cards) {
+        const builtInSignature = await builtInCardSignature(card);
+        if (builtInSignature) {
+          refs.push({
+            cardId: card.id,
+            signature: builtInSignature,
+            referenceName: "내장 카드 이미지"
+          });
+        }
+
+        (state.refs?.[card.id] || []).forEach((ref) => {
+          if (!Array.isArray(ref.signature)) return;
+          refs.push({
+            cardId: card.id,
+            signature: ref.signature,
+            referenceName: ref.name || "추가 기준 이미지"
+          });
+        });
+      }
+      return refs;
+    }
+
+    async function builtInCardSignature(card) {
+      if (!card?.id) return null;
+      const cacheKey = `${BUILT_IN_REF_VERSION}:${card.id}`;
+      if (runtimeReferenceSignatureCache.has(cacheKey)) {
+        return runtimeReferenceSignatureCache.get(cacheKey);
+      }
+
+      const source = inlineCardThumb(card);
+      if (!source) return null;
+
+      try {
+        const image = await imageFromDataUrl(source);
+        const canvas = cropImageToCanvas(image, 0, 0, image.naturalWidth, image.naturalHeight, 180, 220);
+        const signature = signatureFromCanvas(canvas);
+        runtimeReferenceSignatureCache.set(cacheKey, signature);
+        return signature;
+      } catch (error) {
+        console.warn(error);
+        runtimeReferenceSignatureCache.set(cacheKey, null);
+        return null;
+      }
     }
 
     function openCardPicker(slotIndex) {
@@ -3742,7 +3798,7 @@
           const refs = state.refs[card.id] || [];
           for (const path of paths) {
             if (refs.some((ref) => ref.name === path)) continue;
-            const image = await imageFromDataUrl(path);
+            const image = await imageFromDataUrl(inlineCardThumb(card) || path);
             const canvas = cropImageToCanvas(image, 0, 0, image.naturalWidth, image.naturalHeight, 180, 220);
             refs.push({
               id: uid(),
@@ -3829,6 +3885,7 @@
       }
       if (els.stopCameraBtn) {
         els.stopCameraBtn.disabled = !active;
+        els.stopCameraBtn.classList.toggle("hidden", !active);
       }
       if (els.cameraStatus) {
         els.cameraStatus.textContent = active
@@ -4011,10 +4068,8 @@
         return;
       }
 
-      if (hasBundledReferences() && hasMissingBundledReferences()) {
-        await loadBundledReferences(true);
-      }
-      const referenceCount = countReferences();
+      const recognitionRefs = await buildRecognitionReferences();
+      const referenceCount = recognitionRefs.length;
       const player = getActivePlayer();
       const crop = autoGridSourceRect(runtimePhoto.width, runtimePhoto.height);
       const sx = crop.x;
@@ -4030,7 +4085,7 @@
           const cell = cropImageToCanvas(runtimePhoto.image, sx + col * cellW, sy + row * cellH, cellW, cellH, 180, 220);
           const thumb = cell.toDataURL("image/jpeg", 0.62);
           const signature = signatureFromCanvas(cell);
-          const candidates = referenceCount ? matchSignature(signature, 3) : [];
+          const candidates = referenceCount ? matchSignature(signature, 3, recognitionRefs) : [];
           player.slots[index] = {
             ...player.slots[index],
             cardId: candidates[0]?.cardId || null,
@@ -4048,24 +4103,22 @@
       const reviewCount = player.slots.filter((slot) => slot.needsReview).length;
       showToast(referenceCount
         ? `사진 인식 완료 · ${selectedCount}칸 자동 선택${reviewCount ? ` · 확인 필요 ${reviewCount}칸` : ""}`
-        : "기준 이미지가 없어 9칸만 잘랐습니다. 기준 이미지를 먼저 등록하세요.");
+        : "내장 카드 이미지를 읽지 못해 9칸만 잘랐습니다. 새로고침 후 다시 시도하세요.");
     }
 
-    function matchSignature(query, limit) {
+    function matchSignature(query, limit, recognitionRefs) {
       const bestByCard = new Map();
-      Object.entries(state.refs || {}).forEach(([cardId, refs]) => {
-        refs.forEach((ref) => {
-          if (!Array.isArray(ref.signature)) return;
-          const distance = signatureDistance(query, ref.signature);
-          const current = bestByCard.get(cardId);
-          if (!current || distance < current.distance) {
-            bestByCard.set(cardId, {
-              cardId,
-              distance,
-              referenceName: ref.name
-            });
-          }
-        });
+      recognitionRefs.forEach((ref) => {
+        if (!ref?.cardId || !Array.isArray(ref.signature)) return;
+        const distance = signatureDistance(query, ref.signature);
+        const current = bestByCard.get(ref.cardId);
+        if (!current || distance < current.distance) {
+          bestByCard.set(ref.cardId, {
+            cardId: ref.cardId,
+            distance,
+            referenceName: ref.referenceName
+          });
+        }
       });
 
       return Array.from(bestByCard.values())
