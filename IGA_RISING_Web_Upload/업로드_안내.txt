@@ -1,0 +1,11 @@
+IGA RISING 웹 업로드용 파일
+
+1. ZIP 압축을 풉니다.
+2. iga-rising 폴더를 통째로 GitHub 저장소나 웹서버에 올립니다.
+3. iga-rising/index.html을 열면 됩니다.
+
+index.html과 assets 폴더의 상대 위치를 유지해 주세요.
+웹앱 파일은 총 6개입니다: index.html, assets/previews.js, assets 폴더의 PDF 4개.
+previews.js에는 원문 페이지 이미지와 OAP 이미지가 들어 있습니다.
+개별 파일은 모두 25 MB 미만입니다. ZIP 자체를 웹페이지로 업로드하지 마세요.
+메모와 진행 위치는 각 브라우저에 자동 저장됩니다.
